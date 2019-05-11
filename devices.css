@@ -1,0 +1,17 @@
+.led {
+	width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	background: red;
+}
+.led-mask {
+	width: 16px;
+	height: 16px;
+	border-radius: 8px;
+}
+.led .led-mask {
+	background: rgba(0, 0, 0, 0.6);
+}
+.led.on .led-mask {
+	background: rgba(0, 0, 0, 0.0);
+}

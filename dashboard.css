@@ -1,0 +1,59 @@
+:root {
+	font-family: sans-serif;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+
+
+body {
+	display: flex;
+	flex-direction: column;
+}
+
+#middle {
+	flex-shrink: 0;
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+#terminal-box {
+	display: flex;
+	flex-grow: 1;
+}
+
+#terminal {
+	width: 100%;
+	min-height: 10em;
+	resize: none;
+	border: 0;
+	background: #111;
+	color: white;
+	font-family: monospace;
+}
+
+@media screen and (min-width: 800px) {
+	#middle {
+		flex-direction: row;
+	}
+	#devices {
+		flex-grow: 1;
+	}
+	#terminal-box {
+		flex-grow: 1;
+	}
+}
+
+.device {
+	padding: 8px;
+	display: flex;
+}
+
+.device > .device-name {
+	padding-left: 8px;
+}
