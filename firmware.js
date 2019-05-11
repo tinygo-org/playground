@@ -36,11 +36,20 @@ class Firmware {
           setTimeout(this._inst.exports.go_scheduler, timeout),
         boardsimu_gpio_set: (pin, high) =>
           board.getPin(pin).set(high ? true : false),
+        boardsimu_gpio_get: (pin, high) =>
+          board.getPin(pin).get(),
         boardsimu_gpio_configure: (pin, mode) =>
           board.getPin(pin).setMode({
             0: 'input',
             1: 'output',
           }[mode]),
+        boardsimu_spi_configure: (bus, sck, mosi, miso) => {
+          console.log('spi:', bus, sck, mosi, miso);
+          board.getSPI(bus).configure(board.getPin(sck), board.getPin(mosi), board.getPin(miso));
+        },
+        boardsimu_spi_transfer: (bus, w) => {
+          return board.getSPI(bus).transfer(w);
+        },
       },
     })
     .then(this.onload.bind(this))

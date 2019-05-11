@@ -62,6 +62,33 @@ class Pin {
     this.update();
   }
 
+  // Sense whether an input device has set this high or low, or floating. It
+  // returns true (high), false (low), or null (floating).
+  get() {
+    if (this.mode != 'input') {
+      console.warn('read pin while mode is', this.mode);
+      return this.high;
+    }
+    let value = null;
+    for (let device of this.devices) {
+      if ('sensePin' in device) {
+        let v = device.sensePin(this);
+        if (v === true || v === false) {
+          if (value == true || value == false) {
+            console.warn('pin has more than one input:', this.number);
+            return value;
+          }
+          value = v;
+        }
+      }
+    }
+    if (value !== true && value !== false) {
+      console.warn('reading a floating pin:', this.number);
+      return null;
+    }
+    return value ? true : false;
+  }
+
   // Notify this device on each change to this pin.
   attach(device) {
     this.devices.add(device);
@@ -72,6 +99,27 @@ class Pin {
     for (let device of this.devices) {
       device.update();
     }
+  }
+
+  // Whether this pin is currently high. Returns true, false, or null (when
+  // floating).
+  isHigh() {
+    if (this.mode == 'output') {
+      return this.high;
+    } else if (this.mode == 'input') {
+      return this.get() === true;
+    }
+    return null;
+  }
+
+  // Whether this pin is currently low.
+  isLow() {
+    if (this.mode == 'output') {
+      return !this.high;
+    } else if (this.mode == 'input') {
+      return this.get() === false;
+    }
+    return null;
   }
 
   // Whether this is a source, that is, whether current can flow from this pin
@@ -87,11 +135,40 @@ class Pin {
   }
 }
 
+// An SPI device emulates a hardware SPI peripheral. It can send/receive one byte at a time.
+class SPI {
+  constructor(board, number) {
+    this.board = board;
+    this.number = number;
+    this.sck = null;
+    this.mosi = null;
+    this.miso = null;
+  }
+
+  configure(sck, mosi, miso) {
+    this.sck = sck;
+    this.mosi = mosi;
+    this.miso = miso;
+  }
+
+  // Send/receive a single byte, communicating with all connected devices.
+  transfer(send) {
+    let recv = 0;
+    for (let device of this.sck.devices) {
+      if ('transferSPI' in device) {
+        recv = device.transferSPI(this.sck, this.mosi, this.miso, send);
+      }
+    }
+    return recv;
+  }
+}
+
 class Board {
   constructor(config, container) {
     this.config = config;
     this.container = container;
     this.pins = {};
+    this.spiBuses = {};
 
     container.innerHTML = '';
     for (let deviceConfig of config.devices) {
@@ -101,12 +178,16 @@ class Board {
       deviceContainer.innerHTML = '<div class="device-content"></div><div class="device-name"></div>';
       deviceContainer.querySelector('.device-name').textContent = deviceConfig.name;
       container.appendChild(deviceContainer);
+      let deviceContent = deviceContainer.querySelector('.device-content');
       if (deviceConfig.type == 'led') {
-        device = new LED(this, deviceConfig, deviceContainer.querySelector('.device-content'));
+        device = new LED(this, deviceConfig, deviceContent);
+      } else if (deviceConfig.type == 'epd2in13x') {
+        device = new EPD2IN13X(this, deviceConfig, deviceContent);
       } else {
         console.warn('unknown device type:', deviceConfig);
         continue;
       }
+      device.update();
     }
   }
 
@@ -116,6 +197,14 @@ class Board {
       this.pins[number] = new Pin(this, number);
     }
     return this.pins[number];
+  }
+
+  // Get (or create) a new SPI bus attached to the chip of this board.
+  getSPI(number) {
+    if (!(number in this.spiBuses)) {
+      this.spiBuses[number] = new SPI(this, number);
+    }
+    return this.spiBuses[number];
   }
 }
 

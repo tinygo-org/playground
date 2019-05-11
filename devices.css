@@ -15,3 +15,7 @@
 .led.on .led-mask {
 	background: rgba(0, 0, 0, 0.0);
 }
+
+.display {
+	border: 1px solid gray;
+}
