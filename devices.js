@@ -87,7 +87,6 @@ class EPD2IN13X extends Device {
     }
     if (sck == this.sck && mosi == this.mosi) {
       if (this.dc.isHigh()) {
-        //console.log('data:', w);
         if (this.currentBuffer && this.currentBufferIndex < this.currentBuffer.length) {
           this.currentBuffer[this.currentBufferIndex] = w;
           this.currentBufferIndex++;
@@ -96,15 +95,12 @@ class EPD2IN13X extends Device {
         // command
         if (w == 0x10) {
           // B/W data
-          console.log('b/w data');
           this.currentBuffer = this.bufferBlack;
           this.currentBufferIndex = 0;
         } else if (w == 0x13) {
-          console.log('colored data');
           this.currentBuffer = this.bufferColor;
           this.currentBufferIndex = 0;
         } else if (w == 0x12) {
-          console.log('display refresh');
           this.paint();
         }
       }
@@ -118,7 +114,6 @@ class EPD2IN13X extends Device {
     for (let x=0; x<this.config.width; x++) {
       for (let y=0; y<this.config.height; y++) {
         let byteIndex = Math.floor((x + y*this.config.width) / 8);
-        //console.log('bits:', this.bufferBlack[byteIndex] & (0x80 >> x%8), this.bufferBlack[byteIndex], x, byteIndex);
         let blackSet = this.bufferBlack[byteIndex] & (0x80 >> x%8);
         let colorSet = this.bufferColor[byteIndex] & (0x80 >> x%8);
         if (!blackSet && colorSet) {
