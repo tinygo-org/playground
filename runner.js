@@ -6,7 +6,7 @@ class Runner {
   constructor(response) {
     this.logLine = [];
     this.timeout = null;
-    WebAssembly.instantiateStreaming(response, {
+    let importObject = {
       // Bare minimum syscall/js environment, to get time.Sleep to work.
       env: {
         io_get_stdout: () => 0,
@@ -37,9 +37,16 @@ class Runner {
           return board.getSPI(bus).transfer(w);
         },
       },
-    })
-    .then(this.onload.bind(this))
-    .catch((err) => log(err));
+    };
+    if ('instantiateStreaming' in WebAssembly) {
+      WebAssembly.instantiateStreaming(response, importObject)
+      .then(this.onload.bind(this))
+      .catch(log);
+    } else {
+      response.arrayBuffer().then(bytes =>
+        WebAssembly.instantiate(bytes, importObject).then(this.onload.bind(this))
+      ).catch(log);
+    }
   }
 
   onload(result) {
