@@ -1,25 +1,12 @@
 'use strict';
 
-class Firmware {
-  constructor(url) {
-    this.url = url;
+// This file loads and executes some WebAssembly compiled by TinyGo.
+
+class Runner {
+  constructor(response) {
     this.logLine = [];
-    let wasmPromise = fetch(url).then((response) => {
-      if (!response.ok) {
-        if (response.status == 404) {
-          throw Error('file not found: ' + url);
-        } else if (response.statusText) {
-          throw Error(response.statusText);
-        } else {
-          throw Error('error ' + response.status + ': ' + url);
-        }
-      }
-      return response;
-    }).catch((e) =>{
-      log(e);
-      throw e;
-    });
-    WebAssembly.instantiateStreaming(wasmPromise, {
+    this.timeout = null;
+    WebAssembly.instantiateStreaming(response, {
       // Bare minimum syscall/js environment, to get time.Sleep to work.
       env: {
         io_get_stdout: () => 0,
@@ -33,7 +20,7 @@ class Firmware {
         'syscall/js.valueLoadString': (v_addr, slice_ptr, slice_len, slice_cap) =>
           this.envValueLoadString(v_addr, slice_ptr, slice_len, slice_cap),
         'runtime.sleepTicks': (timeout) =>
-          setTimeout(this._inst.exports.go_scheduler, timeout),
+          this.timeout = setTimeout(this._inst.exports.go_scheduler, timeout),
         __tinygo_gpio_set: (pin, high) =>
           board.getPin(pin).set(high ? true : false),
         __tinygo_gpio_get: (pin, high) =>
@@ -56,7 +43,6 @@ class Firmware {
   }
 
   onload(result) {
-    log('loaded ' + this.url);
     this._timeOrigin = performance.now();
     this._inst = result.instance;
     this._refs = new Map();
@@ -75,6 +61,13 @@ class Firmware {
       this,
     ];
     this._inst.exports.cwa_main();
+  }
+
+  stop() {
+    if (this.timeout !== null) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
   }
 
   envMem() {
@@ -186,14 +179,3 @@ class Firmware {
     this.envMem().setUint32(addr, ref, true);
   }
 }
-
-function log(msg) {
-  let textarea = document.querySelector('#terminal');
-  let distanceFromBottom = textarea.scrollHeight - textarea.scrollTop - textarea.clientHeight;
-  textarea.textContent += msg + '\n';
-  if (distanceFromBottom < 2) {
-    textarea.scrollTop = textarea.scrollHeight;
-  }
-}
-
-let firmware = new Firmware('firmware.wasm');

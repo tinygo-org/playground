@@ -1,12 +1,20 @@
+/* scaffolding */
 :root {
 	font-family: sans-serif;
 }
+
+/* layout */
 
 html,
 body {
 	margin: 0;
 	padding: 0;
 	height: 100%;
+}
+
+header {
+	display: flex;
+	align-items: center;
 }
 
 
@@ -22,10 +30,47 @@ body {
 	flex-direction: column;
 }
 
+#input {
+	flex-grow: 1;
+}
+
+#output {
+	display: flex;
+	flex-direction: column;
+}
+
 #terminal-box {
 	display: flex;
 	flex-grow: 1;
 }
+
+@media screen and (min-width: 800px) {
+	#middle {
+		flex-direction: row;
+	}
+	#output {
+		flex-grow: 1;
+	}
+}
+
+/* header */
+
+h1 {
+	margin: 8px;
+	font-size: 1.3rem;
+}
+
+/* textarea */
+
+#input {
+	font-family: monospace;
+	font-size: inherit;
+	tab-size: 4;
+	border-width: 1px; /* default */
+	padding: 7px;
+}
+
+/* terminal */
 
 #terminal {
 	width: 100%;
@@ -36,17 +81,11 @@ body {
 	color: white;
 	font-family: monospace;
 }
-
-@media screen and (min-width: 800px) {
-	#middle {
-		flex-direction: row;
-	}
-	#devices {
-		flex-grow: 1;
-	}
-	#terminal-box {
-		flex-grow: 1;
-	}
+#terminal::selection {
+	background: rgba(255, 255, 255, 0.3);
+}
+#terminal.error {
+	color: #f55;
 }
 
 .device {

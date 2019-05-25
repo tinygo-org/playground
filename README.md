@@ -1,8 +1,8 @@
-# Board simulation
+# TinyGo Playground
 
-Simulate firmware written in Go (using
-[TinyGo](https://github.com/tinygo-org/tinygo)) in the browser, by compiling to
-WebAssembly and emulating common devices on these boards.
+Run small script and simulate firmware written in Go (using
+[TinyGo](https://github.com/tinygo-org/tinygo)) in the browser, by compiling
+to WebAssembly and optionally emulating common devices on these boards.
 
 ## License
 

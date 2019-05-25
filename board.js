@@ -3,36 +3,70 @@
 // This file emulates a hardware board with an MCU and a set of external
 // devices (LEDs etc.).
 
-// Board configuration for the PCA10040.
-var boardConfig = {
-  name: 'PCA10040',
-  devices: [
-    {
-      type: 'led',
-      name: 'LED 1',
-      color: '#3c0',
-      cathode: 17,
-    },
-    {
-      type: 'led',
-      name: 'LED 2',
-      color: '#3c0',
-      cathode: 18,
-    },
-    {
-      type: 'led',
-      name: 'LED 3',
-      color: '#3c0',
-      cathode: 19,
-    },
-    {
-      type: 'led',
-      name: 'LED 4',
-      color: '#3c0',
-      cathode: 20,
-    },
-  ],
-};
+var boards = {
+  wasm: {
+    name: 'wasm',
+    devices: [],
+  },
+  pca10040: {
+    name: 'pca10040',
+    devices: [
+      {
+        type: 'led',
+        name: 'LED 1',
+        color: '#3c0',
+        cathode: 17,
+      },
+      {
+        type: 'led',
+        name: 'LED 2',
+        color: '#3c0',
+        cathode: 18,
+      },
+      {
+        type: 'led',
+        name: 'LED 3',
+        color: '#3c0',
+        cathode: 19,
+      },
+      {
+        type: 'led',
+        name: 'LED 4',
+        color: '#3c0',
+        cathode: 20,
+      },
+    ],
+  },
+  pca10056: {
+    name: 'pca10056',
+    devices: [
+      {
+        type: 'led',
+        name: 'LED 1',
+        color: '#3c0',
+        cathode: 13,
+      },
+      {
+        type: 'led',
+        name: 'LED 2',
+        color: '#3c0',
+        cathode: 14,
+      },
+      {
+        type: 'led',
+        name: 'LED 3',
+        color: '#3c0',
+        cathode: 15,
+      },
+      {
+        type: 'led',
+        name: 'LED 4',
+        color: '#3c0',
+        cathode: 16,
+      },
+    ],
+  },
+}
 
 // A pin is one GPIO pin of a chip. It can be an input or an output and when it
 // is an output, it can be low or high. It is used for the simplest peripherals
@@ -206,6 +240,8 @@ class Board {
     }
     return this.spiBuses[number];
   }
-}
 
-var board = new Board(boardConfig, document.querySelector('#devices'))
+  get name() {
+    return this.config.name;
+  }
+}

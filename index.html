@@ -2,21 +2,56 @@
 
 <html lang="en">
   <head>
-    <title>Board simulation</title>
+    <title>TinyGo Playground</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="dashboard.css"/>
     <link rel="stylesheet" href="devices.css"/>
     <script src="devices.js" defer></script>
     <script src="board.js" defer></script>
-    <script src="firmware.js" defer></script>
+    <script src="runner.js" defer></script>
+    <script src="dashboard.js" defer></script>
   </head>
   <body>
-    <h1>Board simulation</h1>
+    <header>
+      <h1>TinyGo Playground</h1>
+      <select id="target">
+        <option value="wasm">Console</option>
+        <option value="pca10040" selected>PCA10040</option>
+        <option value="pca10056">PCA10056</option>
+      </select>
+    </header>
     <div id="middle">
-      <div id="devices"></div>
-      <div id="terminal-box">
-        <textarea id="terminal" readonly placeholder="Console..."></textarea>
+      <textarea id="input">package main
+
+import (
+	"machine"
+	"time"
+)
+
+func main() {
+	println("Hello TinyGo!")
+	go blink(machine.LED1, 1000 * time.Millisecond)
+	go blink(machine.LED2, 750 * time.Millisecond)
+	select {}
+}
+
+func blink(pin uint8, delay time.Duration) {
+	led := machine.GPIO{pin}
+	led.Configure(machine.GPIOConfig{Mode: machine.GPIO_OUTPUT})
+	for {
+		led.Low()
+		time.Sleep(delay)
+
+		led.High()
+		time.Sleep(delay)
+	}
+}</textarea>
+      <div id="output">
+        <div id="devices"></div>
+        <div id="terminal-box">
+          <textarea id="terminal" readonly></textarea>
+        </div>
       </div>
     </div>
   </body>
