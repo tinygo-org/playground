@@ -73,6 +73,7 @@ func (job compilerJob) Run() {
 	func() {
 		err := cmd.Run()
 		if err != nil {
+			buf.WriteString(err.Error())
 			job.ResultErrors <- buf
 		} else {
 			job.ResultFile <- outfile
