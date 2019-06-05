@@ -36,9 +36,8 @@ func main() {
 	select {}
 }
 
-func blink(pin uint8, delay time.Duration) {
-	led := machine.GPIO{pin}
-	led.Configure(machine.GPIOConfig{Mode: machine.GPIO_OUTPUT})
+func blink(led machine.Pin, delay time.Duration) {
+	led.Configure(machine.PinConfig{Mode: machine.PinOutput})
 	for {
 		led.Low()
 		time.Sleep(delay)

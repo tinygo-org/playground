@@ -13,14 +13,24 @@ class Runner {
         resource_write: (fd, ptr, len) => this.logWrite(fd, ptr, len),
         'runtime.ticks': () =>
           performance.now() - this._timeOrigin,
-        'syscall/js.valueGet': (retval, v_addr, p_ptr, p_len) =>
-          this.envValueGet(retval, v_addr, p_ptr, p_len),
-        'syscall/js.valuePrepareString': (ret_addr, v_addr) =>
-          this.envValuePrepareString(ret_addr, v_addr),
-        'syscall/js.valueLoadString': (v_addr, slice_ptr, slice_len, slice_cap) =>
-          this.envValueLoadString(v_addr, slice_ptr, slice_len, slice_cap),
         'runtime.sleepTicks': (timeout) =>
           this.timeout = setTimeout(this._inst.exports.go_scheduler, timeout),
+        'syscall/js.stringVal': () =>
+          console.error('js.stringVal is not supported'),
+        'syscall/js.valueCall': () =>
+          console.error('js.FuncOf is not supported'),
+        'syscall/js.valueGet': (retval, v_addr, p_ptr, p_len) =>
+          this.envValueGet(retval, v_addr, p_ptr, p_len),
+        'syscall/js.valueIndex': () =>
+          console.error('js.valueIndexis not supported'),
+        'syscall/js.valueLength': () =>
+          console.error('js.valueLength is not supported'),
+        'syscall/js.valueLoadString': (v_addr, slice_ptr, slice_len, slice_cap) =>
+          this.envValueLoadString(v_addr, slice_ptr, slice_len, slice_cap),
+        'syscall/js.valuePrepareString': (ret_addr, v_addr) =>
+          this.envValuePrepareString(ret_addr, v_addr),
+        'syscall/js.valueSet': () =>
+          console.error('js.valueSet is not supported'),
         __tinygo_gpio_set: (pin, high) =>
           board.getPin(pin).set(high ? true : false),
         __tinygo_gpio_get: (pin, high) =>
