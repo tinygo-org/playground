@@ -75,6 +75,25 @@ function getTarget() {
   return document.querySelector('#target').value;
 }
 
+// Source:
+// https://www.everythingfrontend.com/posts/insert-text-into-textarea-at-cursor-position.html
+function insertAtCursor (input, textToInsert) {
+  const couldInsert = document.execCommand("insertText", false, textToInsert);
+
+  // Firefox (non-standard method)
+  if (!couldInsert && typeof input.setRangeText === "function") {
+    const start = input.selectionStart;
+    input.setRangeText(textToInsert);
+    // update cursor to be at the end of insertion
+    input.selectionStart = input.selectionEnd = start + textToInsert.length;
+
+    // Notify any possible listeners of the change
+    const e = document.createEvent("UIEvent");
+    e.initEvent("input", true, false);
+    input.dispatchEvent(e);
+  }
+}
+
 // Compile the code on load.
 document.addEventListener('DOMContentLoaded', function(e) {
   update();
@@ -83,8 +102,38 @@ document.addEventListener('DOMContentLoaded', function(e) {
 // Compile the code when the target has changed.
 document.querySelector('#target').addEventListener('change', () => update());
 
-// Compile the code after a certain delay of inactivity.
 document.querySelector('#input').addEventListener('input', function(e) {
+  // Insert whitespace at the start of the next line.
+  if (e.inputType == 'insertLineBreak') {
+    let line = e.target.value.substr(0, e.target.selectionStart).trimRight();
+    if (line.lastIndexOf('\n') >= 0) {
+      line = line.substr(line.lastIndexOf('\n')+1);
+    }
+
+    // Get the number of tabs at the start of the previous line.
+    let numTabs = 0;
+    for (let i=0; i<line.length; i++) {
+      if (line.substr(i, 1) != '\t') {
+        break;
+      }
+      numTabs++;
+    }
+
+    // Increase the number of tabs if this is the start of a block.
+    if (line.substr(-1, 1) == '{' || line.substr(-1, 1) == '(') {
+      numTabs += 1;
+    }
+
+    // Insert the number of tabs at the current cursor location, which must be
+    // the start of the next line.
+    let insertBefore = '';
+    for (let i=0; i<numTabs; i++) {
+      insertBefore += '\t';
+    }
+    insertAtCursor(input, insertBefore);
+  }
+
+  // Compile the code after a certain delay of inactivity.
   if (inputCompileTimeout !== null) {
     clearTimeout(inputCompileTimeout);
   }
