@@ -1,17 +1,17 @@
-FROM golang:latest AS build
+FROM golang:1.12-stretch AS build
 RUN mkdir /build
-ADD . /build/
+COPY *.go /build/
 WORKDIR /build
-RUN tar -xf ./release.tar.gz
 RUN go build -o main .
 
-FROM golang:latest
+FROM golang:1.12-stretch
 RUN adduser --disabled-login --system --home /app appuser
 RUN mkdir -p /app/.cache && chown appuser /app/.cache
 RUN apt-get update && apt-get install -y libxml2
-USER appuser
+ADD release.tar.gz /app/
 COPY --from=build /build/main /app/
-COPY --from=build /build/tinygo /app/tinygo
+COPY *.html *.css *.js /app/
+USER appuser
 ENV PATH="${PATH}:/app/tinygo/bin"
 WORKDIR /app
 CMD ["./main"]
