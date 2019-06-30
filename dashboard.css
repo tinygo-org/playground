@@ -15,6 +15,7 @@ body {
 header {
 	display: flex;
 	align-items: center;
+	border-bottom: 1px solid #aaa;
 }
 
 
@@ -34,6 +35,10 @@ body {
 	flex-grow: 1;
 }
 
+#devices {
+	border-top: 1px solid #aaa;
+}
+
 #output {
 	display: flex;
 	flex-direction: column;
@@ -51,24 +56,33 @@ body {
 	#output {
 		flex-grow: 1;
 	}
+	#devices {
+		border-top: none;
+		border-left: 1px solid #aaa;
+	}
 }
 
 /* header */
 
-h1 {
+header h1 {
 	margin: 8px;
 	font-size: 1.3rem;
+}
+
+header > *:not(h1) {
+	margin: 4px 4px 4px 0;
 }
 
 /* textarea */
 
 #input {
 	font-family: monospace;
-	font-size: inherit;
+	font-size: 14px;
 	-moz-tab-size: 4;
 	tab-size: 4;
-	border-width: 1px; /* default */
+	border: none;
 	padding: 7px;
+	resize: none;
 }
 
 /* terminal */
@@ -81,6 +95,7 @@ h1 {
 	background: #111;
 	color: white;
 	font-family: monospace;
+	font-size: 14px;
 }
 #terminal::selection {
 	background: rgba(255, 255, 255, 0.3);
@@ -92,6 +107,7 @@ h1 {
 .device {
 	padding: 8px;
 	display: flex;
+	line-height: 1;
 }
 
 .device > .device-name {

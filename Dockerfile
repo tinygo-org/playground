@@ -10,9 +10,9 @@ RUN mkdir -p /app/.cache && chown appuser /app/.cache
 RUN apt-get update && apt-get install -y libxml2
 ADD release.tar.gz /app/
 COPY --from=build /build/main /app/
-COPY *.html *.css *.js /app/
+COPY *.html *.css *.js *.json /app/frontend/
 USER appuser
 ENV PATH="${PATH}:/app/tinygo/bin"
 WORKDIR /app
-CMD ["./main"]
+CMD ["./main", "-dir=/app/frontend"]
 EXPOSE 8080

@@ -3,70 +3,16 @@
 // This file emulates a hardware board with an MCU and a set of external
 // devices (LEDs etc.).
 
+
+// Initial set of boards. It will be extended after boards.json has been loaded.
 var boards = {
-  wasm: {
-    name: 'wasm',
+  console: {
+    name: 'console',
+    humanName: 'Console',
+    example: 'hello',
     devices: [],
-  },
-  pca10040: {
-    name: 'pca10040',
-    devices: [
-      {
-        type: 'led',
-        name: 'LED 1',
-        color: '#3c0',
-        cathode: 17,
-      },
-      {
-        type: 'led',
-        name: 'LED 2',
-        color: '#3c0',
-        cathode: 18,
-      },
-      {
-        type: 'led',
-        name: 'LED 3',
-        color: '#3c0',
-        cathode: 19,
-      },
-      {
-        type: 'led',
-        name: 'LED 4',
-        color: '#3c0',
-        cathode: 20,
-      },
-    ],
-  },
-  pca10056: {
-    name: 'pca10056',
-    devices: [
-      {
-        type: 'led',
-        name: 'LED 1',
-        color: '#3c0',
-        cathode: 13,
-      },
-      {
-        type: 'led',
-        name: 'LED 2',
-        color: '#3c0',
-        cathode: 14,
-      },
-      {
-        type: 'led',
-        name: 'LED 3',
-        color: '#3c0',
-        cathode: 15,
-      },
-      {
-        type: 'led',
-        name: 'LED 4',
-        color: '#3c0',
-        cathode: 16,
-      },
-    ],
-  },
-}
+  }
+};
 
 // A pin is one GPIO pin of a chip. It can be an input or an output and when it
 // is an output, it can be low or high. It is used for the simplest peripherals
@@ -244,4 +190,44 @@ class Board {
   get name() {
     return this.config.name;
   }
+}
+
+// updateBoards updates the dropdown menu. This must be done after loading the
+// boards or updating the target selection.
+function updateBoards(selectedTarget) {
+  let dropdown = document.querySelector('#target > .dropdown-menu');
+  dropdown.innerHTML = '';
+  for (let name in boards) {
+    let board = boards[name];
+    let item = document.createElement('a');
+    item.textContent = board.humanName;
+    item.classList.add('dropdown-item');
+    if (name == selectedTarget) {
+      item.classList.add('active');
+    }
+    item.setAttribute('href', '');
+    item.dataset.name = name;
+    dropdown.appendChild(item);
+  }
+  for (let item of document.querySelectorAll('#target > .dropdown-menu > .dropdown-item')) {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      let boardConfig = boards[item.dataset.name];
+      document.querySelector('#target > button').textContent = boardConfig.humanName;
+      updateBoards(boardConfig.name);
+      setTarget(boardConfig.name);
+    });
+  }
+}
+
+function loadBoards() {
+  fetch('boards.json').then((response) => {
+    response.json().then((data) => {
+      Object.assign(boards, data);
+      updateBoards(defaultTarget);
+    });
+  }).catch((reason) => {
+    // TODO
+    console.error(reason);
+  });
 }

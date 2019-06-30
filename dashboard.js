@@ -1,10 +1,19 @@
 'use strict';
 
 var inputCompileTimeout = null;
-const inputCompileDelay = 500;
+const inputCompileDelay = 1000;
 var runner = null;
 var compileAbortController = null;
-var board = null;
+var project = null;
+var db;
+const defaultTarget = 'console';
+
+// A list of source code samples used for each target. This is the default code
+// set for a given configuration.
+var examples = {
+  hello: 'package main\n\nimport (\n\t"fmt"\n)\n\nfunc main() {\n\tfmt.Println("Hello, TinyGo")\n}\n',
+  blinky2: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tgo blink(machine.LED1, 1000 * time.Millisecond)\n\tgo blink(machine.LED2, 750 * time.Millisecond)\n\tselect {}\n}\n\nfunc blink(led machine.Pin, delay time.Duration) {\n\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tled.Low()\n\t\ttime.Sleep(delay)\n\n\t\tled.High()\n\t\ttime.Sleep(delay)\n\t}\n}',
+};
 
 // Compile the script and if it succeeded, display the result on the right.
 function update() {
@@ -18,18 +27,10 @@ function update() {
   terminal.textContent = '';
   terminal.placeholder = 'Compiling...';
 
-  if (board === null || board.name !== getTarget()) {
-    // No board or a different board was selected.
-    if (runner !== null) {
-      // A previous job is running, stop it now.
-      runner.stop();
-      runner = null;
-    }
-    board = new Board(boards[getTarget()], document.querySelector('#devices'))
-  }
+  updateResetButton();
 
   // Compile the script.
-  fetch('/api/compile?target=' + getTarget(), {
+  fetch('/api/compile?target=' + project.target, {
     method: 'POST',
     body: document.querySelector('#input').value,
     signal: abortController.signal,
@@ -71,8 +72,37 @@ function log(msg) {
   }
 }
 
-function getTarget() {
-  return document.querySelector('#target').value;
+// Reset all saved project settings to the defaults. This currently only
+// includes source code, but will include extra devices in the future.
+function resetProject() {
+  project.delete()
+  project = new Project({
+    target: project.target,
+  });
+  document.querySelector('#input').value = examples[project.board.config.example];
+  update();
+};
+
+// setTarget updates the current target to the new target string. The new target
+// state will be loaded from the database if possible.
+function setTarget(newTarget) {
+  if (project) {
+    project.save();
+  }
+  if (runner !== null) {
+    // A previous job is running, stop it now.
+    runner.stop();
+    runner = null;
+  }
+  loadProject(newTarget).then(() => {
+    update();
+  });
+}
+
+// Update the active state of the reset button. The reset button is only active
+// when there are changes to the project.
+function updateResetButton() {
+  document.querySelector('#btn-reset').disabled = (project.created === undefined);
 }
 
 // Source:
@@ -94,15 +124,9 @@ function insertAtCursor (input, textToInsert) {
   }
 }
 
-// Compile the code on load.
-document.addEventListener('DOMContentLoaded', function(e) {
-  update();
-})
-
-// Compile the code when the target has changed.
-document.querySelector('#target').addEventListener('change', () => update());
-
 document.querySelector('#input').addEventListener('input', function(e) {
+  project.markModified();
+
   // Insert whitespace at the start of the next line.
   if (e.inputType == 'insertLineBreak') {
     let line = e.target.value.substr(0, e.target.selectionStart).trimRight();
@@ -138,6 +162,36 @@ document.querySelector('#input').addEventListener('input', function(e) {
     clearTimeout(inputCompileTimeout);
   }
   inputCompileTimeout = setTimeout(() => {
+    project.save();
     update();
   }, inputCompileDelay);
+})
+
+document.querySelector('#btn-reset').addEventListener('click', resetProject);
+
+// Load boards.json to extend the list of boards in the target dropdown.
+loadBoards();
+
+// Compile the code on load.
+document.addEventListener('DOMContentLoaded', function(e) {
+  // First get the database.
+  let request = indexedDB.open("tinygo-playground", 1);
+  request.onupgradeneeded = function(e) {
+    let db = e.target.result;
+    let projects = db.createObjectStore('projects', {keyPath: 'created', autoIncrement: true});
+    projects.createIndex('target', 'target', {unique: false});
+  };
+  request.onsuccess = function(e) {
+    db = e.target.result;
+    db.onerror = function(e) {
+      console.error('database error:', e);
+    };
+
+    // This updates the target, which will start a compilation in the
+    // background.
+    setTarget(defaultTarget);
+  };
+  request.onerror = function(e) {
+    console.error('failed to open database:', e);
+  };
 })

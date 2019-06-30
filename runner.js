@@ -32,19 +32,19 @@ class Runner {
         'syscall/js.valueSet': () =>
           console.error('js.valueSet is not supported'),
         __tinygo_gpio_set: (pin, high) =>
-          board.getPin(pin).set(high ? true : false),
+          project.board.getPin(pin).set(high ? true : false),
         __tinygo_gpio_get: (pin, high) =>
-          board.getPin(pin).get(),
+          project.board.getPin(pin).get(),
         __tinygo_gpio_configure: (pin, mode) =>
-          board.getPin(pin).setMode({
+          project.board.getPin(pin).setMode({
             0: 'input',
             1: 'output',
           }[mode]),
         __tinygo_spi_configure: (bus, sck, mosi, miso) => {
-          board.getSPI(bus).configure(board.getPin(sck), board.getPin(mosi), board.getPin(miso));
+          project.board.getSPI(bus).configure(project.board.getPin(sck), project.board.getPin(mosi), project.board.getPin(miso));
         },
         __tinygo_spi_transfer: (bus, w) => {
-          return board.getSPI(bus).transfer(w);
+          return project.board.getSPI(bus).transfer(w);
         },
       },
     };
