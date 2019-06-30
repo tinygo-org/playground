@@ -1,4 +1,17 @@
 {
+	"arduino": {
+		"name": "arduino",
+		"humanName": "Arduino Uno",
+		"example": "blinky1",
+		"devices": [
+			{
+				"type": "led",
+				"name": "LED",
+				"color": "#3c0",
+				"cathode": 13
+			}
+		]
+	},
 	"pca10040": {
 		"name": "pca10040",
 		"humanName": "PCA10040",

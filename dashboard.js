@@ -12,7 +12,8 @@ const defaultTarget = 'console';
 // set for a given configuration.
 var examples = {
   hello: 'package main\n\nimport (\n\t"fmt"\n)\n\nfunc main() {\n\tfmt.Println("Hello, TinyGo")\n}\n',
-  blinky2: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tgo blink(machine.LED1, 1000 * time.Millisecond)\n\tgo blink(machine.LED2, 750 * time.Millisecond)\n\tselect {}\n}\n\nfunc blink(led machine.Pin, delay time.Duration) {\n\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tled.Low()\n\t\ttime.Sleep(delay)\n\n\t\tled.High()\n\t\ttime.Sleep(delay)\n\t}\n}',
+  blinky1: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nconst led = machine.LED\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tled.Low()\n\t\ttime.Sleep(time.Second)\n\n\t\tled.High()\n\t\ttime.Sleep(time.Second)\n\t}\n}\n',
+  blinky2: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tgo blink(machine.LED1, 1000 * time.Millisecond)\n\tgo blink(machine.LED2, 750 * time.Millisecond)\n\tselect {}\n}\n\nfunc blink(led machine.Pin, delay time.Duration) {\n\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tled.Low()\n\t\ttime.Sleep(delay)\n\n\t\tled.High()\n\t\ttime.Sleep(delay)\n\t}\n}\n',
 };
 
 // Compile the script and if it succeeded, display the result on the right.
