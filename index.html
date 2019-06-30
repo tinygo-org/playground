@@ -30,6 +30,7 @@
         </div>
       </div>
       <button type="button" id="btn-reset" class="btn btn-secondary" disabled>Reset</button>
+      <button type="button" id="btn-about" class="btn btn-secondary" data-toggle="modal" data-target="#aboutModal">About</button>
     </header>
     <div id="middle">
       <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled>Loading...</textarea>
@@ -37,6 +38,52 @@
         <div id="devices"></div>
         <div id="terminal-box">
           <textarea id="terminal" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalTitle" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="aboutModalTitle">About TinyGo Playground</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              The TinyGo Playground is a service provided by the TinyGo project
+              to compile and run small code samples directly in the browser. It
+              has been heavily inspired by the <a
+              href="https://play.golang.org/">Go Playground</a> but differs in
+              some significant ways:
+            </p>
+
+            <ul>
+              <li>
+                We use the <a href="https://github.com/tinygo-org/tinygo">TinyGo
+                compiler</a> instead of the main Go compiler.
+              </li>
+              <li>
+                Instead of running code on the server, code is compiled to <a
+                href="https://webassembly.org/">WebAssembly</a> and runs
+                directly in the browser.
+              </li>
+              <li>
+                It can simulate a few popular boards directly in the browser.
+                However, please note that this is a simulation which can differ
+                in behavior from how the program will run on the actual device.
+            </ul>
+
+            <p>
+              For more information, visit <a
+              href="https://tinygo.org/">tinygo.org</a>.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
         </div>
       </div>
     </div>
