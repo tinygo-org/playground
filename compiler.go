@@ -19,6 +19,7 @@ type compilerJob struct {
 	Source       []byte             // source code of program to compile
 	SourceHash   string             // sha256 of source (in hex form)
 	Target       string             // target board name, or "wasm"
+	Format       string             // output format: "wasm", "hex", etc.
 	ResultFile   chan string        // filename on completion
 	ResultErrors chan *bytes.Buffer // errors on completion
 	Context      context.Context
@@ -40,7 +41,7 @@ func backgroundCompiler(ch chan compilerJob) {
 // (or even refuses to start) if this job was cancelled through the context.
 func (job compilerJob) Run() {
 	infile := filepath.Join(cacheDir, "build-"+job.Target+"-"+job.SourceHash+".go")
-	outfile := filepath.Join(cacheDir, "build-"+job.Target+"-"+job.SourceHash+".wasm")
+	outfile := filepath.Join(cacheDir, "build-"+job.Target+"-"+job.SourceHash+"."+job.Format)
 
 	// Attempt to load the file from the cache.
 	_, err := os.Stat(outfile)
@@ -65,7 +66,15 @@ func (job compilerJob) Run() {
 
 	// Cache miss, compile now.
 	ioutil.WriteFile(infile, job.Source, 0400)
-	cmd := exec.Command("tinygo", "build", "-o", outfile, "-tags", job.Target, "-no-debug", infile)
+	var cmd *exec.Cmd
+	switch job.Format {
+	case "wasm":
+		// simulate
+		cmd = exec.Command("tinygo", "build", "-o", outfile, "-tags", job.Target, "-no-debug", infile)
+	default:
+		// build firmware
+		cmd = exec.Command("tinygo", "build", "-o", outfile, "-target", job.Target, "-no-debug", infile)
+	}
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf

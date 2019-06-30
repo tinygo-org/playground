@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -56,22 +57,44 @@ func main() {
 // handleCompile handles the /api/compile API endpoint. It first tries to serve
 // from a cache and if that fails, compiles the submitted source code directly.
 func handleCompile(w http.ResponseWriter, r *http.Request) {
-	// Read the source from the POST request and hash it (for the cache).
-	source, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
+	var source []byte
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") {
+		// Read the source from the POST request.
+		var err error
+		source, err = ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
+	} else {
+		// Read the source from a form parameter.
+		source = []byte(r.FormValue("code"))
 	}
+	// Hash the source code, used for the build cache.
 	sourceHashRaw := sha256.Sum256([]byte(source))
 	sourceHash := hex.EncodeToString(sourceHashRaw[:])
 
+	format := r.FormValue("format")
+	switch format {
+	case "", "wasm":
+		// Run code in the browser.
+		format = "wasm"
+	case "elf", "hex":
+		// Build a firmware that can be flashed directly to a development board.
+	default:
+		// Unrecognized format. Disallow to be sure (might introduce security
+		// issues otherwise).
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	// Attempt to serve directly from the directory with cached files.
-	filename := filepath.Join(cacheDir, "build-"+r.FormValue("target")+"-"+sourceHash+".wasm")
+	filename := filepath.Join(cacheDir, "build-"+r.FormValue("target")+"-"+sourceHash+"."+format)
 	fp, err := os.Open(filename)
 	if err == nil {
 		// File was already cached! Serve it directly.
 		defer fp.Close()
-		sendCompiledResult(w, fp)
+		sendCompiledResult(w, fp, format)
 		return
 	}
 
@@ -81,6 +104,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 		Source:       source,
 		SourceHash:   sourceHash,
 		Target:       r.FormValue("target"),
+		Format:       format,
 		Context:      r.Context(),
 		ResultFile:   make(chan string),
 		ResultErrors: make(chan *bytes.Buffer),
@@ -98,7 +122,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer fp.Close()
-		sendCompiledResult(w, fp)
+		sendCompiledResult(w, fp, format)
 	case buf := <-job.ResultErrors:
 		// Failed compilation.
 		io.Copy(w, buf)
@@ -106,8 +130,14 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 }
 
 // sendCompiledResult streams a wasm file while gzipping it during transfer.
-func sendCompiledResult(w http.ResponseWriter, fp *os.File) {
-	w.Header().Set("Content-Type", "application/wasm")
+func sendCompiledResult(w http.ResponseWriter, fp *os.File, format string) {
+	switch format {
+	case "wasm":
+		w.Header().Set("Content-Type", "application/wasm")
+	default:
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", "attachment; filename=firmware."+format)
+	}
 	w.Header().Set("Content-Encoding", "gzip")
 	gw := gzip.NewWriter(w)
 	_, err := io.Copy(gw, fp)

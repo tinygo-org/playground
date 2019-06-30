@@ -1,5 +1,7 @@
 'use strict';
 
+const API_URL = '/api'
+
 var inputCompileTimeout = null;
 const inputCompileDelay = 1000;
 var runner = null;
@@ -31,7 +33,7 @@ function update() {
   updateResetButton();
 
   // Compile the script.
-  fetch('/api/compile?target=' + project.target, {
+  fetch(API_URL + '/compile?target=' + project.target, {
     method: 'POST',
     body: document.querySelector('#input').value,
     signal: abortController.signal,
@@ -97,7 +99,31 @@ function setTarget(newTarget) {
   }
   loadProject(newTarget).then(() => {
     update();
+    document.querySelector('#btn-flash').disabled = project.board.config.firmwareFormat === undefined;
   });
+}
+
+// Start a firmware file download. This can be used for drag-and-drop
+// programming supported by many modern development boards.
+function flashFirmware(e) {
+  project.save();
+  e.preventDefault();
+
+  // Create a hidden form with the correct values that sends back the file with
+  // the correct headers to make this a download:
+  //     Content-Disposition: attachment; filename=firmware.hex
+  let form = document.createElement('form');
+  form.setAttribute('method', 'POST');
+  form.setAttribute('action', API_URL + '/compile?target='+project.target+'&format='+project.board.config.firmwareFormat);
+  form.classList.add('d-none');
+  let input = document.createElement('input');
+  input.setAttribute('type', 'hidden');
+  input.setAttribute('name', 'code');
+  input.value = document.querySelector('#input').value;
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
 }
 
 // Update the active state of the reset button. The reset button is only active
@@ -169,6 +195,7 @@ document.querySelector('#input').addEventListener('input', function(e) {
 })
 
 document.querySelector('#btn-reset').addEventListener('click', resetProject);
+document.querySelector('#btn-flash').addEventListener('click', flashFirmware);
 
 // Load boards.json to extend the list of boards in the target dropdown.
 loadBoards();

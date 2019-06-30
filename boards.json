@@ -16,6 +16,7 @@
 		"name": "pca10040",
 		"humanName": "PCA10040",
 		"example": "blinky2",
+		"firmwareFormat": "hex",
 		"devices": [
 			{
 				"type": "led",
@@ -47,6 +48,7 @@
 		"name": "pca10056",
 		"humanName": "PCA10056",
 		"example": "blinky2",
+		"firmwareFormat": "hex",
 		"devices": [
 			{
 				"type": "led",
