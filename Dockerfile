@@ -3,6 +3,7 @@ RUN mkdir /build
 COPY *.go /build/
 WORKDIR /build
 RUN go build -o main .
+RUN go get tinygo.org/x/drivers
 
 FROM golang:1.12-stretch
 RUN adduser --disabled-login --system --home /app appuser
@@ -13,6 +14,7 @@ RUN wget -O- https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     apt-get install -y --no-install-recommends libxml2 clang-8
 ADD release.tar.gz /app/
 COPY --from=build /build/main /app/
+COPY --from=build /go/src/tinygo.org/ /go/src/tinygo.org/
 COPY *.html *.css *.js *.json /app/frontend/
 USER appuser
 ENV PATH="${PATH}:/app/tinygo/bin"
