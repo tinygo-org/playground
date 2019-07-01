@@ -12,6 +12,38 @@
 			}
 		]
 	},
+	"reelboard": {
+		"name": "reelboard",
+		"humanName": "Phytec reel board",
+		"example": "blinky1",
+		"firmwareFormat": "hex",
+		"devices": [
+			{
+				"type": "led",
+				"name": "LED 1 (yellow)",
+				"color": "yellow",
+				"cathode": 13
+			},
+			{
+				"type": "led",
+				"name": "LED 2 (red)",
+				"color": "red",
+				"cathode": 11
+			},
+			{
+				"type": "led",
+				"name": "LED 3 (green)",
+				"color": "#3c0",
+				"cathode": 12
+			},
+			{
+				"type": "led",
+				"name": "LED 4 (blue)",
+				"color": "blue",
+				"cathode": 41
+			}
+		]
+	},
 	"pca10040": {
 		"name": "pca10040",
 		"humanName": "PCA10040",
