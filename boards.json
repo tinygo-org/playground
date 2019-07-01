@@ -41,6 +41,16 @@
 				"name": "LED 4 (blue)",
 				"color": "blue",
 				"cathode": 41
+			},
+			{
+				"type": "epd2in13",
+				"rotation": 3,
+				"sck": 19,
+				"mosi": 20,
+				"cs": 17,
+				"dc": 16,
+				"rst": 15,
+				"busy": 14
 			}
 		]
 	},
