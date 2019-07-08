@@ -20,27 +20,15 @@
 		"devices": [
 			{
 				"type": "led",
-				"name": "LED 1 (yellow)",
+				"name": "LED 1 (back)",
 				"color": "yellow",
 				"cathode": 13
 			},
 			{
-				"type": "led",
-				"name": "LED 2 (red)",
+				"type": "rgbled",
+				"name": "LED 2-4 (RGB, front)",
 				"color": "red",
-				"cathode": 11
-			},
-			{
-				"type": "led",
-				"name": "LED 3 (green)",
-				"color": "#3c0",
-				"cathode": 12
-			},
-			{
-				"type": "led",
-				"name": "LED 4 (blue)",
-				"color": "blue",
-				"cathode": 41
+				"cathodes": [11, 12, 41]
 			},
 			{
 				"type": "epd2in13",

@@ -161,6 +161,8 @@ class Board {
       let deviceContent = deviceContainer.querySelector('.device-content');
       if (deviceConfig.type == 'led') {
         device = new LED(this, deviceConfig, deviceContent);
+      } else if (deviceConfig.type == 'rgbled') {
+        device = new RGBLED(this, deviceConfig, deviceContent);
       } else if (deviceConfig.type == 'epd2in13') {
         device = new EPD2IN13(this, deviceConfig, deviceContent);
       } else if (deviceConfig.type == 'epd2in13x') {

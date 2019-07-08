@@ -44,6 +44,42 @@ class LED extends Device {
   }
 }
 
+// An RGB LED which is present on some boards. Currently it emulates a common
+// anode RGB LED with the 'cathodes' property listing the 3 pins (R, G, B).
+class RGBLED extends Device {
+  constructor(board, config, container) {
+    super(board, config, container);
+    if ('cathodes' in config && config.cathodes.length == 3) {
+      this.red = board.getPin(config.cathodes[0]);
+      this.green = board.getPin(config.cathodes[1]);
+      this.blue = board.getPin(config.cathodes[2]);
+      this.red.attach(this);
+      this.green.attach(this);
+      this.blue.attach(this);
+    }
+
+    container.innerHTML = '<div class="led"></div>'
+    if (config.color) {
+      container.querySelector('.led').style.background = 'black';
+    }
+  }
+
+  update() {
+    let red = '0', green = '0', blue = '0';
+    if (this.red && this.red.isSink()) {
+      red = '255';
+    }
+    if (this.green && this.green.isSink()) {
+      green = '255';
+    }
+    if (this.blue && this.blue.isSink()) {
+      blue = '255';
+    }
+    let color = 'rgb(' + red + ',' + green + ',' + blue + ')';
+    this.container.querySelector('.led').style.background = color;
+  }
+}
+
 // E-paper display by WaveShare.
 // https://www.waveshare.com/w/upload/e/e6/2.13inch_e-Paper_Datasheet.pdf
 class EPD2IN13 extends Device {
