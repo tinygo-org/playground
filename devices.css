@@ -1,19 +1,14 @@
 .led {
 	width: 16px;
 	height: 16px;
-	border-radius: 8px;
+	border-radius: 9px;
 	background: red;
+	border: 1px solid black;
+	box-sizing: content-box;
+	background-image: radial-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1));
 }
-.led-mask {
-	width: 16px;
-	height: 16px;
-	border-radius: 8px;
-}
-.led .led-mask {
-	background: rgba(0, 0, 0, 0.6);
-}
-.led.on .led-mask {
-	background: rgba(0, 0, 0, 0.0);
+.led.off {
+	background-image: radial-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.67));
 }
 
 .display {

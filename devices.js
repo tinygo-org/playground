@@ -24,9 +24,9 @@ class LED extends Device {
       this.anode.attach(this);
     }
 
-    container.innerHTML = '<div class="led"><div class="led-mask"></div></div>'
+    container.innerHTML = '<div class="led off"></div>'
     if (config.color) {
-      container.querySelector('.led').style.background = config.color;
+      container.querySelector('.led').style.backgroundColor = config.color;
     }
   }
 
@@ -40,7 +40,7 @@ class LED extends Device {
       cathode = this.cathode.isSink();
     }
     let on = anode && cathode; // only on when both are connected
-    this.container.querySelector('.led').classList.toggle('on', on)
+    this.container.querySelector('.led').classList.toggle('off', !on)
   }
 }
 
@@ -60,7 +60,7 @@ class RGBLED extends Device {
 
     container.innerHTML = '<div class="led"></div>'
     if (config.color) {
-      container.querySelector('.led').style.background = 'black';
+      container.querySelector('.led').style.backgroundColor = 'black';
     }
   }
 
@@ -76,7 +76,7 @@ class RGBLED extends Device {
       blue = '255';
     }
     let color = 'rgb(' + red + ',' + green + ',' + blue + ')';
-    this.container.querySelector('.led').style.background = color;
+    this.container.querySelector('.led').style.backgroundColor = color;
   }
 }
 
