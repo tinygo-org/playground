@@ -12,6 +12,20 @@
 			}
 		]
 	},
+	"hifive1b": {
+		"name": "hifive1b",
+		"humanName": "HiFive1 rev B",
+		"example": "blinky1",
+		"firmwareFormat": "hex",
+		"devices": [
+			{
+				"type": "rgbled",
+				"name": "LED",
+				"color": "red",
+				"cathodes": [22, 19, 21]
+			}
+		]
+	},
 	"reelboard": {
 		"name": "reelboard",
 		"humanName": "Phytec reel board",
