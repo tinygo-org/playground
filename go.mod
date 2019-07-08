@@ -1,3 +1,3 @@
-module github.com/aykevl/tinygo-play
+module github.com/tinygo-org/playground
 
 go 1.12

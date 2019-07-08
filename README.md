@@ -10,7 +10,7 @@ If you have [TinyGo installed](https://tinygo.org/getting-started/), you can
 easily run a local test server:
 
     $ go install
-    $ tinygo-play
+    $ playground
 
 Some changes need to be tested in the Docker container used in production. Run
 `make run` to test such changes.

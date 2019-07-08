@@ -1,4 +1,4 @@
-// Command tinygo-play runs a TinyGo compiler as an API that can be used from a
+// Command playground runs a TinyGo compiler as an API that can be used from a
 // web application.
 package main
 
