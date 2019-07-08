@@ -48,6 +48,7 @@ function update() {
       if (runner !== null) {
         runner.stop();
       }
+      project.refreshBoard();
       runner = new Runner(response);
     } else {
       terminal.classList.add('error');

@@ -11,6 +11,10 @@ class Project {
     this.created = data.created; // both a timestamp and the database key (undefined if not in the DB)
     this.target = data.target;
     this.mustBeSaved = false;
+    this.refreshBoard();
+  }
+
+  refreshBoard() {
     this.board = new Board(boards[this.target], document.querySelector('#devices'));
   }
 
