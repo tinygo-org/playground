@@ -6,7 +6,8 @@ build: release.tar.gz
 
 .PHONY: run
 run: build
-	docker run --rm -p 8080:8080 -t tinygo/playground:latest
+	docker rm -f playground || true
+	docker run --rm -p 8080:8080 -t --name=playground tinygo/playground:latest
 
 .PHONY: push
 push:
