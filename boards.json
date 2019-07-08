@@ -15,7 +15,7 @@
 	"hifive1b": {
 		"name": "hifive1b",
 		"humanName": "HiFive1 rev B",
-		"example": "blinky1",
+		"example": "rgbled",
 		"firmwareFormat": "hex",
 		"devices": [
 			{
@@ -29,7 +29,7 @@
 	"reelboard": {
 		"name": "reelboard",
 		"humanName": "Phytec reel board",
-		"example": "blinky1",
+		"example": "rgbled",
 		"firmwareFormat": "hex",
 		"devices": [
 			{
