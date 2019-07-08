@@ -5,9 +5,12 @@ build: release.tar.gz
 	docker build -t tinygo/playground:latest .
 
 .PHONY: run
-run: build
-	docker rm -f playground || true
+run: build stop
 	docker run --rm -p 8080:8080 -t --name=playground tinygo/playground:latest
+
+.PHONY: stop
+stop:
+	docker rm -f playground || true
 
 .PHONY: push
 push:
