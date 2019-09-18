@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"flag"
@@ -17,6 +18,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"cloud.google.com/go/storage"
+)
+
+const (
+	cacheTypeLocal = iota + 1 // Cache to a local directory
+	cacheTypeGCS              // Google Cloud Storage
 )
 
 var (
@@ -25,12 +33,14 @@ var (
 
 	// The cache directory where cached wasm files are stored.
 	cacheDir string
+
+	// The cache type: local or Google Cloud Storage.
+	cacheType int
+
+	bucket *storage.BucketHandle
 )
 
 func main() {
-	dir := flag.String("dir", ".", "which directory to serve from")
-	flag.Parse()
-
 	// Create a build cache directory.
 	userCacheDir, err := os.UserCacheDir()
 	if err != nil {
@@ -40,6 +50,26 @@ func main() {
 	err = os.MkdirAll(cacheDir, 0777)
 	if err != nil {
 		log.Fatalln("could not create temporary directory:", err)
+	}
+
+	dir := flag.String("dir", ".", "which directory to serve from")
+	cacheTypeFlag := flag.String("cache-type", "local", "cache type (local, gcs)")
+	bucketNameFlag := flag.String("bucket-name", "", "Google Cloud Storage bucket name")
+	flag.Parse()
+
+	switch *cacheTypeFlag {
+	case "local":
+		cacheType = cacheTypeLocal
+	case "gcs":
+		cacheType = cacheTypeGCS
+		ctx := context.Background()
+		client, err := storage.NewClient(ctx)
+		if err != nil {
+			log.Fatalln("could not create Google Cloud Storage client:", err)
+		}
+		bucket = client.Bucket(*bucketNameFlag)
+	default:
+		log.Fatalln("unrecognized cache type:", *cacheTypeFlag)
 	}
 
 	// Start the compiler goroutine in the background, that will serialize all
@@ -57,6 +87,8 @@ func main() {
 // handleCompile handles the /api/compile API endpoint. It first tries to serve
 // from a cache and if that fails, compiles the submitted source code directly.
 func handleCompile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	var source []byte
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") {
 		// Read the source from the POST request.

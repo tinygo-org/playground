@@ -1,9 +1,8 @@
 FROM golang:1.12-stretch AS build
 RUN mkdir /build
-COPY *.go /build/
+COPY *.go go.mod go.sum /build/
 WORKDIR /build
 RUN go build -o main .
-RUN go get tinygo.org/x/drivers
 
 FROM golang:1.12-stretch
 RUN adduser --disabled-login --system --home /app appuser
@@ -17,10 +16,10 @@ RUN curl -O https://static.dev.sifive.com/dev-tools/riscv64-unknown-elf-gcc-8.2.
     rm riscv64-unknown-elf-gcc-8.2.0-2019.05.3-x86_64-linux-ubuntu14.tar.gz
 ADD release.tar.gz /app/
 COPY --from=build /build/main /app/
-COPY --from=build /go/src/tinygo.org/ /go/src/tinygo.org/
+RUN go get tinygo.org/x/drivers
 COPY *.html *.css *.js *.json /app/frontend/
 USER appuser
 ENV PATH="${PATH}:/app/tinygo/bin"
 WORKDIR /app
-CMD ["./main", "-dir=/app/frontend"]
+CMD ["./main", "-dir=/app/frontend", "-cache-type=gcs", "-bucket-name=tinygo-cache"]
 EXPOSE 8080

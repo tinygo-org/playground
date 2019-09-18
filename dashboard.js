@@ -1,6 +1,6 @@
 'use strict';
 
-const API_URL = '/api'
+const API_URL = 'https://playground-bttoqog3vq-uc.a.run.app/api'
 
 var inputCompileTimeout = null;
 const inputCompileDelay = 1000;

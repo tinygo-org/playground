@@ -3,12 +3,16 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
+	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"time"
 )
 
 const (
@@ -30,7 +34,12 @@ func backgroundCompiler(ch chan compilerJob) {
 	n := 0
 	for job := range ch {
 		n++
-		job.Run()
+		err := job.Run()
+		if err != nil {
+			buf := &bytes.Buffer{}
+			buf.WriteString(err.Error())
+			job.ResultErrors <- buf
+		}
 		if n%100 == 1 {
 			cleanupCompileCache()
 		}
@@ -39,16 +48,16 @@ func backgroundCompiler(ch chan compilerJob) {
 
 // Run a single compiler job. It tries to load from the cache and kills the job
 // (or even refuses to start) if this job was cancelled through the context.
-func (job compilerJob) Run() {
-	infile := filepath.Join(cacheDir, "build-"+job.Target+"-"+job.SourceHash+".go")
-	outfile := filepath.Join(cacheDir, "build-"+job.Target+"-"+job.SourceHash+"."+job.Format)
+func (job compilerJob) Run() error {
+	outfileName := "build-" + job.Target + "-" + job.SourceHash + "." + job.Format
+	outfile := filepath.Join(cacheDir, outfileName)
 
 	// Attempt to load the file from the cache.
 	_, err := os.Stat(outfile)
 	if err == nil {
 		// Cache hit!
 		job.ResultFile <- outfile
-		return
+		return nil
 	}
 
 	// Perhaps the job should not even be started.
@@ -56,38 +65,101 @@ func (job compilerJob) Run() {
 	select {
 	case <-job.Context.Done():
 		// Cancelled.
-		buf := &bytes.Buffer{}
-		buf.WriteString("aborted")
-		job.ResultErrors <- buf
-		return
+		return errors.New("aborted")
 	default:
 		// Not cancelled.
 	}
 
+	tmpfile := filepath.Join(cacheDir, "build-"+job.Target+"-"+randomString(16)+".tmp."+job.Format)
+	defer os.Remove(tmpfile)
+
+	r, err := bucket.Object(outfileName).NewReader(job.Context)
+	if err == nil {
+		// File is already cached in the cloud.
+		defer r.Close()
+
+		// Copy the file (that is already cached in the cloud but not locally)
+		// to the local cache.
+		f, err := os.Create(tmpfile)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		if _, err := io.Copy(f, r); err != nil {
+			return err
+		}
+
+		if err := os.Rename(tmpfile, outfile); err != nil {
+			return err
+		}
+
+		// Done. Return the file that is now cached locally.
+		job.ResultFile <- outfile
+		return nil
+	}
+
 	// Cache miss, compile now.
-	ioutil.WriteFile(infile, job.Source, 0400)
+	// But first write the Go source code to a file so it can be read by the
+	// compiler.
+	infile, err := ioutil.TempFile("", "tinygo-playground-source-*.go")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(infile.Name())
+	if _, err := infile.Write(job.Source); err != nil {
+		return err
+	}
+
 	var cmd *exec.Cmd
 	switch job.Format {
 	case "wasm":
 		// simulate
-		cmd = exec.Command("tinygo", "build", "-o", outfile, "-tags", job.Target, "-no-debug", infile)
+		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-tags", job.Target, "-no-debug", infile.Name())
 	default:
 		// build firmware
-		cmd = exec.Command("tinygo", "build", "-o", outfile, "-target", job.Target, "-no-debug", infile)
+		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, "-no-debug", infile.Name())
 	}
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
 	finishedChan := make(chan struct{})
 	func() {
+		defer close(finishedChan)
 		err := cmd.Run()
 		if err != nil {
 			buf.WriteString(err.Error())
 			job.ResultErrors <- buf
-		} else {
-			job.ResultFile <- outfile
+			return
 		}
-		close(finishedChan)
+		if err := os.Rename(tmpfile, outfile); err != nil {
+			buf.WriteString(err.Error())
+			job.ResultErrors <- buf
+			return
+		}
+
+		// Now copy the file over to cloud storage to cache across all
+		// instances.
+		if cacheType == cacheTypeGCS {
+			obj := bucket.Object(outfileName)
+			w := obj.NewWriter(job.Context)
+			r, err := os.Open(outfile)
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+			defer r.Close()
+			if _, err := io.Copy(w, r); err != nil {
+				log.Println(err.Error())
+				return
+			}
+			if err := w.Close(); err != nil {
+				log.Println(err.Error())
+				return
+			}
+		}
+
+		// Done. Return the local file immediately.
+		job.ResultFile <- outfile
 	}()
 	select {
 	case <-finishedChan:
@@ -96,7 +168,7 @@ func (job compilerJob) Run() {
 		// Job should be killed: it's useless now.
 		cmd.Process.Kill()
 	}
-	os.Remove(infile)
+	return nil
 }
 
 // cleanupCompileCache is called regularly to clean up old compile results from
@@ -131,4 +203,15 @@ func cleanupCompileCache() {
 			files = files[1:]
 		}
 	}
+}
+
+var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func randomString(length int) string {
+	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = chars[seededRand.Intn(len(chars))]
+	}
+	return string(b)
 }

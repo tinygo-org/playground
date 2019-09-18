@@ -6,15 +6,16 @@ build: release.tar.gz
 
 .PHONY: run
 run: build stop
-	docker run --rm -p 8080:8080 -t --name=playground tinygo/playground:latest
+	docker run --rm -p 8080:8080 -t --name=playground tinygo/playground:latest ./main -dir=/app/frontend
 
 .PHONY: stop
 stop:
 	docker rm -f playground || true
 
-.PHONY: push
-push:
+.PHONY: push-docker
+push-docker:
 	docker push tinygo/playground:latest
 
-release.tar.gz: ../../tinygo-org/tinygo/build/release.tar.gz
-	cp $^ $@
+.PHONY: push-gcloud
+push-gcloud: release.tar.gz
+	gcloud builds submit --tag gcr.io/tinygo/playground
