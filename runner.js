@@ -19,6 +19,10 @@ class Runner {
           console.error('js.stringVal is not supported'),
         'syscall/js.valueCall': () =>
           console.error('js.FuncOf is not supported'),
+        'syscall/js.valueNew': () =>
+          console.error('js.New is not supported'),
+        'syscall/js.valueSetIndex': () =>
+          console.error('js.Value.SetIndex is not supported'),
         'syscall/js.valueGet': (retval, v_addr, p_ptr, p_len) =>
           this.envValueGet(retval, v_addr, p_ptr, p_len),
         'syscall/js.valueIndex': () =>
