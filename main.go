@@ -111,7 +111,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 	case "", "wasm":
 		// Run code in the browser.
 		format = "wasm"
-	case "elf", "hex":
+	case "elf", "hex", "uf2":
 		// Build a firmware that can be flashed directly to a development board.
 	default:
 		// Unrecognized format. Disallow to be sure (might introduce security
