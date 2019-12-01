@@ -73,29 +73,31 @@ func (job compilerJob) Run() error {
 	tmpfile := filepath.Join(cacheDir, "build-"+job.Target+"-"+randomString(16)+".tmp."+job.Format)
 	defer os.Remove(tmpfile)
 
-	r, err := bucket.Object(outfileName).NewReader(job.Context)
-	if err == nil {
-		// File is already cached in the cloud.
-		defer r.Close()
+	if bucket != nil {
+		r, err := bucket.Object(outfileName).NewReader(job.Context)
+		if err == nil {
+			// File is already cached in the cloud.
+			defer r.Close()
 
-		// Copy the file (that is already cached in the cloud but not locally)
-		// to the local cache.
-		f, err := os.Create(tmpfile)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		if _, err := io.Copy(f, r); err != nil {
-			return err
-		}
+			// Copy the file (that is already cached in the cloud but not locally)
+			// to the local cache.
+			f, err := os.Create(tmpfile)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			if _, err := io.Copy(f, r); err != nil {
+				return err
+			}
 
-		if err := os.Rename(tmpfile, outfile); err != nil {
-			return err
-		}
+			if err := os.Rename(tmpfile, outfile); err != nil {
+				return err
+			}
 
-		// Done. Return the file that is now cached locally.
-		job.ResultFile <- outfile
-		return nil
+			// Done. Return the file that is now cached locally.
+			job.ResultFile <- outfile
+			return nil
+		}
 	}
 
 	// Cache miss, compile now.
