@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -116,7 +117,8 @@ func (job compilerJob) Run() error {
 	switch job.Format {
 	case "wasm":
 		// simulate
-		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-tags", job.Target, "-no-debug", infile.Name())
+		tag := strings.Replace(job.Target, "-", "_", -1) // '-' not allowed in tags, use '_' instead
+		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-tags", tag, "-no-debug", infile.Name())
 	default:
 		// build firmware
 		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, "-no-debug", infile.Name())

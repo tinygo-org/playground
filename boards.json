@@ -12,6 +12,20 @@
 			}
 		]
 	},
+	"circuitplay-express": {
+		"name": "circuitplay-express",
+		"humanName": "Circuit Playground Express",
+		"example": "blinky1",
+		"firmwareFormat": "uf2",
+		"devices": [
+			{
+				"type": "led",
+				"name": "LED",
+				"color": "red",
+				"cathode": 17
+			}
+		]
+	},
 	"hifive1b": {
 		"name": "hifive1b",
 		"humanName": "HiFive1 rev B",
