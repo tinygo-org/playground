@@ -7,8 +7,9 @@ const inputCompileDelay = 1000;
 var runner = null;
 var compileAbortController = null;
 var project = null;
+var board = null;
 var db;
-const defaultTarget = 'console';
+const defaultProjectName = 'console';
 
 // A list of source code samples used for each target. This is the default code
 // set for a given configuration.
@@ -31,8 +32,6 @@ function update() {
   terminal.textContent = '';
   terminal.placeholder = 'Compiling...';
 
-  updateResetButton();
-
   // Compile the script.
   fetch(API_URL + '/compile?target=' + project.target, {
     method: 'POST',
@@ -48,7 +47,7 @@ function update() {
       if (runner !== null) {
         runner.stop();
       }
-      project.refreshBoard();
+      board = new Board(project.config, document.querySelector('#devices'));
       runner = new Runner(response);
     } else {
       terminal.classList.add('error');
@@ -77,38 +76,29 @@ function log(msg) {
   }
 }
 
-// Reset all saved project settings to the defaults. This currently only
-// includes source code, but will include extra devices in the future.
-function resetProject() {
-  project.delete()
-  project = new Project({
-    target: project.target,
-  });
-  document.querySelector('#input').value = examples[project.board.config.example];
-  update();
-};
-
-// setTarget updates the current target to the new target string. The new target
-// state will be loaded from the database if possible.
-function setTarget(newTarget) {
+// setProject updates the current project to the new project name.
+async function setProject(name) {
   if (project) {
-    project.save();
+    project.save(document.querySelector('#input').value);
   }
   if (runner !== null) {
     // A previous job is running, stop it now.
     runner.stop();
     runner = null;
   }
-  loadProject(newTarget).then(() => {
-    update();
-    document.querySelector('#btn-flash').disabled = project.board.config.firmwareFormat === undefined;
-  });
+  project = await loadProject(name);
+  updateBoards();
+  let input = document.querySelector('#input');
+  input.value = project.code;
+  input.disabled = false;
+  update();
+  document.querySelector('#btn-flash').disabled = project.config.firmwareFormat === undefined;
 }
 
 // Start a firmware file download. This can be used for drag-and-drop
 // programming supported by many modern development boards.
 function flashFirmware(e) {
-  project.save();
+  project.save(document.querySelector('#input').value);
   e.preventDefault();
 
   // Create a hidden form with the correct values that sends back the file with
@@ -126,12 +116,6 @@ function flashFirmware(e) {
   document.body.appendChild(form);
   form.submit();
   form.remove();
-}
-
-// Update the active state of the reset button. The reset button is only active
-// when there are changes to the project.
-function updateResetButton() {
-  document.querySelector('#btn-reset').disabled = (project.created === undefined);
 }
 
 // Source:
@@ -154,7 +138,7 @@ function insertAtCursor (input, textToInsert) {
 }
 
 document.querySelector('#input').addEventListener('input', function(e) {
-  project.markModified();
+  project.markModified(e.target.value);
 
   // Insert whitespace at the start of the next line.
   if (e.inputType == 'insertLineBreak') {
@@ -191,12 +175,11 @@ document.querySelector('#input').addEventListener('input', function(e) {
     clearTimeout(inputCompileTimeout);
   }
   inputCompileTimeout = setTimeout(() => {
-    project.save();
+    project.save(document.querySelector('#input').value);
     update();
   }, inputCompileDelay);
 })
 
-document.querySelector('#btn-reset').addEventListener('click', resetProject);
 document.querySelector('#btn-flash').addEventListener('click', flashFirmware);
 
 // Load boards.json to extend the list of boards in the target dropdown.
@@ -205,10 +188,15 @@ loadBoards();
 // Compile the code on load.
 document.addEventListener('DOMContentLoaded', function(e) {
   // First get the database.
-  let request = indexedDB.open("tinygo-playground", 1);
+  let request = indexedDB.open("tinygo-playground", 2);
   request.onupgradeneeded = function(e) {
     let db = e.target.result;
-    let projects = db.createObjectStore('projects', {keyPath: 'created', autoIncrement: true});
+    if (e.oldVersion == 1) {
+      // The proper way would be to upgrade the object store in place, but the
+      // easy way is to simply drop all existing data.
+      db.deleteObjectStore('projects');
+    }
+    let projects = db.createObjectStore('projects', {keyPath: 'name', autoIncrement: true});
     projects.createIndex('target', 'target', {unique: false});
   };
   request.onsuccess = function(e) {
@@ -219,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function(e) {
 
     // This updates the target, which will start a compilation in the
     // background.
-    setTarget(defaultTarget);
+    setProject(defaultProjectName);
   };
   request.onerror = function(e) {
     console.error('failed to open database:', e);

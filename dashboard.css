@@ -73,6 +73,17 @@ header > *:not(h1) {
 	margin: 4px 4px 4px 0;
 }
 
+#target .project-name {
+	display: flex;
+	justify-content: space-between;
+}
+#target .project-name .buttons {
+	margin-left: 16px;
+}
+.edit-symbol {
+	transform: scaleX(-1);
+}
+
 /* textarea */
 
 #input {

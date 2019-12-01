@@ -196,9 +196,46 @@ class Board {
   }
 }
 
+// getProjects returns the complete list of project objects from the projects
+// store. It returns an empty list when the database hasn't been initialized
+// yet.
+async function getProjects() {
+  // Load all projects.
+  if (!db) {
+    return [];
+  }
+  let projects = [];
+  return await new Promise(function(resolve, reject) {
+    db.transaction(['projects'], 'readonly').objectStore('projects').openCursor().onsuccess = function(e) {
+      var cursor = e.target.result;
+      if (cursor) {
+        projects.push(cursor.value);
+        cursor.continue();
+      } else {
+        resolve(projects);
+      }
+    }
+  });
+}
+
 // updateBoards updates the dropdown menu. This must be done after loading the
 // boards or updating the target selection.
-function updateBoards(selectedTarget) {
+async function updateBoards() {
+  if (project) {
+    let button = document.querySelector('#target > button');
+    if (project.created) {
+      if (project.projectHumanName) {
+        button.textContent = project.projectHumanName + ' ';
+      } else {
+        button.textContent = project.config.humanName + ' * ';
+      }
+    } else {
+      button.textContent = project.config.humanName + ' ';
+    }
+  }
+
+  let projects = await getProjects();
+
   let dropdown = document.querySelector('#target > .dropdown-menu');
   dropdown.innerHTML = '';
   for (let name in boards) {
@@ -206,20 +243,83 @@ function updateBoards(selectedTarget) {
     let item = document.createElement('a');
     item.textContent = board.humanName;
     item.classList.add('dropdown-item');
-    if (name == selectedTarget) {
+    if (project && name == project.name) {
       item.classList.add('active');
     }
     item.setAttribute('href', '');
     item.dataset.name = name;
     dropdown.appendChild(item);
-  }
-  for (let item of document.querySelectorAll('#target > .dropdown-menu > .dropdown-item')) {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       let boardConfig = boards[item.dataset.name];
-      document.querySelector('#target > button').textContent = boardConfig.humanName;
-      updateBoards(boardConfig.name);
-      setTarget(boardConfig.name);
+      setProject(boardConfig.name);
+    });
+  }
+
+  if (!projects.length) {
+    // No saved projects.
+    return;
+  }
+
+  let divider = document.createElement('div');
+  divider.classList.add('dropdown-divider');
+  dropdown.appendChild(divider);
+
+  // Add a list of projects (modified templates).
+  for (let projectObj of projects) {
+    let board = boards[projectObj.target];
+    let item = document.createElement('a');
+    item.innerHTML = '<span class="text"><span class="name"></span> – <i class="time"></i></span><span class="buttons"><button class="btn btn-light btn-sm edit-symbol rename" title="Rename">✎</button> <button class="btn btn-light btn-sm delete" title="Delete">🗑</button></span>';
+    if (projectObj.humanName) {
+      item.querySelector('.text').textContent = projectObj.humanName;
+    } else {
+      item.querySelector('.name').textContent = board.humanName;
+      item.querySelector('.time').textContent = projectObj.created.toISOString();
+    }
+    item.classList.add('dropdown-item');
+    item.classList.add('project-name');
+    if (project && projectObj.name == project.name) {
+      item.classList.add('active');
+    }
+    item.setAttribute('href', '');
+    item.dataset.name = projectObj.name;
+    dropdown.appendChild(item);
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      setProject(item.dataset.name);
+    });
+
+    item.querySelector('.rename').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      let name = e.target.parentNode.parentNode.dataset.name;
+      let humanName = prompt('Project name');
+
+      if (project.name == name) {
+        // Update name of current project.
+        project.projectHumanName = humanName;
+      }
+      let tx = db.transaction(['projects'], 'readwrite');
+      tx.objectStore('projects').get(name).onsuccess = function(e) {
+        let obj = e.target.result;
+        obj.humanName = humanName;
+        tx.objectStore('projects').put(obj).onsuccess = function(e) {
+          updateBoards();
+        };
+      };
+    });
+
+    item.querySelector('.delete').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      let name = e.target.parentNode.parentNode.dataset.name;
+      if (name == project.name) {
+        setProject(project.target);
+      }
+      db.transaction(['projects'], 'readwrite').objectStore('projects').delete(name);
+      updateBoards();
     });
   }
 }
@@ -228,7 +328,7 @@ function loadBoards() {
   fetch('boards.json').then((response) => {
     response.json().then((data) => {
       Object.assign(boards, data);
-      updateBoards(defaultTarget);
+      updateBoards();
     });
   }).catch((reason) => {
     // TODO

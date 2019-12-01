@@ -8,82 +8,101 @@
 // without losing data.
 class Project {
   constructor(data) {
-    this.created = data.created; // both a timestamp and the database key (undefined if not in the DB)
-    this.target = data.target;
+    this._data = data;
+    this.name = data.name; // may be undefined
+    this.target = data.target || data.name;
+    this.created = data.created;
     this.mustBeSaved = false;
-    this.refreshBoard();
   }
 
-  refreshBoard() {
-    this.board = new Board(boards[this.target], document.querySelector('#devices'));
+  get config() {
+    return boards[this.target];
+  }
+
+  get board() {
+    throw 'todo: board';
+  }
+
+  get projectHumanName() {
+    if (this.created) {
+      return this._data.humanName;
+    }
+    return undefined; // no project name available
+  }
+
+  set projectHumanName(humanName) {
+    if (!this.created)
+      throw 'trying to set project human name of non-created project';
+    this._data.humanName = humanName;
+  }
+
+  get code() {
+    if (this.name in boards) {
+      return examples[this.config.example];
+    }
+    return this._data.code;
   }
 
   // Set the board state as modified, so that it will be saved the next time
   // save() is called.
-  markModified() {
+  markModified(code) {
     this.mustBeSaved = true;
     if (!this.created) {
       // Project is modified for the first time.
       this.created = new Date();
-      this.save();
-      updateResetButton();
+      this.name = this.config.name + '-' + (new Date()).toISOString();
+      // this._data was a board config before. Replace it with a real object
+      // before calling save() to avoid inconsistencies.
+      this._data = {
+        name: this.name,
+        target: this.target,
+        created: this.created,
+        code: code,
+      };
+      this.save(code);
     }
   }
 
   // Save the project, if it was marked dirty.
-  save() {
+  save(code) {
     if (!this.created)
       return;
     if (!this.mustBeSaved)
       return;
+    if (code === undefined) {
+      throw 'no code provided';
+    }
     this.mustBeSaved = false;
-    let code = document.querySelector('#input').value;
     let transaction = db.transaction(['projects'], 'readwrite');
-    transaction.objectStore('projects').put({
+    this._data = {
+      name: this.name,
       target: this.target,
       created: this.created,
+      humanName: this.projectHumanName,
       code: code,
-    });
+    };
+    transaction.objectStore('projects').put(this._data).onsuccess = function(e) {
+      updateBoards();
+    };
     transaction.onerror = function(e) {
       console.error('failed to save project:', e);
       e.stopPropagation();
     };
   }
-
-  // Delete this project. After this, the project object should not generally be
-  // re-used.
-  delete() {
-    if (!this.created) return;
-    let transaction = db.transaction(['projects'], 'readwrite');
-    transaction.objectStore('projects').delete(this.created);
-    this.created = undefined;
-  }
 }
 
-// Load a project based on a target name. In the future, multiple saved projects
-// may exist at the same time.
-function loadProject(target) {
-  return new Promise((resolve, reject) => {
+// Load a project based on a project name.
+async function loadProject(name) {
+  if (name in boards) {
+    return new Project(boards[name]);
+  }
+  return await new Promise((resolve, reject) => {
     let transaction = db.transaction(['projects'], 'readonly');
-    let input = document.querySelector('#input');
-    input.textContent = '';
-    input.disabled = true;
-    transaction.objectStore('projects').index('target').get(target).onsuccess = function(e) {
+    transaction.objectStore('projects').get(name).onsuccess = function(e) {
       if (e.target.result === undefined) {
-        // Project data does not exist. Create a new project.
-        project = new Project({
-          target: target,
-        });
-        input.value = examples[project.board.config.example];
-      } else {
-        project = new Project({
-          target: target,
-          created: e.target.result.created,
-        });
-        input.value = e.target.result.code;
+        throw 'loadProject: project does not exist in DB';
       }
-      resolve();
-      input.disabled = false;
+      resolve(new Project(e.target.result));
     };
   });
 }
