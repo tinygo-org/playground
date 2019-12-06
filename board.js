@@ -18,18 +18,27 @@ var boards = {
 // is an output, it can be low or high. It is used for the simplest peripherals
 // (LEDs etc.).
 class Pin {
-  constructor(board, number) {
-    this.board = board;
-    this.number = number;
+  constructor(part, id) {
+    this.part = part;
+    this.id = id;
     this.mode = 'input';
     this.high = false;
-    this.devices = new Set();
+    this.net = new Net(this);
+    this.spiSlave = null;
   }
 
-  // Set the pin mode: 'input' or 'output'.
+  // A human readable name that can be displayed in the UI.
+  get name() {
+    return this.part.name + '.' + this.id;
+  }
+
+  // Set the pin mode: 'input' or 'output'. It must be one of these two.
   setMode(mode) {
+    if (mode !== 'input' && mode !== 'output') {
+      throw 'mode should be input or output, got: ' + mode;
+    }
     this.mode = mode;
-    this.update();
+    this.net.update();
   }
 
   // Update whether this pin is high or low. This is only a valid operation when
@@ -39,86 +48,159 @@ class Pin {
       console.warn('set output while mode is', this.mode);
     }
     this.high = high ? true : false;
-    this.update();
+    this.net.update();
   }
 
   // Sense whether an input device has set this high or low, or floating. It
   // returns true (high), false (low), or null (floating).
   get() {
-    if (this.mode != 'input') {
-      console.warn('read pin while mode is', this.mode);
+    if (this.mode == 'output') {
+      console.warn('read output pin:', this.name);
       return this.high;
     }
-    let value = null;
-    for (let device of this.devices) {
-      if ('sensePin' in device) {
-        let v = device.sensePin(this);
-        if (v === true || v === false) {
-          if (value == true || value == false) {
-            console.warn('pin has more than one input:', this.number);
-            return value;
-          }
-          value = v;
-        }
-      }
+
+    let value = this.net.state;
+    if (value === 'floating') {
+      console.warn('reading a floating pin:', this.name);
+      // Act like a floating pin by returning a random value.
+      return Math.random() < 0.5;
+    } else if (value === 'source') {
+      return true;
+    } else if (value === 'sink') {
+      return false;
+    } else {
+      console.error('unknown net state:', this.name);
+      return false;
     }
-    if (value !== true && value !== false) {
-      console.warn('reading a floating pin:', this.number);
-      return null;
-    }
-    return value ? true : false;
   }
 
-  // Notify this device on each change to this pin.
-  attach(device) {
-    this.devices.add(device);
+  // Connect the two Pin objects together in a net.
+  attach(pin) {
+    this.net.attach(pin);
   }
 
-  // Update all attached devices. Used when any of the properties change.
-  update() {
-    for (let device of this.devices) {
-      device.update();
+  // Set the SPI slave peripheral (SPISlave). It should only be set for the sck
+  // pin. By setting the SPI slave, the SPI master (SPIMaster) can find
+  // connected slaves.
+  setSPISlave(spi) {
+    if (this.spiSlave !== null) {
+      throw 'Pin.setSPISlave: SPI slave already set!';
     }
+    this.spiSlave = spi;
   }
 
   // Whether this pin is currently high. Returns true, false, or null (when
   // floating).
   isHigh() {
-    if (this.mode == 'output') {
-      return this.high;
-    } else if (this.mode == 'input') {
-      return this.get() === true;
-    }
-    return null;
+    return this.isSource();
   }
 
   // Whether this pin is currently low.
   isLow() {
-    if (this.mode == 'output') {
-      return !this.high;
-    } else if (this.mode == 'input') {
-      return this.get() === false;
-    }
-    return null;
+    return this.isSink();
   }
 
   // Whether this is a source, that is, whether current can flow from this pin
   // (like VCC).
   isSource() {
-    return this.mode == 'output' && this.high;
+    return this.net.isSource();
   }
 
   // Whether this is a sink, that is, whether current can flow into this pin
   // (like GND).
   isSink() {
-    return this.mode == 'output' && !this.high;
+    return this.net.isSink();
+  }
+
+  get connected() {
+    return this.net.pins.size > 1;
   }
 }
 
-// An SPI device emulates a hardware SPI peripheral. It can send/receive one byte at a time.
-class SPI {
-  constructor(board, number) {
-    this.board = board;
+// A net is a collection of pins that are connected together.
+class Net {
+  constructor(pin) {
+    // Note: this net should only be constructed while creating a Pin, and the
+    // Pin should set this net as its net.
+    this.pins = new Set([pin]);
+    this.state = 'floating';
+  }
+
+  attach(pin) {
+    // Merge the net of the pin into this net.
+    let newpins = pin.net.pins;
+    pin.net.pins = null; // make sure this net is not used anymore
+    for (let p of newpins) {
+      this.pins.add(p);
+      p.net = this;
+    }
+    if (pin.net !== this) {
+      throw 'Net.attach: expected the pin to have the correct net by now';
+    }
+  }
+
+  isSink() {
+    if (this.state === 'sink') {
+      return true;
+    } else if (this.state == 'source') {
+      return false;
+    } else if (this.state == 'floating') {
+      return null;
+    } else {
+      throw 'Net.isSink: unknown state';
+    }
+  }
+
+  isSource() {
+    if (this.state === 'source') {
+      return true;
+    } else if (this.state == 'sink') {
+      return false;
+    } else if (this.state == 'floating') {
+      return null;
+    } else {
+      throw 'Net.isSource: unknown state';
+    }
+  }
+
+  // Update the state of this connection: source (high), sink (low), or
+  // floating. It will call onupdate on all connected parts if the state
+  // changed.
+  update() {
+    // Default state when no outputs are connected.
+    let state = 'floating';
+
+    for (let pin of this.pins) {
+      // TODO: detect shorts
+      if (pin.mode == 'output' && !pin.high) {
+        state = 'sink';
+        break
+      }
+      if (pin.mode == 'output' && pin.high) {
+        state = 'source';
+        break;
+      }
+    }
+
+    if (state !== this.state) {
+      // State was changed.
+      this.state = state;
+
+      // Notify all connected pins.
+      for (let pin of this.pins) {
+        if (pin.mode == 'input') {
+          pin.part.onupdate(pin);
+        }
+      }
+    }
+  }
+}
+
+// An SPI master emulates a hardware SPI peripheral. It can send/receive one
+// byte at a time.
+class SPIMaster {
+  constructor(part, number) {
+    this.part = part;
     this.number = number;
     this.sck = null;
     this.mosi = null;
@@ -133,13 +215,63 @@ class SPI {
 
   // Send/receive a single byte, communicating with all connected devices.
   transfer(send) {
-    let recv = 0;
-    for (let device of this.sck.devices) {
-      if ('transferSPI' in device) {
-        recv = device.transferSPI(this.sck, this.mosi, this.miso, send);
+    // Find connected SPI slaves.
+    let recv = null;
+    for (let pin of this.sck.net.pins) {
+      if (pin.spiSlave === null) {
+        continue;
+      }
+      let w = pin.spiSlave.transfer(this.sck, this.mosi, this.miso, send);
+      if (typeof w === 'number') {
+        if (recv !== null) {
+          console.warn('SPIMaster.transfer: received byte from two slaves');
+        }
+        recv = w;
       }
     }
+
+    if (recv === null) {
+      // None of the connected devices (if any) returned anything.
+      // We could theoretically also send a random value back, but we should
+      // ideally warn at the same time. Unfortunately, we don't know whether
+      // the returned byte is used at all.
+      recv = 0;
+    }
     return recv;
+  }
+}
+
+// A SPI slave implements the slave part of a SPI bus. It is usually part of an
+// external device, such as an MCU.
+class SPISlave {
+  constructor(sck, mosi, miso, callback) {
+    this.sck = sck;
+    this.mosi = mosi;
+    this.miso = miso;
+    this.callback = callback;
+
+    // Set the SPI slave of the clock pin. This is the pin that will be checked
+    // by the SPI master for connected SPI slaves.
+    this.sck.setSPISlave(this);
+  }
+
+  // Transmit (send+receive) a single byte. It is called by the SPI master when
+  // it needs to do a transmit.
+  transfer(sck, mosi, miso, w) {
+    if (this.sck.net !== sck.net) {
+      throw 'SPISlave.transfer: wrong sck?';
+    }
+    if (this.mosi.net !== mosi.net) {
+      // MOSI is not connected, so we didn't actually receive this byte.
+      w = undefined;
+    }
+    w = this.callback(w);
+    if (this.miso.net !== miso.net) {
+      // MISO is not connected, so this byte is dropped on the floor instead of
+      // being received by the SPI master.
+      w = undefined;
+    }
+    return w;
   }
 }
 
@@ -160,19 +292,51 @@ class Board {
       container.appendChild(deviceContainer);
       let deviceContent = deviceContainer.querySelector('.device-content');
       if (deviceConfig.type == 'led') {
-        device = new LED(this, deviceConfig, deviceContent);
+        device = new LED(deviceConfig, deviceContent);
+        if ('cathode' in deviceConfig) {
+          device.cathode.attach(this.getPin(deviceConfig.cathode));
+        }
+        if ('anode' in deviceConfig) {
+          device.anode.attach(this.getPin(deviceConfig.anode));
+        }
       } else if (deviceConfig.type == 'rgbled') {
-        device = new RGBLED(this, deviceConfig, deviceContent);
+        device = new RGBLED(deviceConfig, deviceContent);
+        if ('cathodes' in deviceConfig && deviceConfig.cathodes.length == 3) {
+          device.red.attach(this.getPin(deviceConfig.cathodes[0]));
+          device.green.attach(this.getPin(deviceConfig.cathodes[1]));
+          device.blue.attach(this.getPin(deviceConfig.cathodes[2]));
+        }
       } else if (deviceConfig.type == 'epd2in13') {
-        device = new EPD2IN13(this, deviceConfig, deviceContent);
+        device = new EPD2IN13(deviceConfig, deviceContent);
+        device.sck.attach(this.getPin(deviceConfig.sck));
+        device.mosi.attach(this.getPin(deviceConfig.mosi));
+        device.cs.attach(this.getPin(deviceConfig.cs));
+        device.dc.attach(this.getPin(deviceConfig.dc));
+        device.rst.attach(this.getPin(deviceConfig.rst));
+        device.busy.attach(this.getPin(deviceConfig.busy));
       } else if (deviceConfig.type == 'epd2in13x') {
-        device = new EPD2IN13X(this, deviceConfig, deviceContent);
+        device = new EPD2IN13X(deviceConfig, deviceContent);
+        device.sck.attach(this.getPin(deviceConfig.sck));
+        device.mosi.attach(this.getPin(deviceConfig.mosi));
+        device.cs.attach(this.getPin(deviceConfig.cs));
+        device.dc.attach(this.getPin(deviceConfig.dc));
+        device.rst.attach(this.getPin(deviceConfig.rst));
+        device.busy.attach(this.getPin(deviceConfig.busy));
       } else {
         console.warn('unknown device type:', deviceConfig);
         continue;
       }
-      device.update();
     }
+  }
+
+  // Return the configured (human-readable) name.
+  get name() {
+    return this.config.name;
+  }
+
+  onupdate() {
+    // Nothing changes on pin changes.
+    // TODO: interrupts.
   }
 
   // Get one of the pins attached to the chip on this board.
@@ -186,13 +350,9 @@ class Board {
   // Get (or create) a new SPI bus attached to the chip of this board.
   getSPI(number) {
     if (!(number in this.spiBuses)) {
-      this.spiBuses[number] = new SPI(this, number);
+      this.spiBuses[number] = new SPIMaster(this, number);
     }
     return this.spiBuses[number];
-  }
-
-  get name() {
-    return this.config.name;
   }
 }
 
