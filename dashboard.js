@@ -106,7 +106,7 @@ function flashFirmware(e) {
   //     Content-Disposition: attachment; filename=firmware.hex
   let form = document.createElement('form');
   form.setAttribute('method', 'POST');
-  form.setAttribute('action', API_URL + '/compile?target='+project.target+'&format='+project.board.config.firmwareFormat);
+  form.setAttribute('action', API_URL + '/compile?target='+project.target+'&format='+project.config.firmwareFormat);
   form.classList.add('d-none');
   let input = document.createElement('input');
   input.setAttribute('type', 'hidden');
