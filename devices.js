@@ -291,7 +291,7 @@ class ST7789 extends Device {
     this.inReset = false;
     this.command = 0x00; // nop
     this.dataBuf = null;
-    this.reset();
+    this.softwareReset();
 
     container.innerHTML = '<canvas class="display"></canvas>';
     let canvas = container.querySelector('canvas');
@@ -308,13 +308,13 @@ class ST7789 extends Device {
     if (this.reset.isLow() != this.inReset) {
       this.inReset = this.reset.isLow();
       if (this.inReset) {
-        this.reset();
+        this.softwareReset();
       }
     }
   }
 
   // Reset all registers to their default state.
-  reset() {
+  softwareReset() {
     this.xs = 0;
     this.xe = 0xef; // note: depends on MV value
     this.ys = 0;
@@ -408,7 +408,7 @@ class ST7789 extends Device {
       this.dataBuf = null;
       if (w == 0x01) {
         // SWRESET: re-initialize all registers
-        this.reset();
+        this.softwareReset();
       } else if (w == 0x11) {
         // SLPOUT: nothing to do
       } else if (w == 0x13) {
