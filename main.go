@@ -5,7 +5,6 @@ package main
 // This file implements the HTTP frontend.
 
 import (
-	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
@@ -139,7 +138,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 		Format:       format,
 		Context:      r.Context(),
 		ResultFile:   make(chan string),
-		ResultErrors: make(chan *bytes.Buffer),
+		ResultErrors: make(chan []byte),
 	}
 	// Send the job for execution.
 	compilerChan <- job
@@ -157,7 +156,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 		sendCompiledResult(w, fp, format)
 	case buf := <-job.ResultErrors:
 		// Failed compilation.
-		io.Copy(w, buf)
+		w.Write(buf)
 	}
 }
 

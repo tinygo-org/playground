@@ -21,12 +21,12 @@ const (
 )
 
 type compilerJob struct {
-	Source       []byte             // source code of program to compile
-	SourceHash   string             // sha256 of source (in hex form)
-	Target       string             // target board name, or "wasm"
-	Format       string             // output format: "wasm", "hex", etc.
-	ResultFile   chan string        // filename on completion
-	ResultErrors chan *bytes.Buffer // errors on completion
+	Source       []byte      // source code of program to compile
+	SourceHash   string      // sha256 of source (in hex form)
+	Target       string      // target board name, or "wasm"
+	Format       string      // output format: "wasm", "hex", etc.
+	ResultFile   chan string // filename on completion
+	ResultErrors chan []byte // errors on completion
 	Context      context.Context
 }
 
@@ -39,7 +39,7 @@ func backgroundCompiler(ch chan compilerJob) {
 		if err != nil {
 			buf := &bytes.Buffer{}
 			buf.WriteString(err.Error())
-			job.ResultErrors <- buf
+			job.ResultErrors <- buf.Bytes()
 		}
 		if n%100 == 1 {
 			cleanupCompileCache()
@@ -109,6 +109,9 @@ func (job compilerJob) Run() error {
 		return err
 	}
 	defer os.Remove(infile.Name())
+	if _, err := infile.Write([]byte("//line main.go:1\n")); err != nil {
+		return err
+	}
 	if _, err := infile.Write(job.Source); err != nil {
 		return err
 	}
@@ -126,18 +129,22 @@ func (job compilerJob) Run() error {
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
+	cmd.Dir = filepath.Dir(infile.Name()) // avoid long relative paths in error messages
 	finishedChan := make(chan struct{})
 	func() {
 		defer close(finishedChan)
 		err := cmd.Run()
 		if err != nil {
-			buf.WriteString(err.Error())
-			job.ResultErrors <- buf
+			if buf.Len() == 0 {
+				buf.WriteString(err.Error())
+			}
+			job.ResultErrors <- stripFilename(buf.Bytes(), infile.Name())
 			return
 		}
 		if err := os.Rename(tmpfile, outfile); err != nil {
+			// unlikely
 			buf.WriteString(err.Error())
-			job.ResultErrors <- buf
+			job.ResultErrors <- buf.Bytes()
 			return
 		}
 
@@ -218,4 +225,12 @@ func randomString(length int) string {
 		b[i] = chars[seededRand.Intn(len(chars))]
 	}
 	return string(b)
+}
+
+func stripFilename(buf []byte, filename string) []byte {
+	prefix := []byte("# " + filename + "\n")
+	if bytes.HasPrefix(buf, prefix) {
+		buf = buf[len(prefix):]
+	}
+	return buf
 }
