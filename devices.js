@@ -275,6 +275,183 @@ class EPD2IN13X extends Device {
   }
 }
 
+// ST7789 is a display controller for LCD screens up to 240x320 pixels.
+// Datasheet:
+// https://www.newhavendisplay.com/appnotes/datasheets/LCDs/ST7789V.pdf
+class ST7789 extends Device {
+  constructor(config, container) {
+    super(config, container);
+    this.sck = new Pin(this, 'sck');
+    this.mosi = new Pin(this, 'mosi');
+    this.cs = new Pin(this, 'cs');
+    this.dc = new Pin(this, 'dc');
+    this.reset = new Pin(this, 'reset');
+    this.spi = new SPISlave(this.sck, this.mosi, null, this.transferSPI.bind(this));
+
+    this.inReset = false;
+    this.command = 0x00; // nop
+    this.dataBuf = null;
+    this.reset();
+
+    container.innerHTML = '<canvas class="display"></canvas>';
+    let canvas = container.querySelector('canvas');
+    canvas.width = config.width;
+    canvas.height = config.height;
+    this.context = canvas.getContext('2d');
+  }
+
+  get name() {
+    return this.config.name ? this.config.name : 'ST7789';
+  }
+
+  onupdate(pin) {
+    if (this.reset.isLow() != this.inReset) {
+      this.inReset = this.reset.isLow();
+      if (this.inReset) {
+        this.reset();
+      }
+    }
+  }
+
+  // Reset all registers to their default state.
+  reset() {
+    this.xs = 0;
+    this.xe = 0xef; // note: depends on MV value
+    this.ys = 0;
+    this.ye = 0x13f; // note: depends on MV value
+    this.inverse = false; // display inversion off
+
+    // Give these a sensible default value. Will be updated with the RAMWR
+    // command.
+    this.x = 0;
+    this.y = 0;
+    this.dataByte = null;
+    this.currentColor = -1;
+  }
+
+  // Handle an incoming SPI byte.
+  transferSPI(w) {
+    if (!this.cs.isLow()) {
+      return;
+    }
+    if (this.dc.isHigh()) {
+      // data
+      if (this.dataBuf !== null) {
+        this.dataBuf.push(w);
+      }
+      if (this.command == 0x2a && this.dataBuf.length == 4) {
+        // CASET: column address set
+        this.xs = (this.dataBuf[0] << 8) + this.dataBuf[1];
+        this.xe = (this.dataBuf[2] << 8) + this.dataBuf[3];
+        if (this.xs > this.xe) {
+          console.error('st7789: xs must be smaller than or equal to xe');
+        }
+      } else if (this.command == 0x2b && this.dataBuf.length == 4) {
+        // RASET: row address set
+        this.ys = (this.dataBuf[0] << 8) + this.dataBuf[1];
+        this.ye = (this.dataBuf[2] << 8) + this.dataBuf[3];
+        if (this.ys > this.ye) {
+          console.error('st7789: ys must be smaller than or equal to ye');
+        }
+      } else if (this.command == 0x2c) {
+        // RAMWR: memory write
+        if (this.dataByte === null) {
+          // First byte received. Record this byte for later use.
+          this.dataByte = w;
+        } else {
+          // Second byte received.
+          let word = (this.dataByte << 8) + w;
+          this.dataByte = null;
+
+          // Set the correct color, if it was different from the previous
+          // color.
+          if (this.currentColor != word) {
+            this.currentColor = word;
+            let red = Math.round((word >> 11) * 255 / 31);
+            let green = Math.round(((word >> 5) & 63) * 255 / 63);
+            let blue = Math.round((word & 31) * 255 / 31);
+            this.context.fillStyle = 'rgb(' + red + ',' + green + ',' + blue + ')';
+          }
+
+          // Draw the pixel.
+          let x = this.x - (this.config.columnOffset || 0);
+          let y = this.y - (this.config.rowOffset || 0);
+          if (x >= 0 && y >= 0 && x < this.config.width && y < this.config.height) {
+            this.context.fillRect(x, y, 1, 1);
+          }
+
+          // Increment row/column address.
+          this.x += 1;
+          if (this.x > this.xe) {
+            this.x = this.xs;
+            this.y += 1;
+          }
+          if (this.y > this.ye) {
+            this.y = this.ys;
+          }
+        }
+      } else if (this.command == 0x36 && this.dataBuf.length == 1) {
+        // MADCTL: memory data access control
+        // Controls how the display is updated, and allows rotating it.
+        if (this.dataBuf[0] != 0xc0) {
+          console.warn('st7789: unknown MADCTL value:', this.dataBuf[0]);
+        }
+      } else if (this.command == 0x3a && this.dataBuf.length == 1) {
+        // COLMOD: color format
+        if (this.dataBuf[0] != 0x55) {
+          // Only the 16-bit interface is currently supported.
+          console.warn('st7789: unknown COLMOD value:', this.dataBuf[0]);
+        }
+      }
+    } else {
+      this.command = w;
+      this.dataBuf = null;
+      if (w == 0x01) {
+        // SWRESET: re-initialize all registers
+        this.reset();
+      } else if (w == 0x11) {
+        // SLPOUT: nothing to do
+      } else if (w == 0x13) {
+        // NORON: normal display mode on
+        // Sets the display to normal mode (as opposed to partial mode).
+        // Defaults to on, so nothing to do here.
+      } else if (w == 0x20) {
+        // INVOFF: display inversion off
+        this.inverse = false;
+      } else if (w == 0x21) {
+        // INVON: display inversion on
+        this.inverse = true;
+      } else if (w == 0x29) {
+        // DISPON: display on
+        // The default is to disable the display, this command enables it.
+        // Ignore it, it's not super important in simulation (but should
+        // eventually be implemented by blanking the display when off).
+      } else if (w == 0x2a || w == 0x2b) {
+        // CASET: column address set
+        // RASET: row address set
+        this.dataBuf = [];
+      } else if (w == 0x2c) {
+        // RAMWR: memory write
+        this.x = this.xs;
+        this.y = this.ys;
+        this.dataByte = null;
+      } else if (w == 0x3a) {
+        // COLMOD: interface pixel format
+        this.dataBuf = [];
+      } else if (w == 0x36) {
+        // MADCTL: memory data access control
+        // It can be used to rotate/swap the display (see 8.12 Address Control
+        // in the PDF), but has not yet been implemented.
+        this.dataBuf = [];
+      } else {
+        // unknown command
+        console.log('st7789: unknown command:', w);
+      }
+    }
+    return 0;
+  }
+}
+
 // Decode an array of numbers (assumed to be bytes in the range 0-255) as a
 // little-endian number.
 function decodeLittleEndian(buf) {

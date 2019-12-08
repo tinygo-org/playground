@@ -261,12 +261,12 @@ class SPISlave {
     if (this.sck.net !== sck.net) {
       throw 'SPISlave.transfer: wrong sck?';
     }
-    if (this.mosi.net !== mosi.net) {
+    if (!this.mosi || !mosi || this.mosi.net !== mosi.net) {
       // MOSI is not connected, so we didn't actually receive this byte.
       w = undefined;
     }
     w = this.callback(w);
-    if (this.miso.net !== miso.net) {
+    if (!this.miso || !miso || this.miso.net !== miso.net) {
       // MISO is not connected, so this byte is dropped on the floor instead of
       // being received by the SPI master.
       w = undefined;
@@ -322,6 +322,13 @@ class Board {
         device.dc.attach(this.getPin(deviceConfig.dc));
         device.rst.attach(this.getPin(deviceConfig.rst));
         device.busy.attach(this.getPin(deviceConfig.busy));
+      } else if (deviceConfig.type == 'st7789') {
+        device = new ST7789(deviceConfig, deviceContent);
+        device.sck.attach(this.getPin(deviceConfig.sck));
+        device.mosi.attach(this.getPin(deviceConfig.mosi));
+        device.cs.attach(this.getPin(deviceConfig.cs));
+        device.dc.attach(this.getPin(deviceConfig.dc));
+        device.reset.attach(this.getPin(deviceConfig.reset));
       } else {
         console.warn('unknown device type:', deviceConfig);
         continue;
