@@ -133,5 +133,43 @@
 				"cathode": 16
 			}
 		]
+	},
+	"pinetime-devkit0": {
+		"name": "pinetime-devkit0",
+		"humanName": "PineTime (dev kit)",
+		"example": "blinky1",
+		"firmwareFormat": "hex",
+		"devices": [
+			{
+				"type": "led",
+				"name": "Background (high)",
+				"color": "#ddd",
+				"cathode": 23
+			},
+			{
+				"type": "led",
+				"name": "Background (mid)",
+				"color": "#bbb",
+				"cathode": 22
+			},
+			{
+				"type": "led",
+				"name": "Background (low)",
+				"color": "#777",
+				"cathode": 14
+			},
+			{
+				"type": "st7789",
+				"name": "Display (st7789)",
+				"width": 240,
+				"height": 240,
+				"rowOffset": 80,
+				"sck": 2,
+				"mosi": 3,
+				"cs": 25,
+				"dc": 18,
+				"reset": 26
+			}
+		]
 	}
 }
