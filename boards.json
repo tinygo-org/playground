@@ -1,4 +1,18 @@
 {
+	"arduino-nano33": {
+		"name": "arduino-nano33",
+		"humanName": "Arduino Nano 33 IoT",
+		"example": "blinky1",
+		"firmwareFormat": "hex",
+		"devices": [
+			{
+				"type": "led",
+				"name": "LED",
+				"color": "orange",
+				"cathode": 17
+			}
+		]
+	},
 	"arduino": {
 		"name": "arduino",
 		"humanName": "Arduino Uno",
