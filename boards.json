@@ -23,6 +23,12 @@
 				"name": "LED",
 				"color": "red",
 				"cathode": 17
+			},
+			{
+				"type": "ws2812",
+				"name": "NeoPixels",
+				"din": 55,
+				"length": 10
 			}
 		]
 	},

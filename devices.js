@@ -461,3 +461,73 @@ function decodeLittleEndian(buf) {
   }
   return n;
 }
+
+class WS2812 extends Device {
+  constructor(board, config, container) {
+    super(board, config, container);
+    this.din = new Pin(this, 'din');
+    this.din.setWS2812Listener(this);
+
+    this.chain = [];
+    this.chainTimeout = null;
+    this.chainToPaint = null;
+
+    this.leds = [];
+    container.innerHTML = '<div class="ws2812"><div class="ws2812-leds"></div></div>'
+    let ledContainer = container.querySelector('.ws2812-leds');
+    for (let i=0; i<config.length; i++) {
+      let led = document.createElement('div');
+      led.classList.add('ws2812-led');
+      ledContainer.appendChild(led);
+      this.leds.push(led);
+    }
+  }
+
+  onupdate(pin) {
+  }
+
+  writeWS2812Byte(c) {
+    this.chain.push(c);
+    if (this.chainTimeout === null) {
+      this.chainTimeout = setTimeout(() => {
+        this.chainTimeout = null;
+
+        if (this.chainToPaint === null) {
+          window.requestAnimationFrame(this.paint.bind(this));
+        }
+        this.chain.reverse();
+        this.chainToPaint = this.chain;
+        this.chain = [];
+      }, 0);
+    }
+  }
+
+  paint() {
+    for (let i=0; i<this.leds.length; i++) {
+      let led = this.leds[i];
+      if (i * 3 + 3 > this.chainToPaint.length) {
+        break;
+      }
+
+      // Extract colors from the chain.
+      // The colors are sent out in GRB order, but because they are swapped in
+      // this driver they are in BRG order.
+      let r = this.chainToPaint[i*3+1];
+      let g = this.chainToPaint[i*3+2];
+      let b = this.chainToPaint[i*3+0];
+
+      // Do a gamma correction. The LEDs are in linear color space, while the
+      // web uses the sRGB color space (with gamma=~2.2).
+      // I'm not sure why the gamma needs to be this high (gamma=4), but that's
+      // how I managed to get them sort-of similar to the real LEDs.
+      // Without any gamma correction, the LEDs would look way too dark.
+      r = Math.pow(r / 255, 1/4) * 255;
+      g = Math.pow(g / 255, 1/4) * 255;
+      b = Math.pow(b / 255, 1/4) * 255;
+
+      let color = 'rgb(' + r + ',' + g + ',' + b + ')';
+      led.style.background = color;
+    }
+    this.chainToPaint = null;
+  }
+}

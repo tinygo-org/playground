@@ -14,3 +14,19 @@
 .display {
 	border: 1px solid gray;
 }
+
+.ws2812 {
+	line-height: 0;
+	background: black;
+	padding: 2px 3px;
+	border-radius: 10px;
+}
+
+.ws2812-led {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin: 2px;
+	border-radius: 8px;
+	background: black;
+}

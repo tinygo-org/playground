@@ -25,6 +25,7 @@ class Pin {
     this.high = false;
     this.net = new Net(this);
     this.spiSlave = null;
+    this.ws2812Listener = null;
   }
 
   // A human readable name that can be displayed in the UI.
@@ -87,6 +88,13 @@ class Pin {
       throw 'Pin.setSPISlave: SPI slave already set!';
     }
     this.spiSlave = spi;
+  }
+
+  setWS2812Listener(part) {
+    if (this.ws2812Listener !== null) {
+      throw 'Pin.setWS2812Listener: listener already set!';
+    }
+    this.ws2812Listener = part;
   }
 
   // Whether this pin is currently high. Returns true, false, or null (when
@@ -306,6 +314,9 @@ class Board {
           device.green.attach(this.getPin(deviceConfig.cathodes[1]));
           device.blue.attach(this.getPin(deviceConfig.cathodes[2]));
         }
+      } else if (deviceConfig.type == 'ws2812') {
+        device = new WS2812(this, deviceConfig, deviceContent);
+        device.din.attach(this.getPin(deviceConfig.din));
       } else if (deviceConfig.type == 'epd2in13') {
         device = new EPD2IN13(deviceConfig, deviceContent);
         device.sck.attach(this.getPin(deviceConfig.sck));
