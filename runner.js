@@ -50,6 +50,12 @@ class Runner {
         __tinygo_spi_transfer: (bus, w) => {
           return board.getSPI(bus).transfer(w);
         },
+        __tinygo_ws2812_write_byte: (pinNumber, c) => {
+          for (let pin of board.getPin(pinNumber).net.pins) {
+            if (pin.ws2812Listener === null) continue;
+            pin.ws2812Listener.writeWS2812Byte(c);
+          }
+        },
       },
     };
     if ('instantiateStreaming' in WebAssembly) {
