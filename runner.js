@@ -8,9 +8,10 @@ class Runner {
     this.timeout = null;
     let importObject = {
       // Bare minimum syscall/js environment, to get time.Sleep to work.
+      wasi_unstable: {
+        fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr),
+      },
       env: {
-        io_get_stdout: () => 0,
-        resource_write: (fd, ptr, len) => this.logWrite(fd, ptr, len),
         'runtime.ticks': () =>
           performance.now() - this._timeOrigin,
         'runtime.sleepTicks': (timeout) =>
@@ -87,7 +88,7 @@ class Runner {
       this._inst.exports.memory,
       this,
     ];
-    this._inst.exports.cwa_main();
+    this._inst.exports._start();
   }
 
   stop() {
@@ -101,22 +102,33 @@ class Runner {
     return new DataView(this._inst.exports.memory.buffer)
   }
 
-  logWrite(fd, ptr, len) {
-    if (fd == 0) {
-      for (let i=0; i<len; i++) {
-        let c = this.envMem().getUint8(ptr+i);
-        if (c == 13) { // CR
-          // ignore
-        } else if (c == 10) { // LF
-          // write line
-          let line = (new TextDecoder('utf-8')).decode(new Uint8Array(this.logLine));
-          this.logLine = [];
-          log(line);
-        } else {
-          this.logLine.push(c);
+  logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr) {
+    // https://github.com/bytecodealliance/wasmtime/blob/master/docs/WASI-api.md#__wasi_fd_write
+    let nwritten = 0;
+    if (fd == 1) {
+      for (let iovs_i=0; iovs_i<iovs_len;iovs_i++) {
+        let iov_ptr = iovs_ptr+iovs_i*8; // assuming wasm32
+        let ptr = this.envMem().getUint32(iov_ptr + 0, true);
+        let len = this.envMem().getUint32(iov_ptr + 4, true);
+        for (let i=0; i<len; i++) {
+          let c = this.envMem().getUint8(ptr+i);
+          if (c == 13) { // CR
+            // ignore
+          } else if (c == 10) { // LF
+            // write line
+            let line = (new TextDecoder('utf-8')).decode(new Uint8Array(this.logLine));
+            this.logLine = [];
+            log(line);
+          } else {
+            this.logLine.push(c);
+          }
         }
       }
+    } else {
+      console.error('invalid file descriptor:', fd);
     }
+    this.envMem().setUint32(nwritten_ptr, nwritten, true);
+    return 0;
   }
 
   // func valueGet(v ref, p string) ref
