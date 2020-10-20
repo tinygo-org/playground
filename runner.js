@@ -16,6 +16,8 @@ class Runner {
           performance.now() - this._timeOrigin,
         'runtime.sleepTicks': (timeout) =>
           this.timeout = setTimeout(this._inst.exports.go_scheduler, timeout),
+        'syscall/js.finalizeRef': () =>
+          console.error('js.finalizeRef is not supported'),
         'syscall/js.stringVal': () =>
           console.error('js.stringVal is not supported'),
         'syscall/js.valueCall': () =>
@@ -202,16 +204,16 @@ class Runner {
       this._values.push(v);
       this._refs.set(v, ref);
     }
-    let typeFlag = 0;
+    let typeFlag = 1;
     switch (typeof v) {
       case "string":
-        typeFlag = 1;
-        break;
-      case "symbol":
         typeFlag = 2;
         break;
-      case "function":
+      case "symbol":
         typeFlag = 3;
+        break;
+      case "function":
+        typeFlag = 4;
         break;
     }
     this.envMem().setUint32(addr + 4, nanHead | typeFlag, true);

@@ -1,10 +1,10 @@
-FROM golang:1.14-buster AS build
+FROM golang:1.15-buster AS build
 RUN mkdir /build
 COPY *.go go.mod go.sum /build/
 WORKDIR /build
 RUN go build -o main .
 
-FROM golang:1.13-buster
+FROM golang:1.15-buster
 RUN adduser --disabled-login --system --home /app appuser
 RUN mkdir -p /app/.cache && chown appuser /app/.cache
 ADD release.tar.gz /app/
