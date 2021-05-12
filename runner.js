@@ -8,7 +8,7 @@ class Runner {
     this.timeout = null;
     let importObject = {
       // Bare minimum syscall/js environment, to get time.Sleep to work.
-      wasi_unstable: {
+      wasi_snapshot_preview1: {
         fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr),
       },
       env: {
