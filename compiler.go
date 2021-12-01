@@ -124,7 +124,7 @@ func (job compilerJob) Run() error {
 		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-tags", tag, "-no-debug", infile.Name())
 	default:
 		// build firmware
-		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, "-no-debug", infile.Name())
+		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, infile.Name())
 	}
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
