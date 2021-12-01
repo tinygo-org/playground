@@ -16,7 +16,6 @@ const defaultProjectName = 'console';
 var examples = {
   hello: 'package main\n\nimport (\n\t"fmt"\n)\n\nfunc main() {\n\tfmt.Println("Hello, TinyGo")\n}\n',
   blinky1: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nconst led = machine.LED\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tled.Low()\n\t\ttime.Sleep(time.Second)\n\n\t\tled.High()\n\t\ttime.Sleep(time.Second)\n\t}\n}\n',
-  blinky2: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tgo blink(machine.LED1, 1000 * time.Millisecond)\n\tgo blink(machine.LED2, 750 * time.Millisecond)\n\tselect {}\n}\n\nfunc blink(led machine.Pin, delay time.Duration) {\n\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tled.Low()\n\t\ttime.Sleep(delay)\n\n\t\tled.High()\n\t\ttime.Sleep(delay)\n\t}\n}\n',
   rgbled: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nvar leds = []machine.Pin{machine.LED_RED, machine.LED_GREEN, machine.LED_BLUE}\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tfor _, led := range leds {\n\t\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\t\tled.High()\n\t}\n\tfor {\n\t\tfor _, led := range leds {\n\t\t\tled.Low()\n\t\t\ttime.Sleep(time.Second)\n\t\t\tled.High()\n\t\t}\n\n\t}\n}\n',
 };
 
