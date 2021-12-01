@@ -129,7 +129,8 @@ func (job compilerJob) Run() error {
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
-	cmd.Dir = filepath.Dir(infile.Name()) // avoid long relative paths in error messages
+	cmd.Dir = filepath.Dir(infile.Name())             // avoid long relative paths in error messages
+	cmd.Env = append(os.Environ(), "GO111MODULE=off") // fix build error when importing drivers repo, TODO: start using Go modules
 	finishedChan := make(chan struct{})
 	func() {
 		defer close(finishedChan)
