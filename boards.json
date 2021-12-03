@@ -1,29 +1,60 @@
 {
+	"arduino": {
+		"name": "arduino",
+		"humanName": "Arduino Uno",
+		"example": "blinky1",
+		"mainPart": "mcu",
+		"parts": [
+			{
+				"id": "mcu",
+				"type": "mcu",
+				"pins": {
+					"PB0": 0,
+					"PB1": 1,
+					"PB2": 2,
+					"PB3": 3,
+					"PB4": 4,
+					"PB5": 5,
+					"PB6": 6,
+					"PB7": 7
+				}
+			},
+			{
+				"id": "led",
+				"type": "led",
+				"shape": "led",
+				"humanName": "LED",
+				"color": [51, 204, 0]
+			}
+		],
+		"wires": [
+			{"from": "mcu.PB5", "to": "led.cathode"}
+		]
+	},
 	"arduino-nano33": {
 		"name": "arduino-nano33",
 		"humanName": "Arduino Nano 33 IoT",
 		"example": "blinky1",
 		"firmwareFormat": "hex",
-		"devices": [
+		"mainPart": "mcu",
+		"parts": [
 			{
-				"type": "led",
-				"name": "LED",
-				"color": "orange",
-				"cathode": 17
-			}
-		]
-	},
-	"arduino": {
-		"name": "arduino",
-		"humanName": "Arduino Uno",
-		"example": "blinky1",
-		"devices": [
+				"id": "mcu",
+				"type": "mcu",
+				"pins": {
+					"PA17": 17
+				}
+			},
 			{
+				"id": "led",
 				"type": "led",
-				"name": "LED",
-				"color": "#3c0",
-				"cathode": 5
+				"shape": "led",
+				"humanName": "LED",
+				"color": [255, 165, 0]
 			}
+		],
+		"wires": [
+			{"from": "mcu.PA17", "to": "led.cathode"}
 		]
 	},
 	"circuitplay-express": {
@@ -31,19 +62,34 @@
 		"humanName": "Circuit Playground Express",
 		"example": "blinky1",
 		"firmwareFormat": "uf2",
-		"devices": [
+		"mainPart": "mcu",
+		"parts": [
 			{
-				"type": "led",
-				"name": "LED",
-				"color": "red",
-				"cathode": 17
+				"id": "mcu",
+				"type": "mcu",
+				"pins": {
+					"PA17": 17,
+					"PB23": 55
+				}
 			},
 			{
+				"id": "led",
+				"type": "led",
+				"shape": "led",
+				"humanName": "LED",
+				"color": [255, 0, 0]
+			},
+			{
+				"id": "neopixels",
 				"type": "ws2812",
-				"name": "NeoPixels",
-				"din": 55,
+				"shape": "ledstrip",
+				"humanName": "NeoPixels",
 				"length": 10
 			}
+		],
+		"wires": [
+			{"from": "mcu.PA17", "to": "led.cathode"},
+			{"from": "mcu.PB23", "to": "neopixels.din"}
 		]
 	},
 	"hifive1b": {
@@ -51,13 +97,28 @@
 		"humanName": "HiFive1 rev B",
 		"example": "rgbled",
 		"firmwareFormat": "hex",
-		"devices": [
+		"mainPart": "mcu",
+		"parts": [
 			{
+				"id": "mcu",
+				"type": "mcu",
+				"pins": {
+					"P19": 19,
+					"P21": 21,
+					"P22": 22
+				}
+			},
+			{
+				"id": "led",
 				"type": "rgbled",
-				"name": "LED",
-				"color": "red",
-				"cathodes": [22, 19, 21]
+				"shape": "led",
+				"humanName": "LED"
 			}
+		],
+		"wires": [
+			{"from": "mcu.P22", "to": "led.r"},
+			{"from": "mcu.P19", "to": "led.g"},
+			{"from": "mcu.P21", "to": "led.b"}
 		]
 	},
 	"reelboard": {
@@ -65,29 +126,60 @@
 		"humanName": "Phytec reel board",
 		"example": "rgbled",
 		"firmwareFormat": "hex",
-		"devices": [
+		"mainPart": "mcu",
+		"parts": [
 			{
+				"id": "mcu",
+				"type": "mcu",
+				"pins": {
+					"P0_00": 0,
+					"P0_11": 11,
+					"P0_12": 12,
+					"P0_13": 13,
+					"P0_14": 14,
+					"P0_15": 15,
+					"P0_16": 16,
+					"P0_17": 17,
+					"P0_18": 18,
+					"P0_19": 19,
+					"P0_20": 20,
+					"P1_00": 32,
+					"P1_09": 41
+				}
+			},
+			{
+				"id": "led",
 				"type": "led",
-				"name": "LED 1 (back)",
-				"color": "yellow",
-				"cathode": 13
+				"shape": "led",
+				"humanName": "LED 1 (back)",
+				"color": [255, 255, 0]
 			},
 			{
+				"id": "rgbled",
 				"type": "rgbled",
-				"name": "LED 2-4 (RGB, front)",
-				"color": "red",
-				"cathodes": [11, 12, 41]
+				"shape": "led",
+				"humanName": "LED 2-4 (RGB, front)"
 			},
 			{
+				"id": "display",
 				"type": "epd2in13",
-				"rotation": 3,
-				"sck": 19,
-				"mosi": 20,
-				"cs": 17,
-				"dc": 16,
-				"rst": 15,
-				"busy": 14
+				"shape": "display",
+				"width": 122,
+				"height": 250,
+				"rotation": 270
 			}
+		],
+		"wires": [
+			{"from": "mcu.P0_13", "to": "led.cathode"},
+			{"from": "mcu.P0_11", "to": "rgbled.r"},
+			{"from": "mcu.P0_12", "to": "rgbled.g"},
+			{"from": "mcu.P1_09", "to": "rgbled.b"},
+			{"from": "mcu.P0_19", "to": "display.sck"},
+			{"from": "mcu.P0_20", "to": "display.sdi"},
+			{"from": "mcu.P0_17", "to": "display.cs"},
+			{"from": "mcu.P0_16", "to": "display.dc"},
+			{"from": "mcu.P0_15", "to": "display.rst"},
+			{"from": "mcu.P0_14", "to": "display.busy"}
 		]
 	},
 	"pinetime-devkit0": {
@@ -95,37 +187,71 @@
 		"humanName": "PineTime (dev kit)",
 		"example": "blinky1",
 		"firmwareFormat": "hex",
-		"devices": [
+		"mainPart": "mcu",
+		"parts": [
 			{
-				"type": "led",
-				"name": "Background (high)",
-				"color": "#ddd",
-				"cathode": 23
+				"id": "mcu",
+				"type": "mcu",
+				"pins": {
+					"P0_00": 0,
+					"P0_02": 2,
+					"P0_03": 3,
+					"P0_04": 4,
+					"P0_11": 11,
+					"P0_12": 12,
+					"P0_13": 13,
+					"P0_14": 14,
+					"P0_15": 15,
+					"P0_16": 16,
+					"P0_17": 17,
+					"P0_18": 18,
+					"P0_19": 19,
+					"P0_20": 20,
+					"P0_22": 22,
+					"P0_23": 23,
+					"P0_25": 25,
+					"P0_26": 26
+				}
 			},
 			{
+				"id": "light1",
 				"type": "led",
-				"name": "Background (mid)",
-				"color": "#bbb",
-				"cathode": 22
+				"shape": "led",
+				"humanName": "Background (high)",
+				"color": [221, 221, 221]
 			},
 			{
+				"id": "light2",
 				"type": "led",
-				"name": "Background (low)",
-				"color": "#777",
-				"cathode": 14
+				"shape": "led",
+				"humanName": "Background (mid)",
+				"color": [187, 187, 187]
 			},
 			{
+				"id": "light3",
+				"type": "led",
+				"shape": "led",
+				"humanName": "Background (low)",
+				"color": [119, 119, 119]
+			},
+			{
+				"id": "display",
 				"type": "st7789",
-				"name": "Display (st7789)",
+				"shape": "display",
+				"humanName": "Display (st7789)",
 				"width": 240,
-				"height": 240,
-				"rowOffset": 80,
-				"sck": 2,
-				"mosi": 3,
-				"cs": 25,
-				"dc": 18,
-				"reset": 26
+				"height": 240
 			}
+		],
+		"wires": [
+			{"from": "mcu.P0_23", "to": "light1.cathode"},
+			{"from": "mcu.P0_22", "to": "light2.cathode"},
+			{"from": "mcu.P0_14", "to": "light3.cathode"},
+			{"from": "mcu.P0_02", "to": "display.sck"},
+			{"from": "mcu.P0_03", "to": "display.sdi"},
+			{"from": "mcu.P0_25", "to": "display.cs"},
+			{"from": "mcu.P0_18", "to": "display.dc"},
+			{"from": "mcu.P0_26", "to": "display.reset"}
 		]
 	}
 }

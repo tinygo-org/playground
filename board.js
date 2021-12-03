@@ -10,367 +10,122 @@ var boards = {
     name: 'console',
     humanName: 'Console',
     example: 'hello',
-    devices: [],
-  }
+    mainPart: 'console',
+    parts: [
+      {
+        id: 'console',
+        type: 'mcu',
+        pins: [],
+      }
+    ],
+  },
 };
 
-// A pin is one GPIO pin of a chip. It can be an input or an output and when it
-// is an output, it can be low or high. It is used for the simplest peripherals
-// (LEDs etc.).
-class Pin {
-  constructor(part, id) {
-    this.part = part;
-    this.id = id;
-    this.mode = 'input';
-    this.high = false;
-    this.net = new Net(this);
-    this.spiSlave = null;
-    this.ws2812Listener = null;
-  }
-
-  // A human readable name that can be displayed in the UI.
-  get name() {
-    return this.part.name + '.' + this.id;
-  }
-
-  // Set the pin mode: 'input' or 'output'. It must be one of these two.
-  setMode(mode) {
-    if (mode !== 'input' && mode !== 'output') {
-      throw 'mode should be input or output, got: ' + mode;
-    }
-    this.mode = mode;
-    this.net.update();
-  }
-
-  // Update whether this pin is high or low. This is only a valid operation when
-  // the mode is set to 'output'.
-  set(high) {
-    if (this.mode != 'output') {
-      console.warn('set output while mode is', this.mode);
-    }
-    this.high = high ? true : false;
-    this.net.update();
-  }
-
-  // Sense whether an input device has set this high or low, or floating. It
-  // returns true (high), false (low), or null (floating).
-  get() {
-    if (this.mode == 'output') {
-      console.warn('read output pin:', this.name);
-      return this.high;
+// refreshParts recreates the div that contains all parts.
+function refreshParts(boardConfig, boardContainer) {
+  boardContainer.innerHTML = '';
+  let parts = {};
+  for (let config of boardConfig.parts) {
+    if (!config.shape) {
+      // Assume no shape property means the part doesn't need to be created.
+      continue;
     }
 
-    let value = this.net.state;
-    if (value === 'floating') {
-      console.warn('reading a floating pin:', this.name);
-      // Act like a floating pin by returning a random value.
-      return Math.random() < 0.5;
-    } else if (value === 'source') {
-      return true;
-    } else if (value === 'sink') {
-      return false;
-    } else {
-      console.error('unknown net state:', this.name);
-      return false;
-    }
-  }
+    let part = {id: boardConfig.name+'.'+config.id};
+    parts[part.id] = part;
 
-  // Connect the two Pin objects together in a net.
-  attach(pin) {
-    this.net.attach(pin);
-  }
-
-  // Set the SPI slave peripheral (SPISlave). It should only be set for the sck
-  // pin. By setting the SPI slave, the SPI master (SPIMaster) can find
-  // connected slaves.
-  setSPISlave(spi) {
-    if (this.spiSlave !== null) {
-      throw 'Pin.setSPISlave: SPI slave already set!';
-    }
-    this.spiSlave = spi;
-  }
-
-  setWS2812Listener(part) {
-    if (this.ws2812Listener !== null) {
-      throw 'Pin.setWS2812Listener: listener already set!';
-    }
-    this.ws2812Listener = part;
-  }
-
-  // Whether this pin is currently high. Returns true, false, or null (when
-  // floating).
-  isHigh() {
-    return this.isSource();
-  }
-
-  // Whether this pin is currently low.
-  isLow() {
-    return this.isSink();
-  }
-
-  // Whether this is a source, that is, whether current can flow from this pin
-  // (like VCC).
-  isSource() {
-    return this.net.isSource();
-  }
-
-  // Whether this is a sink, that is, whether current can flow into this pin
-  // (like GND).
-  isSink() {
-    return this.net.isSink();
-  }
-
-  get connected() {
-    return this.net.pins.size > 1;
-  }
-}
-
-// A net is a collection of pins that are connected together.
-class Net {
-  constructor(pin) {
-    // Note: this net should only be constructed while creating a Pin, and the
-    // Pin should set this net as its net.
-    this.pins = new Set([pin]);
-    this.state = 'floating';
-  }
-
-  attach(pin) {
-    // Merge the net of the pin into this net.
-    let newpins = pin.net.pins;
-    pin.net.pins = null; // make sure this net is not used anymore
-    for (let p of newpins) {
-      this.pins.add(p);
-      p.net = this;
-    }
-    if (pin.net !== this) {
-      throw 'Net.attach: expected the pin to have the correct net by now';
-    }
-  }
-
-  isSink() {
-    if (this.state === 'sink') {
-      return true;
-    } else if (this.state == 'source') {
-      return false;
-    } else if (this.state == 'floating') {
-      return null;
-    } else {
-      throw 'Net.isSink: unknown state';
-    }
-  }
-
-  isSource() {
-    if (this.state === 'source') {
-      return true;
-    } else if (this.state == 'sink') {
-      return false;
-    } else if (this.state == 'floating') {
-      return null;
-    } else {
-      throw 'Net.isSource: unknown state';
-    }
-  }
-
-  // Update the state of this connection: source (high), sink (low), or
-  // floating. It will call onupdate on all connected parts if the state
-  // changed.
-  update() {
-    // Default state when no outputs are connected.
-    let state = 'floating';
-
-    for (let pin of this.pins) {
-      // TODO: detect shorts
-      if (pin.mode == 'output' && !pin.high) {
-        state = 'sink';
-        break
+    part.container = document.createElement('div');
+    part.container.classList.add('part');
+    part.container.innerHTML = '<div class="part-content"></div><div class="part-name"></div>';
+    part.container.querySelector('.part-name').textContent = config.humanName;
+    boardContainer.appendChild(part.container);
+    let content = part.container.querySelector('.part-content');
+    if (config.shape === 'led') {
+      // A typical LED. Currently in the shape of a 5mm through-hole LED.
+      content.innerHTML = '<div class="led"></div>'
+    } else if (config.shape == 'ledstrip') {
+      // Like a typical WS2812 LED strip.
+      content.innerHTML = '<div class="ledstrip"><div class="ledstrip-leds"></div></div>'
+      let ledContainer = content.querySelector('.ledstrip-leds');
+      part.leds = [];
+      for (let i=0; i<config.length; i++) {
+        let led = document.createElement('div');
+        led.classList.add('ledstrip-led');
+        ledContainer.appendChild(led);
+        part.leds.push(led);
       }
-      if (pin.mode == 'output' && pin.high) {
-        state = 'source';
-        break;
-      }
-    }
-
-    if (state !== this.state) {
-      // State was changed.
-      this.state = state;
-
-      // Notify all connected pins.
-      for (let pin of this.pins) {
-        if (pin.mode == 'input') {
-          pin.part.onupdate(pin);
-        }
-      }
-    }
-  }
-}
-
-// An SPI master emulates a hardware SPI peripheral. It can send/receive one
-// byte at a time.
-class SPIMaster {
-  constructor(part, number) {
-    this.part = part;
-    this.number = number;
-    this.sck = null;
-    this.mosi = null;
-    this.miso = null;
-  }
-
-  configure(sck, mosi, miso) {
-    this.sck = sck;
-    this.mosi = mosi;
-    this.miso = miso;
-  }
-
-  // Send/receive a single byte, communicating with all connected devices.
-  transfer(send) {
-    // Find connected SPI slaves.
-    let recv = null;
-    for (let pin of this.sck.net.pins) {
-      if (pin.spiSlave === null) {
-        continue;
-      }
-      let w = pin.spiSlave.transfer(this.sck, this.mosi, this.miso, send);
-      if (typeof w === 'number') {
-        if (recv !== null) {
-          console.warn('SPIMaster.transfer: received byte from two slaves');
-        }
-        recv = w;
-      }
-    }
-
-    if (recv === null) {
-      // None of the connected devices (if any) returned anything.
-      // We could theoretically also send a random value back, but we should
-      // ideally warn at the same time. Unfortunately, we don't know whether
-      // the returned byte is used at all.
-      recv = 0;
-    }
-    return recv;
-  }
-}
-
-// A SPI slave implements the slave part of a SPI bus. It is usually part of an
-// external device, such as an MCU.
-class SPISlave {
-  constructor(sck, mosi, miso, callback) {
-    this.sck = sck;
-    this.mosi = mosi;
-    this.miso = miso;
-    this.callback = callback;
-
-    // Set the SPI slave of the clock pin. This is the pin that will be checked
-    // by the SPI master for connected SPI slaves.
-    this.sck.setSPISlave(this);
-  }
-
-  // Transmit (send+receive) a single byte. It is called by the SPI master when
-  // it needs to do a transmit.
-  transfer(sck, mosi, miso, w) {
-    if (this.sck.net !== sck.net) {
-      throw 'SPISlave.transfer: wrong sck?';
-    }
-    if (!this.mosi || !mosi || this.mosi.net !== mosi.net) {
-      // MOSI is not connected, so we didn't actually receive this byte.
-      w = undefined;
-    }
-    w = this.callback(w);
-    if (!this.miso || !miso || this.miso.net !== miso.net) {
-      // MISO is not connected, so this byte is dropped on the floor instead of
-      // being received by the SPI master.
-      w = undefined;
-    }
-    return w;
-  }
-}
-
-class Board {
-  constructor(config, container) {
-    this.config = config;
-    this.container = container;
-    this.pins = {};
-    this.spiBuses = {};
-
-    container.innerHTML = '';
-    for (let deviceConfig of config.devices) {
-      let device;
-      let deviceContainer = document.createElement('div');
-      deviceContainer.classList.add('device');
-      deviceContainer.innerHTML = '<div class="device-content"></div><div class="device-name"></div>';
-      deviceContainer.querySelector('.device-name').textContent = deviceConfig.name;
-      container.appendChild(deviceContainer);
-      let deviceContent = deviceContainer.querySelector('.device-content');
-      if (deviceConfig.type == 'led') {
-        device = new LED(deviceConfig, deviceContent);
-        if ('cathode' in deviceConfig) {
-          device.cathode.attach(this.getPin(deviceConfig.cathode));
-        }
-        if ('anode' in deviceConfig) {
-          device.anode.attach(this.getPin(deviceConfig.anode));
-        }
-      } else if (deviceConfig.type == 'rgbled') {
-        device = new RGBLED(deviceConfig, deviceContent);
-        if ('cathodes' in deviceConfig && deviceConfig.cathodes.length == 3) {
-          device.red.attach(this.getPin(deviceConfig.cathodes[0]));
-          device.green.attach(this.getPin(deviceConfig.cathodes[1]));
-          device.blue.attach(this.getPin(deviceConfig.cathodes[2]));
-        }
-      } else if (deviceConfig.type == 'ws2812') {
-        device = new WS2812(this, deviceConfig, deviceContent);
-        device.din.attach(this.getPin(deviceConfig.din));
-      } else if (deviceConfig.type == 'epd2in13') {
-        device = new EPD2IN13(deviceConfig, deviceContent);
-        device.sck.attach(this.getPin(deviceConfig.sck));
-        device.mosi.attach(this.getPin(deviceConfig.mosi));
-        device.cs.attach(this.getPin(deviceConfig.cs));
-        device.dc.attach(this.getPin(deviceConfig.dc));
-        device.rst.attach(this.getPin(deviceConfig.rst));
-        device.busy.attach(this.getPin(deviceConfig.busy));
-      } else if (deviceConfig.type == 'epd2in13x') {
-        device = new EPD2IN13X(deviceConfig, deviceContent);
-        device.sck.attach(this.getPin(deviceConfig.sck));
-        device.mosi.attach(this.getPin(deviceConfig.mosi));
-        device.cs.attach(this.getPin(deviceConfig.cs));
-        device.dc.attach(this.getPin(deviceConfig.dc));
-        device.rst.attach(this.getPin(deviceConfig.rst));
-        device.busy.attach(this.getPin(deviceConfig.busy));
-      } else if (deviceConfig.type == 'st7789') {
-        device = new ST7789(deviceConfig, deviceContent);
-        device.sck.attach(this.getPin(deviceConfig.sck));
-        device.mosi.attach(this.getPin(deviceConfig.mosi));
-        device.cs.attach(this.getPin(deviceConfig.cs));
-        device.dc.attach(this.getPin(deviceConfig.dc));
-        device.reset.attach(this.getPin(deviceConfig.reset));
+    } else if (config.shape === 'display') {
+      // Screens like ST7789 or e-paper displays.
+      content.innerHTML = '<canvas class="display"></canvas>';
+      let canvas = content.querySelector('canvas');
+      let rotation = config.rotation || 0;
+      if (rotation % 180 === 0) {
+        canvas.width = config.width;
+        canvas.height = config.height;
       } else {
-        console.warn('unknown device type:', deviceConfig);
-        continue;
+        canvas.width = config.height;
+        canvas.height = config.width;
+      }
+      part.context = canvas.getContext('2d');
+      if (rotation !== 0) {
+        if (rotation == 90) {
+          part.context.translate(canvas.width, 0);
+          part.context.rotate(Math.PI * 0.5);
+        } else if (rotation == 180) {
+          part.context.translate(canvas.width, canvas.height);
+          part.context.rotate(Math.PI * 1.0);
+        } else if (rotation == 270) {
+          part.context.translate(0, canvas.height);
+          part.context.rotate(Math.PI * 1.5);
+        } else {
+          console.warn('unknown rotation for ' + config.id + ':', rotation);
+        }
+      }
+    } else {
+      console.warn('unknown part shape:', config.shape);
+      continue;
+    }
+  }
+
+  return parts;
+}
+
+// updateParts updates all parts in the UI with the given updates coming from
+// the web worker that's running the simulated program.
+function updateParts(parts, updates) {
+  for (let update of updates) {
+    let part = parts[update.id];
+
+    // LED strips, like typical WS2812 strips.
+    // They are stored as sequential RGB values.
+    if (update.ledstrip) {
+      for (let i=0; i<part.leds.length; i++) {
+        // Extract colors from the array.
+        let r = update.ledstrip[i*3+0];
+        let g = update.ledstrip[i*3+1];
+        let b = update.ledstrip[i*3+2];
+        let color = 'rgb(' + r + ',' + g + ',' + b + ')';
+        part.leds[i].style.background = color;
       }
     }
-  }
 
-  // Return the configured (human-readable) name.
-  get name() {
-    return this.config.name;
-  }
-
-  onupdate() {
-    // Nothing changes on pin changes.
-    // TODO: interrupts.
-  }
-
-  // Get one of the pins attached to the chip on this board.
-  getPin(number) {
-    if (!(number in this.pins)) {
-      this.pins[number] = new Pin(this, number);
+    // Displays of various sorts that render to a canvas element.
+    if (update.canvas) {
+      // TODO: do the createImageBitmap in the web worker.
+      createImageBitmap(update.canvas).then(bitmap => {
+        part.context.drawImage(bitmap, 0, 0);
+        bitmap.close();
+      });
     }
-    return this.pins[number];
-  }
 
-  // Get (or create) a new SPI bus attached to the chip of this board.
-  getSPI(number) {
-    if (!(number in this.spiBuses)) {
-      this.spiBuses[number] = new SPIMaster(this, number);
+    // Simple devices (like LEDs) that only need to change some CSS properties.
+    for (let [key, value] of Object.entries(update.cssProperties || {})) {
+      part.container.style.setProperty('--' + key, value);
     }
-    return this.spiBuses[number];
+
+    if (update.logText) {
+      log(update.logText);
+    }
   }
 }
 

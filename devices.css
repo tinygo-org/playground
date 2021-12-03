@@ -2,27 +2,24 @@
 	width: 16px;
 	height: 16px;
 	border-radius: 9px;
-	background: red;
+	background: var(--color, black);
 	border: 1px solid black;
 	box-sizing: content-box;
 	background-image: radial-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 1));
-}
-.led.off {
-	background-image: radial-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.67));
 }
 
 .display {
 	border: 1px solid gray;
 }
 
-.ws2812 {
+.ledstrip{
 	line-height: 0;
 	background: black;
 	padding: 2px 3px;
 	border-radius: 10px;
 }
 
-.ws2812-led {
+.ledstrip-led {
 	display: inline-block;
 	width: 16px;
 	height: 16px;

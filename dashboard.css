@@ -115,12 +115,12 @@ header > *:not(h1) {
 	color: #f55;
 }
 
-.device {
+.part {
 	padding: 8px;
 	display: flex;
 	line-height: 1;
 }
 
-.device > .device-name {
+.part > .part-name {
 	padding-left: 8px;
 }

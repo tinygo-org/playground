@@ -4,10 +4,9 @@ const API_URL = location.hostname == 'localhost' ? '/api' : 'https://playground-
 
 var inputCompileTimeout = null;
 const inputCompileDelay = 1000;
-var runner = null;
-var compileAbortController = null;
+var worker = null;
+var workerUpdate = null;
 var project = null;
-var board = null;
 var db;
 const defaultProjectName = 'console';
 
@@ -21,55 +20,87 @@ var examples = {
 
 // Compile the script and if it succeeded, display the result on the right.
 function update() {
-  if (compileAbortController !== null) {
-    // A previous compile was in flight. Cancel it to avoid resource starvation.
-    compileAbortController.abort();
-  }
-  let abortController = new AbortController();
-  compileAbortController = abortController;
+  // Reset terminal to the begin 'compiling' state.
   let terminal = document.querySelector('#terminal');
-  terminal.textContent = '';
+  terminal.classList.remove('error');
+  terminal.value = '';
   terminal.placeholder = 'Compiling...';
 
-  // Compile the script.
-  fetch(API_URL + '/compile?target=' + project.target, {
-    method: 'POST',
-    body: document.querySelector('#input').value,
-    signal: abortController.signal,
-  }).then((response) => {
-    // Good response, but the compile was not necessarily successful.
-    compileAbortController = null;
-    terminal.textContent = '';
-    terminal.placeholder = '';
-    if (response.headers.get('Content-Type') == 'application/wasm') {
-      terminal.classList.remove('error');
-      if (runner !== null) {
-        runner.stop();
-      }
-      board = new Board(project.config, document.querySelector('#devices'));
-      runner = new Runner(response);
-    } else {
+  let parts = null;
+
+  // Run the script in a web worker.
+  let message = {
+    type: 'start',
+    fetch: {
+      url: API_URL + '/compile?target=' + project.target,
+      method: 'POST',
+      body: document.querySelector('#input').value,
+    },
+    id: project.config.name,
+    mainPart: project.config.mainPart,
+    parts: project.config.parts,
+    wires: project.config.wires,
+  };
+  worker = new Worker('worker/webworker.js');
+  worker.postMessage(message)
+  worker.onmessage = function(e) {
+    let msg = e.data;
+    if (msg.type == 'error') {
+      // There was an error. Terminate the worker, it has no more work to do.
+      stopWorker();
       terminal.classList.add('error');
-      response.text().then((text) => {
-        terminal.textContent = text;
+      terminal.placeholder = '';
+      terminal.value = msg.message;
+    } else if (msg.type == 'loading') {
+      // Code was compiled and response wasm is streaming in.
+      terminal.placeholder = 'Loading...';
+    } else if (msg.type == 'started') {
+      // WebAssembly code was loaded and will start now.
+      terminal.placeholder = '';
+    } else if (msg.type == 'notifyUpdate') {
+      // The web worker is signalling that there are updates.
+      // It won't repeat this message until the updates have been read using
+      // getUpdate.
+      // Request the updates in a requestAnimationFrame: this makes sure
+      // updates are only pushed when needed.
+      workerUpdate = requestAnimationFrame(() => {
+        // Now request these updates.
+        worker.postMessage({
+          type: 'getUpdate',
+        });
       });
+    } else if (msg.type == 'update') {
+      // Received updates (such as LED state changes) from the web worker after
+      // a getUpdate message.
+      if (!parts) {
+        // The UI hasn't been loaded yet. Do that now.
+        parts = refreshParts(project.config, document.querySelector('#parts'));
+      }
+      // Update the UI with the new state.
+      updateParts(parts, msg.updates);
+    } else {
+      // Unknown message.
+      console.log('unknown worker message:', msg);
     }
-  }).catch((reason) => {
-    if (abortController.signal.aborted) {
-      // Expected error.
-      return;
-    }
-    // Probably a network error.
-    console.error('could not compile', reason);
-    terminal.textContent = reason;
-    terminal.classList.add('error');
-  });
+  };
 }
 
+// Terminate the worker immediately.
+function stopWorker() {
+  worker.terminate();
+  worker = null;
+  if (workerUpdate !== null) {
+    cancelAnimationFrame(workerUpdate);
+    workerUpdate = null;
+  }
+}
+
+// log writes the given message to the terminal. Note that it doesn't append a
+// newline at the end.
 function log(msg) {
   let textarea = document.querySelector('#terminal');
   let distanceFromBottom = textarea.scrollHeight - textarea.scrollTop - textarea.clientHeight;
-  textarea.textContent += msg + '\n';
+  textarea.value += msg;
   if (distanceFromBottom < 2) {
     textarea.scrollTop = textarea.scrollHeight;
   }
@@ -80,10 +111,9 @@ async function setProject(name) {
   if (project) {
     project.save(document.querySelector('#input').value);
   }
-  if (runner !== null) {
+  if (worker !== null) {
     // A previous job is running, stop it now.
-    runner.stop();
-    runner = null;
+    stopWorker();
   }
   project = await loadProject(name);
   updateBoards();
@@ -206,6 +236,7 @@ document.addEventListener('DOMContentLoaded', function(e) {
 
     // This updates the target, which will start a compilation in the
     // background.
+    // TODO: wait for all boards to be loaded.
     setProject(defaultProjectName);
   };
   request.onerror = function(e) {

@@ -3,9 +3,14 @@
 // This file loads and executes some WebAssembly compiled by TinyGo.
 
 class Runner {
-  constructor(response) {
-    this.logLine = [];
+  constructor(schematic, part) {
+    this.schematic = schematic;
+    this.part = part;
     this.timeout = null;
+  }
+
+  // Load response and prepare runner, but don't run any code yet.
+  async start(response) {
     let importObject = {
       // Bare minimum syscall/js environment, to get time.Sleep to work.
       wasi_snapshot_preview1: {
@@ -39,40 +44,25 @@ class Runner {
         'syscall/js.valueSet': () =>
           console.error('js.valueSet is not supported'),
         __tinygo_gpio_set: (pin, high) =>
-          board.getPin(pin).set(high ? true : false),
-        __tinygo_gpio_get: (pin, high) =>
-          board.getPin(pin).get(),
+          this.part.getPin(pin).set(high ? true : false),
+        __tinygo_gpio_get: (pin) =>
+          this.part.getPin(pin).get(),
         __tinygo_gpio_configure: (pin, mode) =>
-          board.getPin(pin).setMode({
-            0: 'input',
-            1: 'output',
+          this.part.getPin(pin).setState({
+            0: 'floating',
+            1: 'low',
           }[mode]),
-        __tinygo_spi_configure: (bus, sck, mosi, miso) => {
-          board.getSPI(bus).configure(board.getPin(sck), board.getPin(mosi), board.getPin(miso));
+        __tinygo_spi_configure: (bus, sck, sdo, sdi) => {
+          this.part.getSPI(bus).configureAsController(this.part.getPin(sck), this.part.getPin(sdo), this.part.getPin(sdi));
         },
         __tinygo_spi_transfer: (bus, w) => {
-          return board.getSPI(bus).transfer(w);
+          return this.part.getSPI(bus).transfer(w);
         },
-        __tinygo_ws2812_write_byte: (pinNumber, c) => {
-          for (let pin of board.getPin(pinNumber).net.pins) {
-            if (pin.ws2812Listener === null) continue;
-            pin.ws2812Listener.writeWS2812Byte(c);
-          }
-        },
+        __tinygo_ws2812_write_byte: (pinNumber, c) =>
+          this.part.getPin(pinNumber).writeWS2812(c),
       },
     };
-    if ('instantiateStreaming' in WebAssembly) {
-      WebAssembly.instantiateStreaming(response, importObject)
-      .then(this.onload.bind(this))
-      .catch(log);
-    } else {
-      response.arrayBuffer().then(bytes =>
-        WebAssembly.instantiate(bytes, importObject).then(this.onload.bind(this))
-      ).catch(log);
-    }
-  }
-
-  onload(result) {
+    let result = await WebAssembly.instantiateStreaming(response, importObject);
     this._timeOrigin = performance.now();
     this._inst = result.instance;
     this._refs = new Map();
@@ -90,14 +80,11 @@ class Runner {
       this._inst.exports.memory,
       this,
     ];
-    this._inst.exports._start();
   }
 
-  stop() {
-    if (this.timeout !== null) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
+  // Start running the code.
+  run() {
+    this._inst.exports._start();
   }
 
   envMem() {
@@ -107,25 +94,17 @@ class Runner {
   logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr) {
     // https://github.com/bytecodealliance/wasmtime/blob/master/docs/WASI-api.md#__wasi_fd_write
     let nwritten = 0;
-    if (fd == 1) {
-      for (let iovs_i=0; iovs_i<iovs_len;iovs_i++) {
-        let iov_ptr = iovs_ptr+iovs_i*8; // assuming wasm32
+    if (fd === 1) {
+      for (let iovs_i=0; iovs_i<iovs_len; iovs_i++) {
+        let iov_ptr = iovs_ptr + iovs_i*8; // assuming wasm32
         let ptr = this.envMem().getUint32(iov_ptr + 0, true);
         let len = this.envMem().getUint32(iov_ptr + 4, true);
+        nwritten += len;
         for (let i=0; i<len; i++) {
-          let c = this.envMem().getUint8(ptr+i);
-          if (c == 13) { // CR
-            // ignore
-          } else if (c == 10) { // LF
-            // write line
-            let line = (new TextDecoder('utf-8')).decode(new Uint8Array(this.logLine));
-            this.logLine = [];
-            log(line);
-          } else {
-            this.logLine.push(c);
-          }
+          this.part.logBuffer.push(this.envMem().getUint8(ptr+i));
         }
       }
+      this.part.notifyUpdate(); // signal that there is new text to be shown in the console
     } else {
       console.error('invalid file descriptor:', fd);
     }
