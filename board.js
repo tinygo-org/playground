@@ -130,13 +130,9 @@ function updateParts(parts, updates) {
 }
 
 // getProjects returns the complete list of project objects from the projects
-// store. It returns an empty list when the database hasn't been initialized
-// yet.
+// store.
 async function getProjects() {
   // Load all projects.
-  if (!db) {
-    return [];
-  }
   let projects = [];
   return await new Promise(function(resolve, reject) {
     db.transaction(['projects'], 'readonly').objectStore('projects').openCursor().onsuccess = function(e) {
@@ -255,16 +251,4 @@ async function updateBoards() {
       updateBoards();
     });
   }
-}
-
-function loadBoards() {
-  fetch('boards.json').then((response) => {
-    response.json().then((data) => {
-      Object.assign(boards, data);
-      updateBoards();
-    });
-  }).catch((reason) => {
-    // TODO
-    console.error(reason);
-  });
 }

@@ -7,7 +7,7 @@ const inputCompileDelay = 1000;
 var worker = null;
 var workerUpdate = null;
 var project = null;
-var db;
+var db = null;
 const defaultProjectName = 'console';
 
 // A list of source code samples used for each target. This is the default code
@@ -121,6 +121,7 @@ async function setProject(name) {
   input.value = project.code;
   input.disabled = false;
   update();
+  localStorage.tinygo_playground_projectName = name;
   document.querySelector('#btn-flash').disabled = project.config.firmwareFormat === undefined;
 }
 
@@ -211,35 +212,55 @@ document.querySelector('#input').addEventListener('input', function(e) {
 
 document.querySelector('#btn-flash').addEventListener('click', flashFirmware);
 
-// Load boards.json to extend the list of boards in the target dropdown.
-loadBoards();
-
-// Compile the code on load.
-document.addEventListener('DOMContentLoaded', function(e) {
-  // First get the database.
-  let request = indexedDB.open("tinygo-playground", 2);
-  request.onupgradeneeded = function(e) {
-    let db = e.target.result;
-    if (e.oldVersion == 1) {
-      // The proper way would be to upgrade the object store in place, but the
-      // easy way is to simply drop all existing data.
-      db.deleteObjectStore('projects');
-    }
-    let projects = db.createObjectStore('projects', {keyPath: 'name', autoIncrement: true});
-    projects.createIndex('target', 'target', {unique: false});
-  };
-  request.onsuccess = function(e) {
-    db = e.target.result;
-    db.onerror = function(e) {
-      console.error('database error:', e);
+// loadDB loads the playground database asynchronously. It returns a promise
+// that resolves when the database is loaded.
+function loadDB() {
+  return new Promise((resolve, reject) => {
+    // First get the database.
+    let request = indexedDB.open("tinygo-playground", 2);
+    request.onupgradeneeded = function(e) {
+      let db = e.target.result;
+      if (e.oldVersion == 1) {
+        // The proper way would be to upgrade the object store in place, but the
+        // easy way is to simply drop all existing data.
+        db.deleteObjectStore('projects');
+      }
+      let projects = db.createObjectStore('projects', {keyPath: 'name', autoIncrement: true});
+      projects.createIndex('target', 'target', {unique: false});
     };
+    request.onsuccess = function(e) {
+      resolve(e.target.result);
+    };
+    request.onerror = function(e) {
+      reject(e);
+    };
+  })
+}
 
-    // This updates the target, which will start a compilation in the
-    // background.
-    // TODO: wait for all boards to be loaded.
-    setProject(defaultProjectName);
+// Load boards.json to extend the list of boards in the target dropdown.
+async function loadBoards() {
+  let response = await fetch('boards.json');
+  return await response.json();
+}
+
+// Initialize the playground.
+document.addEventListener('DOMContentLoaded', async function(e) {
+  // Start loading everything.
+  let dbPromise = loadDB();
+  let boardsPromise = loadBoards();
+
+  // Wait for everything to complete loading.
+  db = await dbPromise;
+  db.onerror = function(e) {
+    console.error('database error:', e);
   };
-  request.onerror = function(e) {
-    console.error('failed to open database:', e);
-  };
+  let loadedBoards = await boardsPromise;
+  Object.assign(boards, loadedBoards);
+
+  // Update the drop down list of boards and projects.
+  updateBoards();
+
+  // Load the current default project.
+  // This updates the target, which will start a compilation in the background.
+  setProject(localStorage.tinygo_playground_projectName || defaultProjectName);
 })
