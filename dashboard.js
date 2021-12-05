@@ -26,6 +26,10 @@ async function update() {
   terminal.value = '';
   terminal.placeholder = 'Compiling...';
 
+  // Stop program and make the schematic gray.
+  stopWorker();
+  document.querySelector('#schematic').classList.add('compiling');
+
   let parts = null;
 
   // Run the script in a web worker.
@@ -65,6 +69,7 @@ async function update() {
       });
     } else if (msg.type == 'started') {
       // WebAssembly code was loaded and will start now.
+      document.querySelector('#schematic').classList.remove('compiling');
       terminal.placeholder = '';
     } else if (msg.type == 'notifyUpdate') {
       // The web worker is signalling that there are updates.
@@ -93,6 +98,8 @@ async function update() {
 
 // Terminate the worker immediately.
 function stopWorker() {
+  if (worker === null)
+    return;
   worker.terminate();
   worker = null;
   if (workerUpdate !== null) {

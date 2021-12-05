@@ -39,6 +39,9 @@ body {
 	border-top: 1px solid #aaa;
 	background: #222;
 }
+#schematic.compiling {
+	opacity: 0.7;
+}
 
 #schematic .board {
 	filter: drop-shadow(0 0 6px #888c);
@@ -47,6 +50,7 @@ body {
 #output {
 	display: flex;
 	flex-direction: column;
+	background: black;
 }
 
 #terminal-box {
