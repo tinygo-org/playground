@@ -3,6 +3,7 @@
 		"name": "arduino",
 		"humanName": "Arduino Uno",
 		"example": "blinky1",
+		"svg": "parts/arduino.svg",
 		"mainPart": "mcu",
 		"parts": [
 			{
@@ -22,7 +23,6 @@
 			{
 				"id": "led",
 				"type": "led",
-				"shape": "led",
 				"humanName": "LED",
 				"color": [51, 204, 0]
 			}
@@ -36,6 +36,7 @@
 		"humanName": "Arduino Nano 33 IoT",
 		"example": "blinky1",
 		"firmwareFormat": "hex",
+		"svg": "parts/arduino-nano33.svg",
 		"mainPart": "mcu",
 		"parts": [
 			{
@@ -48,7 +49,6 @@
 			{
 				"id": "led",
 				"type": "led",
-				"shape": "led",
 				"humanName": "LED",
 				"color": [255, 165, 0]
 			}
@@ -62,6 +62,7 @@
 		"humanName": "Circuit Playground Express",
 		"example": "blinky1",
 		"firmwareFormat": "uf2",
+		"svg": "parts/circuit-playground.svg",
 		"mainPart": "mcu",
 		"parts": [
 			{
@@ -75,14 +76,12 @@
 			{
 				"id": "led",
 				"type": "led",
-				"shape": "led",
 				"humanName": "LED",
 				"color": [255, 0, 0]
 			},
 			{
 				"id": "neopixels",
 				"type": "ws2812",
-				"shape": "ledstrip",
 				"humanName": "NeoPixels",
 				"length": 10
 			}
@@ -97,6 +96,7 @@
 		"humanName": "HiFive1 rev B",
 		"example": "rgbled",
 		"firmwareFormat": "hex",
+		"svg": "parts/hifive1b.svg",
 		"mainPart": "mcu",
 		"parts": [
 			{
@@ -111,7 +111,6 @@
 			{
 				"id": "led",
 				"type": "rgbled",
-				"shape": "led",
 				"humanName": "LED"
 			}
 		],
@@ -126,6 +125,7 @@
 		"humanName": "Phytec reel board",
 		"example": "rgbled",
 		"firmwareFormat": "hex",
+		"svg": "parts/reelboard.svg",
 		"mainPart": "mcu",
 		"parts": [
 			{
@@ -150,23 +150,19 @@
 			{
 				"id": "led",
 				"type": "led",
-				"shape": "led",
 				"humanName": "LED 1 (back)",
 				"color": [255, 255, 0]
 			},
 			{
 				"id": "rgbled",
 				"type": "rgbled",
-				"shape": "led",
 				"humanName": "LED 2-4 (RGB, front)"
 			},
 			{
 				"id": "display",
 				"type": "epd2in13",
-				"shape": "display",
 				"width": 122,
-				"height": 250,
-				"rotation": 270
+				"height": 250
 			}
 		],
 		"wires": [
@@ -187,6 +183,7 @@
 		"humanName": "PineTime (dev kit)",
 		"example": "blinky1",
 		"firmwareFormat": "hex",
+		"svg": "parts/pinetime.svg",
 		"mainPart": "mcu",
 		"parts": [
 			{
@@ -216,28 +213,24 @@
 			{
 				"id": "light1",
 				"type": "led",
-				"shape": "led",
 				"humanName": "Background (high)",
-				"color": [221, 221, 221]
+				"color": [255, 255, 255]
 			},
 			{
 				"id": "light2",
 				"type": "led",
-				"shape": "led",
 				"humanName": "Background (mid)",
-				"color": [187, 187, 187]
+				"color": [127, 127, 127]
 			},
 			{
 				"id": "light3",
 				"type": "led",
-				"shape": "led",
 				"humanName": "Background (low)",
-				"color": [119, 119, 119]
+				"color": [63, 63, 63]
 			},
 			{
 				"id": "display",
 				"type": "st7789",
-				"shape": "display",
 				"humanName": "Display (st7789)",
 				"width": 240,
 				"height": 240

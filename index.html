@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="dashboard.css"/>
-    <link rel="stylesheet" href="devices.css"/>
     <link rel="shortcut icon" href="https://tinygo.org/favicons/favicon.ico"/>
     <link rel="icon" type="image/png" href="https://tinygo.org/favicons/favicon-32x32.png" sizes="32x32"/>
     <script src="board.js" defer></script>
@@ -35,7 +34,7 @@
     <div id="middle">
       <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled>Loading...</textarea>
       <div id="output">
-        <div id="parts"></div>
+        <svg id="schematic" height="0"></svg>
         <div id="terminal-box">
           <textarea id="terminal" readonly></textarea>
         </div>

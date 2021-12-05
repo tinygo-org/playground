@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- note: setting the viewBox at the bounding box of the PCB, for easier copy-pasting between boards -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-6.2 0 74.8 53.3" width="74.8mm" height="53.3mm">
+  <!-- PCB -->
+  <path d="M 0,0 H 66.06 V 13 L 68.6,15.54 V 48.22 L 66.06,50.76 V 53.3 H 0 Z"
+    fill="#10A2A1"/>
+  <!-- USB port -->
+  <rect x="-6.2" y="9.6" width="16" height="12" fill="#ccc"/>
+  <!-- Vin port -->
+  <rect x="-2" y="40.9" width="14" height="8.6" fill="#333"/>
+  <!-- female header pins -->
+  <rect
+    x="44.47" y="1.27" width="20.32" height="2.54"
+    fill="#4d4d4d" />
+  <rect
+    x="17.8" y="1.27" width="25.4" height="2.54"
+    fill="#4d4d4d" />
+  <rect
+    x="49.55" y="49.49" width="15.24" height="2.54"
+    fill="#4d4d4d" />
+  <rect
+    x="27.96" y="49.49" width="20.32" height="2.54"
+    fill="#4d4d4d" />
+  <!-- LED -->
+  <g data-part="led" transform="translate(18.3, 9.4)">
+    <rect width="2.0" height="1.2" fill="black"/>
+    <rect width="2.0" height="1.2" style="fill: var(--color, black); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+</svg>

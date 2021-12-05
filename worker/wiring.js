@@ -162,7 +162,10 @@ class Schematic {
   constructor() {
     this.parts = {};
     this.wires = [];
-    this.hasUpdate = false;
+    // Don't send an update before the UI has requested an update. The UI will
+    // request an update on load. The way this is implemented is by setting
+    // hasUpdate to true at the beginning.
+    this.hasUpdate = true;
   }
 
   // addPart adds a single part to the schematic.

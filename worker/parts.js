@@ -91,13 +91,9 @@ class MCU extends Part {
 // LEDBase is a base class for any kind of LED (monochromatic, RGB, etc).
 class LEDBase extends Part {
   getState() {
-    let [r, g, b] = this.getColor();
-    let color = 'rgb(' + r + ', ' + g + ', ' + b + ')';
     return {
       id: this.id,
-      cssProperties: {
-        color: color,
-      },
+      cssProperties: colorProperties(this.getColor()),
     };
   }
 }
@@ -120,12 +116,10 @@ class LED extends LEDBase {
     let on = anode && cathode;
     let [r, g, b] = this.color;
     if (!on) {
-      // Reduce the brightness, but don't go all the way to black.
-      // Many LEDs (especially through-hole LEDs) are embedded in colored
-      // plastic, so they still have a particular color even when they're off.
-      r = Math.floor(encodeSRGB(decodeSRGB(r) / 7));
-      g = Math.floor(encodeSRGB(decodeSRGB(g) / 7));
-      b = Math.floor(encodeSRGB(decodeSRGB(b) / 7));
+      // Turn off the LED entirely.
+      r = 0;
+      g = 0;
+      b = 0;
     }
     return [r, g, b];
   }
@@ -439,7 +433,6 @@ class WS2812 extends Part {
     this.pins.din.mode = 'ws2812-din';
     this.length = config.length;
     this.data = new Uint8Array(this.length * 3);
-    this.notifyUpdate();
   }
 
   writeWS2812(c) {
@@ -453,7 +446,7 @@ class WS2812 extends Part {
 
   getState() {
     // Calculate the buffer of RGB values to send to the UI.
-    let data = new Uint8Array(this.length * 3);
+    let data = [];
     for (let i=0; i < this.length; i++) {
       // Extract data from the array. Note that the data is in GRB order, at
       // least on most chips. TODO: make this configurable.
@@ -468,10 +461,7 @@ class WS2812 extends Part {
       g = encodeSRGB(g / 255);
       b = encodeSRGB(b / 255);
 
-      // Put outgoing data in normal RGB order.
-      data[i*3+0] = r;
-      data[i*3+1] = g;
-      data[i*3+2] = b;
+      data.push(colorProperties([r, g, b]));
     }
 
     // Send the resulting data.
@@ -482,8 +472,28 @@ class WS2812 extends Part {
   }
 }
 
-function decodeSRGB(channel) {
-  return Math.pow(channel / 255, 2.2);
+// colorProperties returns --color and --shadow CSS custom properties for use
+// in SVG files. The --shadow custom property is used to give the illusion of
+// light coming off the LED and is partially transparent when not fully bright.
+function colorProperties(components) {
+  let [r, g, b] = components;
+  let color = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+  let max = Math.max(r, g, b);
+  let a = max / 255;
+  if (max == 0) {
+    r = 0;
+    g = 0;
+    b = 0;
+  } else {
+    r = r / max * 255;
+    g = g / max * 255;
+    b = b / max * 255;
+  }
+  let shadow = 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
+  return {
+    color: color,
+    shadow: shadow,
+  };
 }
 
 function encodeSRGB(channel) {

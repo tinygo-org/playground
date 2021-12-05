@@ -35,8 +35,13 @@ body {
 	flex-grow: 1;
 }
 
-#devices {
+#schematic {
 	border-top: 1px solid #aaa;
+	background: #222;
+}
+
+#schematic .board {
+	filter: drop-shadow(0 0 6px #888c);
 }
 
 #output {
@@ -53,12 +58,13 @@ body {
 	#middle {
 		flex-direction: row;
 	}
-	#output {
-		flex-grow: 1;
-	}
-	#devices {
+	#schematic {
 		border-top: none;
 		border-left: 1px solid #aaa;
+		width: 50vw;
+	}
+	#terminal-box {
+		width: 50vw;
 	}
 }
 

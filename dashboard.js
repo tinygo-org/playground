@@ -19,7 +19,7 @@ var examples = {
 };
 
 // Compile the script and if it succeeded, display the result on the right.
-function update() {
+async function update() {
   // Reset terminal to the begin 'compiling' state.
   let terminal = document.querySelector('#terminal');
   terminal.classList.remove('error');
@@ -43,7 +43,8 @@ function update() {
   };
   worker = new Worker('worker/webworker.js');
   worker.postMessage(message)
-  worker.onmessage = function(e) {
+  worker.onmessage = async function(e) {
+    let worker = e.target; // make sure we use the correct worker (it might have changed after a call to update())
     let msg = e.data;
     if (msg.type == 'error') {
       // There was an error. Terminate the worker, it has no more work to do.
@@ -54,6 +55,14 @@ function update() {
     } else if (msg.type == 'loading') {
       // Code was compiled and response wasm is streaming in.
       terminal.placeholder = 'Loading...';
+
+      // Load the UI: download the SVG file and initialize parts.
+      parts = await refreshParts(project.config);
+
+      // Request an update.
+      worker.postMessage({
+        type: 'getUpdate',
+      });
     } else if (msg.type == 'started') {
       // WebAssembly code was loaded and will start now.
       terminal.placeholder = '';
@@ -64,6 +73,7 @@ function update() {
       // Request the updates in a requestAnimationFrame: this makes sure
       // updates are only pushed when needed.
       workerUpdate = requestAnimationFrame(() => {
+        workerUpdate = null;
         // Now request these updates.
         worker.postMessage({
           type: 'getUpdate',
@@ -72,10 +82,6 @@ function update() {
     } else if (msg.type == 'update') {
       // Received updates (such as LED state changes) from the web worker after
       // a getUpdate message.
-      if (!parts) {
-        // The UI hasn't been loaded yet. Do that now.
-        parts = refreshParts(project.config, document.querySelector('#parts'));
-      }
       // Update the UI with the new state.
       updateParts(parts, msg.updates);
     } else {

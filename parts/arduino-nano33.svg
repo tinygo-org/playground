@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- note: setting the viewBox at the bounding box of the PCB, for easier copy-pasting between boards -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-1.27 0 45.27 17.5" width="45.27mm" height="17.5mm">
+  <!-- PCB -->
+  <rect x="0" y="0" width="44.27" height="17.5" fill="#0c395a"/>
+  <!-- USB port -->
+  <rect x="-1.27" y="5.5" width="5" height="7.5" fill="#ccc"/>
+  <!-- LED -->
+  <g data-part="led" transform="translate(0.8, 2.5)">
+    <rect width="2.0" height="1.2" fill="black"/>
+    <rect width="2.0" height="1.2" style="fill: var(--color, black); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+</svg>

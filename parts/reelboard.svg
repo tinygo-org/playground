@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- note: setting the viewBox at the bounding box of the PCB, for easier copy-pasting between boards -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 92.54 70" width="92.54mm" height="70mm">
+  <!-- PCB, TODO: the holes -->
+  <path d="M 2.54,0 H 92.54 V 63 H 73.54 V 70 H 21.54 V 63 H 2.54 V 55.88 L 0,53.34 V 20.32 L 2.54,17.78 Z"
+    fill="#403446"/>
+
+  <!-- LEDs, TODO: LED on the back size -->
+  <g data-part="led"/>
+  <g data-part="rgbled" transform="translate(45.54, 10.16)">
+    <rect width="2.0" height="1.2" fill="black"/>
+    <rect width="2.0" height="1.2" style="fill: var(--color, black); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+
+  <!-- e-paper display -->
+  <g transform="translate(20, 19) translate(0, 24.4) rotate(270)">
+    <foreignObject width="24.4" height="50">
+      <canvas data-part="display" xmlns="http://www.w3.org/1999/xhtml" width="122" height="250" style="width: 24.4px; background: white"></canvas>
+    </foreignObject>
+  </g>
+</svg>

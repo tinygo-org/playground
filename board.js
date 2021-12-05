@@ -21,73 +21,62 @@ var boards = {
   },
 };
 
-// refreshParts recreates the div that contains all parts.
-function refreshParts(boardConfig, boardContainer) {
-  boardContainer.innerHTML = '';
-  let parts = {};
-  for (let config of boardConfig.parts) {
-    if (!config.shape) {
-      // Assume no shape property means the part doesn't need to be created.
-      continue;
-    }
-
-    let part = {id: boardConfig.name+'.'+config.id};
-    parts[part.id] = part;
-
-    part.container = document.createElement('div');
-    part.container.classList.add('part');
-    part.container.innerHTML = '<div class="part-content"></div><div class="part-name"></div>';
-    part.container.querySelector('.part-name').textContent = config.humanName;
-    boardContainer.appendChild(part.container);
-    let content = part.container.querySelector('.part-content');
-    if (config.shape === 'led') {
-      // A typical LED. Currently in the shape of a 5mm through-hole LED.
-      content.innerHTML = '<div class="led"></div>'
-    } else if (config.shape == 'ledstrip') {
-      // Like a typical WS2812 LED strip.
-      content.innerHTML = '<div class="ledstrip"><div class="ledstrip-leds"></div></div>'
-      let ledContainer = content.querySelector('.ledstrip-leds');
-      part.leds = [];
-      for (let i=0; i<config.length; i++) {
-        let led = document.createElement('div');
-        led.classList.add('ledstrip-led');
-        ledContainer.appendChild(led);
-        part.leds.push(led);
-      }
-    } else if (config.shape === 'display') {
-      // Screens like ST7789 or e-paper displays.
-      content.innerHTML = '<canvas class="display"></canvas>';
-      let canvas = content.querySelector('canvas');
-      let rotation = config.rotation || 0;
-      if (rotation % 180 === 0) {
-        canvas.width = config.width;
-        canvas.height = config.height;
-      } else {
-        canvas.width = config.height;
-        canvas.height = config.width;
-      }
-      part.context = canvas.getContext('2d');
-      if (rotation !== 0) {
-        if (rotation == 90) {
-          part.context.translate(canvas.width, 0);
-          part.context.rotate(Math.PI * 0.5);
-        } else if (rotation == 180) {
-          part.context.translate(canvas.width, canvas.height);
-          part.context.rotate(Math.PI * 1.0);
-        } else if (rotation == 270) {
-          part.context.translate(0, canvas.height);
-          part.context.rotate(Math.PI * 1.5);
-        } else {
-          console.warn('unknown rotation for ' + config.id + ':', rotation);
-        }
-      }
-    } else {
-      console.warn('unknown part shape:', config.shape);
-      continue;
-    }
+function removeBoard(boardContainer) {
+  for (let child of boardContainer.children) {
+    child.remove();
   }
+}
 
-  return parts;
+// refreshParts redraws the SVG board from scratch
+async function refreshParts(boardConfig) {
+  return new Promise((resolve, reject) => {
+    let boardContainer = document.querySelector('#schematic');
+    if (!boardConfig.svg) {
+      // Don't draw a board.
+      // This is probably a regular (non-MCU) program.
+      removeBoard(boardContainer);
+      boardContainer.style.height = '0';
+      resolve([]);
+      return;
+    }
+
+    // Load the SVG file.
+    // Doing this with XHR because XHR allows setting responseType while the
+    // newer fetch API doesn't.
+    let xhr = new XMLHttpRequest();
+    xhr.open('GET', boardConfig.svg);
+    xhr.responseType = 'document';
+    xhr.send();
+    xhr.onload = () => {
+      removeBoard(boardContainer);
+
+      // Add SVG to the existing SVG element (nested SVG).
+      // Use a padding of 8px.
+      let root = xhr.response.rootElement;
+      root.classList.add('board')
+      root.setAttribute('x', '8');
+      root.setAttribute('y', '8');
+      boardContainer.style.height = 'calc(' + root.getAttribute('height') + ' + 16px';
+      boardContainer.appendChild(root);
+
+      // Detect parts inside the SVG file. They have a tag like
+      // data-part="led".
+      let parts = {};
+      for (let el of root.querySelectorAll('[data-part]')) {
+        let part = {
+          id: boardConfig.name+'.'+el.dataset.part,
+          container: el,
+          leds: el.querySelectorAll('[data-type="rgbled"]'),
+        };
+        if (el.nodeName === 'CANVAS') {
+          part.context = el.getContext('2d');
+        }
+        parts[part.id] = part;
+      }
+
+      resolve(parts);
+    };
+  })
 }
 
 // updateParts updates all parts in the UI with the given updates coming from
@@ -97,15 +86,11 @@ function updateParts(parts, updates) {
     let part = parts[update.id];
 
     // LED strips, like typical WS2812 strips.
-    // They are stored as sequential RGB values.
     if (update.ledstrip) {
       for (let i=0; i<part.leds.length; i++) {
-        // Extract colors from the array.
-        let r = update.ledstrip[i*3+0];
-        let g = update.ledstrip[i*3+1];
-        let b = update.ledstrip[i*3+2];
-        let color = 'rgb(' + r + ',' + g + ',' + b + ')';
-        part.leds[i].style.background = color;
+        let properties = update.ledstrip[i];
+        part.leds[i].style.setProperty('--color', properties.color);
+        part.leds[i].style.setProperty('--shadow', properties.shadow);
       }
     }
 

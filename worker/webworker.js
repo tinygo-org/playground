@@ -36,6 +36,16 @@ async function start(msg) {
     return;
   }
 
+  // Check for a compilation error, which will be returned as a non-wasm
+  // content type.
+  if (response.headers.get('Content-Type') !== 'application/wasm') {
+    // Probably a compile error.
+    response.text().then((text) => {
+      sendError(text);
+    });
+    return;
+  }
+
   // The program is compiled, but not yet fully downloaded. Set up all the
   // electronics for this program in preparation of running it.
   schematic = new Schematic();
@@ -49,17 +59,8 @@ async function start(msg) {
   schematic.updateNets();
   schematic.notifyUpdate();
 
-  // Check for a compilation error, which will be returned as a non-wasm
-  // content type.
-  if (response.headers.get('Content-Type') !== 'application/wasm') {
-    // Probably a compile error.
-    response.text().then((text) => {
-      sendError(text);
-    });
-    return;
-  }
-
   // Do a streaming load of the WebAssembly code.
+  // This will also result in the UI requesting the first update.
   postMessage({
     type: 'loading',
   });
