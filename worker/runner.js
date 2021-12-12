@@ -84,7 +84,7 @@ class Runner {
         },
       },
       this._inst.exports.memory,
-      this,
+      {}, // 'this' object (not exposed)
     ];
   }
 
