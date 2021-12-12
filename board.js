@@ -135,12 +135,10 @@ async function getProjects() {
 async function updateBoards() {
   if (project) {
     let button = document.querySelector('#target > button');
-    if (project.created) {
-      if (project.projectHumanName) {
-        button.textContent = project.projectHumanName + ' ';
-      } else {
-        button.textContent = project.config.humanName + ' * ';
-      }
+    if (project.humanName) {
+      button.textContent = project.humanName + ' ';
+    } else if (project.created) {
+      button.textContent = project.config.humanName + ' * ';
     } else {
       button.textContent = project.config.humanName + ' ';
     }
@@ -206,11 +204,14 @@ async function updateBoards() {
       e.stopPropagation();
 
       let name = e.target.parentNode.parentNode.dataset.name;
-      let humanName = prompt('Project name');
+      let humanName = prompt('Project name', project.humanName || project.config.humanName);
+      if (!humanName) {
+        return; // clicked 'cancel'
+      }
 
       if (project.name == name) {
         // Update name of current project.
-        project.projectHumanName = humanName;
+        project.humanName = humanName;
       }
       let tx = db.transaction(['projects'], 'readwrite');
       tx.objectStore('projects').get(name).onsuccess = function(e) {

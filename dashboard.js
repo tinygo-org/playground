@@ -121,7 +121,7 @@ function log(msg) {
 
 // setProject updates the current project to the new project name.
 async function setProject(name) {
-  if (project) {
+  if (project && project.created) {
     project.save(document.querySelector('#input').value);
   }
   if (worker !== null) {
@@ -181,8 +181,6 @@ function insertAtCursor (input, textToInsert) {
 }
 
 document.querySelector('#input').addEventListener('input', function(e) {
-  project.markModified(e.target.value);
-
   // Insert whitespace at the start of the next line.
   if (e.inputType == 'insertLineBreak') {
     let line = e.target.value.substr(0, e.target.selectionStart).trimRight();
@@ -219,6 +217,7 @@ document.querySelector('#input').addEventListener('input', function(e) {
   }
   inputCompileTimeout = setTimeout(() => {
     project.save(document.querySelector('#input').value);
+    localStorage.tinygo_playground_projectName = project.name;
     update();
   }, inputCompileDelay);
 })
