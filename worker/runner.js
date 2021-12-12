@@ -62,7 +62,13 @@ class Runner {
           this.part.getPin(pinNumber).writeWS2812(c),
       },
     };
-    let result = await WebAssembly.instantiateStreaming(response, importObject);
+    let result;
+    if ('instantiateStreaming' in WebAssembly) {
+      result = await WebAssembly.instantiateStreaming(response, importObject);
+    } else { // old Safari versions
+      let bytes = await response.arrayBuffer();
+      result = await WebAssembly.instantiate(bytes, importObject);
+    }
     this._timeOrigin = performance.now();
     this._inst = result.instance;
     this._refs = new Map();
