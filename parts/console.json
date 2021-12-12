@@ -1,0 +1,13 @@
+{
+    "name": "console",
+    "humanName": "Console",
+    "example": "hello",
+    "mainPart": "console",
+    "parts": [
+        {
+            "id": "console",
+            "type": "mcu",
+            "pins": []
+        }
+    ]
+}

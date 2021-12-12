@@ -249,25 +249,16 @@ function loadDB() {
   })
 }
 
-// Load boards.json to extend the list of boards in the target dropdown.
-async function loadBoards() {
-  let response = await fetch('boards.json');
-  return await response.json();
-}
-
 // Initialize the playground.
 document.addEventListener('DOMContentLoaded', async function(e) {
   // Start loading everything.
   let dbPromise = loadDB();
-  let boardsPromise = loadBoards();
 
   // Wait for everything to complete loading.
   db = await dbPromise;
   db.onerror = function(e) {
     console.error('database error:', e);
   };
-  let loadedBoards = await boardsPromise;
-  Object.assign(boards, loadedBoards);
 
   // Update the drop down list of boards and projects.
   updateBoards();

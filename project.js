@@ -60,8 +60,9 @@ class Project {
 
 // Load a project based on a project name.
 async function loadProject(name) {
-  if (name in boards) {
-    let config = boards[name];
+  if (name in boardNames) {
+    let response = await fetch('parts/' + name + '.json');
+    let config = await response.json();
     return new Project(config, {
       target: config.name,
       code: examples[config.example],
@@ -69,12 +70,13 @@ async function loadProject(name) {
   }
   return await new Promise((resolve, reject) => {
     let transaction = db.transaction(['projects'], 'readonly');
-    transaction.objectStore('projects').get(name).onsuccess = function(e) {
+    transaction.objectStore('projects').get(name).onsuccess = async function(e) {
       if (e.target.result === undefined) {
         throw 'loadProject: project does not exist in DB';
       }
       let data = e.target.result;
-      let config = boards[data.target];
+      let response = await fetch('parts/' + data.target + '.json');
+      let config = await response.json();
       resolve(new Project(config, data));
     };
   });

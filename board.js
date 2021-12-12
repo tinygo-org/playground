@@ -4,22 +4,16 @@
 // devices (LEDs etc.).
 
 
-// Initial set of boards. It will be extended after boards.json has been loaded.
-var boards = {
-  console: {
-    name: 'console',
-    humanName: 'Console',
-    example: 'hello',
-    mainPart: 'console',
-    parts: [
-      {
-        id: 'console',
-        type: 'mcu',
-        pins: [],
-      }
-    ],
-  },
-};
+// List of boards to show in the menu. See parts/*.json.
+var boardNames = {
+  'console': 'Console',
+  'arduino': 'Arduino Uno',
+  'arduino-nano33': 'Arduino Nano 33 IoT',
+  'circuitplay-express': 'Circuit Playground Express',
+  'hifive1b': 'HiFive1 rev B',
+  'reelboard': 'Phytec reel board',
+  'pinetime-devkit0': 'PineTime (dev kit)',
+}
 
 function removeBoard(boardContainer) {
   for (let child of boardContainer.children) {
@@ -40,11 +34,14 @@ async function refreshParts(boardConfig) {
       return;
     }
 
+    // Determine the SVG URL, which is relative to the board config JSON file.
+    let svgUrl = new URL(boardConfig.svg, new URL('parts/', document.baseURI));
+
     // Load the SVG file.
     // Doing this with XHR because XHR allows setting responseType while the
     // newer fetch API doesn't.
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', boardConfig.svg);
+    xhr.open('GET', svgUrl);
     xhr.responseType = 'document';
     xhr.send();
     xhr.onload = () => {
@@ -148,10 +145,9 @@ async function updateBoards() {
 
   let dropdown = document.querySelector('#target > .dropdown-menu');
   dropdown.innerHTML = '';
-  for (let name in boards) {
-    let board = boards[name];
+  for (let [name, humanName] of Object.entries(boardNames)) {
     let item = document.createElement('a');
-    item.textContent = board.humanName;
+    item.textContent = humanName;
     item.classList.add('dropdown-item');
     if (project && name == project.name) {
       item.classList.add('active');
@@ -161,8 +157,7 @@ async function updateBoards() {
     dropdown.appendChild(item);
     item.addEventListener('click', (e) => {
       e.preventDefault();
-      let boardConfig = boards[item.dataset.name];
-      setProject(boardConfig.name);
+      setProject(item.dataset.name);
     });
   }
 
@@ -177,13 +172,12 @@ async function updateBoards() {
 
   // Add a list of projects (modified templates).
   for (let projectObj of projects) {
-    let board = boards[projectObj.target];
     let item = document.createElement('a');
     item.innerHTML = '<span class="text"><span class="name"></span> – <i class="time"></i></span><span class="buttons"><button class="btn btn-light btn-sm edit-symbol rename" title="Rename">✎</button> <button class="btn btn-light btn-sm delete" title="Delete">🗑</button></span>';
     if (projectObj.humanName) {
       item.querySelector('.text').textContent = projectObj.humanName;
     } else {
-      item.querySelector('.name').textContent = board.humanName;
+      item.querySelector('.name').textContent = boardNames[projectObj.target];
       item.querySelector('.time').textContent = projectObj.created.toISOString();
     }
     item.classList.add('dropdown-item');

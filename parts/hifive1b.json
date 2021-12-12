@@ -1,0 +1,29 @@
+{
+    "name": "hifive1b",
+    "humanName": "HiFive1 rev B",
+    "example": "rgbled",
+    "firmwareFormat": "hex",
+    "svg": "hifive1b.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "P19": 19,
+                "P21": 21,
+                "P22": 22
+            }
+        },
+        {
+            "id": "led",
+            "type": "rgbled",
+            "humanName": "LED"
+        }
+    ],
+    "wires": [
+        {"from": "mcu.P22", "to": "led.r"},
+        {"from": "mcu.P19", "to": "led.g"},
+        {"from": "mcu.P21", "to": "led.b"}
+    ]
+}

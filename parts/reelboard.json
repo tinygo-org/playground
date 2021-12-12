@@ -1,0 +1,58 @@
+{
+    "name": "reelboard",
+    "humanName": "Phytec reel board",
+    "example": "rgbled",
+    "firmwareFormat": "hex",
+    "svg": "reelboard.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "P0_00": 0,
+                "P0_11": 11,
+                "P0_12": 12,
+                "P0_13": 13,
+                "P0_14": 14,
+                "P0_15": 15,
+                "P0_16": 16,
+                "P0_17": 17,
+                "P0_18": 18,
+                "P0_19": 19,
+                "P0_20": 20,
+                "P1_00": 32,
+                "P1_09": 41
+            }
+        },
+        {
+            "id": "led",
+            "type": "led",
+            "humanName": "LED 1 (back)",
+            "color": [255, 255, 0]
+        },
+        {
+            "id": "rgbled",
+            "type": "rgbled",
+            "humanName": "LED 2-4 (RGB, front)"
+        },
+        {
+            "id": "display",
+            "type": "epd2in13",
+            "width": 122,
+            "height": 250
+        }
+    ],
+    "wires": [
+        {"from": "mcu.P0_13", "to": "led.cathode"},
+        {"from": "mcu.P0_11", "to": "rgbled.r"},
+        {"from": "mcu.P0_12", "to": "rgbled.g"},
+        {"from": "mcu.P1_09", "to": "rgbled.b"},
+        {"from": "mcu.P0_19", "to": "display.sck"},
+        {"from": "mcu.P0_20", "to": "display.sdi"},
+        {"from": "mcu.P0_17", "to": "display.cs"},
+        {"from": "mcu.P0_16", "to": "display.dc"},
+        {"from": "mcu.P0_15", "to": "display.rst"},
+        {"from": "mcu.P0_14", "to": "display.busy"}
+    ]
+}

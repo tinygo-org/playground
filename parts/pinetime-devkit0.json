@@ -1,0 +1,69 @@
+{
+    "name": "pinetime-devkit0",
+    "humanName": "PineTime (dev kit)",
+    "example": "blinky1",
+    "firmwareFormat": "hex",
+    "svg": "pinetime.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "P0_00": 0,
+                "P0_02": 2,
+                "P0_03": 3,
+                "P0_04": 4,
+                "P0_11": 11,
+                "P0_12": 12,
+                "P0_13": 13,
+                "P0_14": 14,
+                "P0_15": 15,
+                "P0_16": 16,
+                "P0_17": 17,
+                "P0_18": 18,
+                "P0_19": 19,
+                "P0_20": 20,
+                "P0_22": 22,
+                "P0_23": 23,
+                "P0_25": 25,
+                "P0_26": 26
+            }
+        },
+        {
+            "id": "light1",
+            "type": "led",
+            "humanName": "Background (high)",
+            "color": [255, 255, 255]
+        },
+        {
+            "id": "light2",
+            "type": "led",
+            "humanName": "Background (mid)",
+            "color": [127, 127, 127]
+        },
+        {
+            "id": "light3",
+            "type": "led",
+            "humanName": "Background (low)",
+            "color": [63, 63, 63]
+        },
+        {
+            "id": "display",
+            "type": "st7789",
+            "humanName": "Display (st7789)",
+            "width": 240,
+            "height": 240
+        }
+    ],
+    "wires": [
+        {"from": "mcu.P0_23", "to": "light1.cathode"},
+        {"from": "mcu.P0_22", "to": "light2.cathode"},
+        {"from": "mcu.P0_14", "to": "light3.cathode"},
+        {"from": "mcu.P0_02", "to": "display.sck"},
+        {"from": "mcu.P0_03", "to": "display.sdi"},
+        {"from": "mcu.P0_25", "to": "display.cs"},
+        {"from": "mcu.P0_18", "to": "display.dc"},
+        {"from": "mcu.P0_26", "to": "display.reset"}
+    ]
+}

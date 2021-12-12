@@ -1,0 +1,32 @@
+{
+    "name": "arduino",
+    "humanName": "Arduino Uno",
+    "example": "blinky1",
+    "svg": "arduino.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "PB0": 0,
+                "PB1": 1,
+                "PB2": 2,
+                "PB3": 3,
+                "PB4": 4,
+                "PB5": 5,
+                "PB6": 6,
+                "PB7": 7
+            }
+        },
+        {
+            "id": "led",
+            "type": "led",
+            "humanName": "LED",
+            "color": [51, 204, 0]
+        }
+    ],
+    "wires": [
+        {"from": "mcu.PB5", "to": "led.cathode"}
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "name": "circuitplay-express",
+    "humanName": "Circuit Playground Express",
+    "example": "blinky1",
+    "firmwareFormat": "uf2",
+    "svg": "circuit-playground.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "PA17": 17,
+                "PB23": 55
+            }
+        },
+        {
+            "id": "led",
+            "type": "led",
+            "humanName": "LED",
+            "color": [255, 0, 0]
+        },
+        {
+            "id": "neopixels",
+            "type": "ws2812",
+            "humanName": "NeoPixels",
+            "length": 10
+        }
+    ],
+    "wires": [
+        {"from": "mcu.PA17", "to": "led.cathode"},
+        {"from": "mcu.PB23", "to": "neopixels.din"}
+    ]
+}

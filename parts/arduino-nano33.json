@@ -1,0 +1,26 @@
+{
+    "name": "arduino-nano33",
+    "humanName": "Arduino Nano 33 IoT",
+    "example": "blinky1",
+    "firmwareFormat": "hex",
+    "svg": "arduino-nano33.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "PA17": 17
+            }
+        },
+        {
+            "id": "led",
+            "type": "led",
+            "humanName": "LED",
+            "color": [255, 165, 0]
+        }
+    ],
+    "wires": [
+        {"from": "mcu.PA17", "to": "led.cathode"}
+    ]
+}
