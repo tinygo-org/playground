@@ -38,12 +38,16 @@ body {
 #schematic {
 	border-top: 1px solid #aaa;
 	background: #222;
+	position: relative;
 }
 #schematic.compiling {
 	opacity: 0.7;
 }
 
 #schematic .board {
+	position: absolute;
+	left: 8px;
+	top: 8px;
 	filter: drop-shadow(0 0 6px #888c);
 }
 

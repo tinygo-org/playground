@@ -54,8 +54,6 @@ async function refreshParts(boardConfig) {
       // Use a padding of 8px.
       let root = xhr.response.rootElement;
       root.classList.add('board')
-      root.setAttribute('x', '8');
-      root.setAttribute('y', '8');
       boardContainer.style.height = 'calc(' + root.getAttribute('height') + ' + 16px';
       boardContainer.appendChild(root);
 
