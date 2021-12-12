@@ -2,6 +2,16 @@
 
 // This file loads and executes some WebAssembly compiled by TinyGo.
 
+if (typeof module !== 'undefined') {
+  // Running as a Node.js module.
+  global.performance = {
+    now() {
+      const [sec, nsec] = process.hrtime();
+      return sec * 1000 + nsec / 1000000;
+    }
+  }
+}
+
 class Runner {
   constructor(schematic, part) {
     this.schematic = schematic;
@@ -10,7 +20,7 @@ class Runner {
   }
 
   // Load response and prepare runner, but don't run any code yet.
-  async start(response) {
+  async start(source) {
     let importObject = {
       // Bare minimum syscall/js environment, to get time.Sleep to work.
       wasi_snapshot_preview1: {
@@ -63,10 +73,15 @@ class Runner {
       },
     };
     let result;
-    if ('instantiateStreaming' in WebAssembly) {
-      result = await WebAssembly.instantiateStreaming(response, importObject);
-    } else { // old Safari versions
-      let bytes = await response.arrayBuffer();
+    if (source instanceof Uint8Array) {
+      // Running inside VS Code.
+      result = await WebAssembly.instantiate(source, importObject);
+    } else if ('instantiateStreaming' in WebAssembly) {
+      // Running inside a modern browser.
+      result = await WebAssembly.instantiateStreaming(source, importObject);
+    } else {
+      // Running on old version of Safari, probably.
+      let bytes = await source.arrayBuffer();
       result = await WebAssembly.instantiate(bytes, importObject);
     }
     this._timeOrigin = performance.now();
@@ -204,4 +219,8 @@ class Runner {
     this.envMem().setUint32(addr + 4, nanHead | typeFlag, true);
     this.envMem().setUint32(addr, ref, true);
   }
+}
+
+if (typeof module !== 'undefined') {
+  module.exports.Runner = Runner;
 }

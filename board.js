@@ -230,3 +230,31 @@ async function updateBoards() {
     });
   }
 }
+
+// Change the terminal to show the given error message, in red.
+function showErrorInTerminal(message) {
+  let textarea = document.querySelector('#terminal');
+  textarea.placeholder = '';
+  textarea.value = message;
+  terminal.classList.add('error');
+}
+
+// clearTerminal clears any existing content from the terminal (including a
+// possible error message) and sets the given placeholder.
+function clearTerminal(placeholder) {
+  let textarea = document.querySelector('#terminal');
+  textarea.placeholder = placeholder;
+  textarea.value = '';
+  terminal.classList.remove('error');
+}
+
+// log writes the given message to the terminal. Note that it doesn't append a
+// newline at the end.
+function log(msg) {
+  let textarea = document.querySelector('#terminal');
+  let distanceFromBottom = textarea.scrollHeight - textarea.scrollTop - textarea.clientHeight;
+  textarea.value += msg;
+  if (distanceFromBottom < 2) {
+    textarea.scrollTop = textarea.scrollHeight;
+  }
+}

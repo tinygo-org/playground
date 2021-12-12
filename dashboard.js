@@ -21,10 +21,7 @@ var examples = {
 // Compile the script and if it succeeded, display the result on the right.
 async function update() {
   // Reset terminal to the begin 'compiling' state.
-  let terminal = document.querySelector('#terminal');
-  terminal.classList.remove('error');
-  terminal.value = '';
-  terminal.placeholder = 'Compiling...';
+  clearTerminal('Compiling...');
 
   // Stop program and make the schematic gray.
   stopWorker();
@@ -53,12 +50,10 @@ async function update() {
     if (msg.type == 'error') {
       // There was an error. Terminate the worker, it has no more work to do.
       stopWorker();
-      terminal.classList.add('error');
-      terminal.placeholder = '';
-      terminal.value = msg.message;
+      showErrorInTerminal(msg.message);
     } else if (msg.type == 'loading') {
       // Code was compiled and response wasm is streaming in.
-      terminal.placeholder = 'Loading...';
+      clearTerminal('Loading...')
 
       // Load the UI: download the SVG file and initialize parts.
       parts = await refreshParts(project.config);
@@ -70,7 +65,7 @@ async function update() {
     } else if (msg.type == 'started') {
       // WebAssembly code was loaded and will start now.
       document.querySelector('#schematic').classList.remove('compiling');
-      terminal.placeholder = '';
+      clearTerminal('Running...')
     } else if (msg.type == 'notifyUpdate') {
       // The web worker is signalling that there are updates.
       // It won't repeat this message until the updates have been read using
@@ -105,17 +100,6 @@ function stopWorker() {
   if (workerUpdate !== null) {
     cancelAnimationFrame(workerUpdate);
     workerUpdate = null;
-  }
-}
-
-// log writes the given message to the terminal. Note that it doesn't append a
-// newline at the end.
-function log(msg) {
-  let textarea = document.querySelector('#terminal');
-  let distanceFromBottom = textarea.scrollHeight - textarea.scrollTop - textarea.clientHeight;
-  textarea.value += msg;
-  if (distanceFromBottom < 2) {
-    textarea.scrollTop = textarea.scrollHeight;
   }
 }
 

@@ -1,83 +1,8 @@
 'use strict';
 
-// A pin is one pin of a part. It can be in various states (floating, low,
-// high) and it's possible to sample the current state (low, high) from it.
-class Pin {
-  constructor(id, part, state) {
-    this.id = id;
-    this.part = part;
-    this.state = state ? state : 'floating';
-    this.net = null;
-    this.mode = 'gpio';
-  }
-
-  // setState sets the output state of the pin: as low, high, or floating.
-  setState(state, mode) {
-    mode = mode ? mode : 'gpio';
-    if (this.state === state && this.mode === mode)
-      return;
-    this.mode = mode ? mode : 'gpio';
-    this.state = state;
-    if (this.net) {
-      // setState() might be called while setting up parts, and thus before
-      // nets are updated for the first time.
-      this.net.updateState();
-    }
-  }
-
-  // Set the pin state to high or low. It should already be configured as an
-  // output pin.
-  set(high) {
-    let state = high ? 'high' : 'low';
-    if (!this.isOutput()) {
-      console.warn('pin ' + this.id + ' got set to ' + state + ' while it is configured as ' + this.state);
-      return;
-    }
-    this.setState(state);
-  }
-
-  // get() returns the state as read by a Pin.Get() call from Go.
-  get() {
-    let state = this.net.state;
-    if (state === 'high') {
-      return true;
-    } else if (state === 'low') {
-      return false;
-    } else if (state === 'floating') {
-      console.warn('reading from floating pin ' + this.id);
-      // Return a random value, to simulate a floating input.
-      // (This is not exactly accurate, but perhaps more accurate than
-      // returning a fixed 'high' or 'low').
-      return Math.random() < 0.5;
-    } else {
-      console.warn('unknown state: ' + state);
-      return false;
-    }
-  }
-
-  // returns whether this is an output pin, that is, low or high.
-  // A pull-up or pull-down doesn't count as an output.
-  isOutput() {
-    return this.state === 'low' || this.state === 'high';
-  }
-
-  // isConnected returns whether there are any other devices connected to this
-  // pin - floating or not. This is used for LEDs.
-  isConnected() {
-    return this.net.pins.size > 1;
-  }
-
-  // writeWS2812 writes a single WS2812 byte to the network.
-  writeWS2812(c) {
-    if (!this.isOutput()) {
-      // Writing is only possible when this pin is set as an output.
-      return;
-    }
-    for (let pin of this.net.pins) {
-      if (pin.mode !== 'ws2812-din' || pin.state !== 'floating')
-        continue;
-      pin.part.writeWS2812(c);
-    }
+if (typeof module !== 'undefined') {
+  for (let [key, value] of Object.entries(require('./parts.js'))) {
+    global[key] = value;
   }
 }
 
@@ -159,13 +84,14 @@ class Net {
 
 // The schematic tracks all electronic parts and the connections between them.
 class Schematic {
-  constructor() {
+  constructor(sendNotifyUpdate) {
     this.parts = {};
     this.wires = [];
     // Don't send an update before the UI has requested an update. The UI will
     // request an update on load. The way this is implemented is by setting
     // hasUpdate to true at the beginning.
     this.hasUpdate = true;
+    this.sendNotifyUpdate = sendNotifyUpdate;
   }
 
   // addPart adds a single part to the schematic.
@@ -264,9 +190,7 @@ class Schematic {
 
     // There was an update. Notify the frontend.
     this.hasUpdate = true;
-    postMessage({
-      type: 'notifyUpdate',
-    });
+    this.sendNotifyUpdate();
   }
 
   // getUpdates returns an array of updates to be applied in the UI.
@@ -349,4 +273,8 @@ class SPIBus {
     }
     return r;
   }
+}
+
+if (typeof module !== 'undefined') {
+  module.exports.Schematic = Schematic;
 }
