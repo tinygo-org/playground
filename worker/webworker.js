@@ -72,12 +72,11 @@ async function start(msg) {
       type: 'notifyUpdate',
     });
   });
-  for (let part of msg.parts || []) {
-    part.id = msg.id + '.' + part.id;
+  for (let part of msg.config.parts) {
     schematic.addPart(part);
   }
-  for (let wire of msg.wires || []) {
-    schematic.addWire(msg.id + '.' + wire.from, msg.id + '.' + wire.to);
+  for (let wire of msg.config.wires) {
+    schematic.addWire(wire.from, wire.to);
   }
   schematic.updateNets();
   schematic.notifyUpdate();
@@ -87,7 +86,7 @@ async function start(msg) {
   postMessage({
     type: 'loading',
   });
-  let runner = new Runner(schematic, schematic.getPart(msg.id + '.' + msg.mainPart));
+  let runner = new Runner(schematic, schematic.getPart(msg.config.mainPart));
   try {
     await runner.start(source);
   } catch (e) {

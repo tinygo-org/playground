@@ -7,9 +7,13 @@
 // layout, and some state. After saving, it can be destroyed and re-loaded
 // without losing data.
 class Project {
-  constructor(config, data) {
-    this.config = config;
+  constructor(parts, data) {
+    this.parts = parts;
     this._data = data;
+  }
+
+  get config() {
+    return this.parts.main.config;
   }
 
   get created() {
@@ -43,10 +47,9 @@ class Project {
       this._data.created = new Date();
       this._data.name = this.config.name + '-' + this._data.created.toISOString();
     }
-    if (code === undefined) {
-      throw 'no code provided';
+    if (code) {
+      this._data.code = code;
     }
-    this._data.code = code;
     let transaction = db.transaction(['projects'], 'readwrite');
     transaction.objectStore('projects').put(this._data).onsuccess = function(e) {
       updateBoards();
@@ -61,23 +64,43 @@ class Project {
 // Load a project based on a project name.
 async function loadProject(name) {
   if (name in boardNames) {
-    let response = await fetch('parts/' + name + '.json');
-    let config = await response.json();
-    return new Project(config, {
-      target: config.name,
-      code: examples[config.example],
+    let part = await Part.load('main', {
+      location: 'parts/'+name+'.json',
+      x: 0,
+      y: 0,
+    });
+    return new Project({main: part}, {
+      defaultHumanName: part.config.humanName,
+      code: examples[part.config.example],
+      parts: {
+        main: part.data,
+      },
     });
   }
   return await new Promise((resolve, reject) => {
     let transaction = db.transaction(['projects'], 'readonly');
     transaction.objectStore('projects').get(name).onsuccess = async function(e) {
       if (e.target.result === undefined) {
-        throw 'loadProject: project does not exist in DB';
+        reject('loadProject: project does not exist in DB');
       }
       let data = e.target.result;
-      let response = await fetch('parts/' + data.target + '.json');
-      let config = await response.json();
-      resolve(new Project(config, data));
+      if (data.target) {
+        // Upgrade old data format.
+        data.parts = {
+          main: {
+            location: 'parts/'+data.target+'.json',
+            x: 0,
+            y: 0,
+          },
+        };
+        delete data.target;
+      }
+      let parts = await loadParts(data.parts);
+      if (!data.defaultHumanName) {
+        // Upgrade old data format.
+        data.defaultHumanName = parts.main.config.humanName;
+      }
+      resolve(new Project(parts, data));
     };
   });
 }

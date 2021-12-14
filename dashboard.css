@@ -39,15 +39,14 @@ body {
 	border-top: 1px solid #aaa;
 	background: #222;
 	position: relative;
+	flex-grow: 1;
+	overflow: hidden;
 }
 #schematic.compiling {
 	opacity: 0.7;
 }
 
-#schematic .board {
-	position: absolute;
-	left: 8px;
-	top: 8px;
+#schematic .board-wrapper {
 	filter: drop-shadow(0 0 6px #888c);
 }
 
@@ -59,6 +58,9 @@ body {
 
 #terminal-box {
 	display: flex;
+	flex-shrink: 0;
+}
+#schematic.d-none + #terminal-box {
 	flex-grow: 1;
 }
 
@@ -68,7 +70,6 @@ body {
 	}
 	#schematic {
 		border-top: none;
-		border-left: 1px solid #aaa;
 		width: 50vw;
 	}
 	#terminal-box {

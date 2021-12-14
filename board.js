@@ -15,70 +15,86 @@ var boardNames = {
   'pinetime-devkit0': 'PineTime (dev kit)',
 }
 
-function removeBoard(boardContainer) {
-  for (let child of boardContainer.children) {
+// The number of CSS pixels in a CSS millimeter. Yes, this is a constant,
+// defined by the CSS specification. This doesn't correspond exactly to
+// real-world pixels and millimeters, but millimeters should be pretty close.
+// For more information:
+// https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units
+const pixelsPerMillimeter = 96 / 25.4;
+
+// refreshParts redraws all the SVG parts from scratch
+async function refreshParts(parts) {
+  // Load all SVG elements in parallel.
+  let promises = [];
+  for (let part of Object.values(parts)) {
+    if (part.config.svg) {
+      promises.push(part.loadSVG());
+    }
+  }
+
+  // Wait until they are loaded.
+  await Promise.all(promises);
+
+  // Remove existing SVG elements.
+  let partsGroup = document.querySelector('#schematic-parts');
+  for (let child of partsGroup.children) {
     child.remove();
   }
-}
 
-// refreshParts redraws the SVG board from scratch
-async function refreshParts(boardConfig) {
-  return new Promise((resolve, reject) => {
-    let boardContainer = document.querySelector('#schematic');
-    if (!boardConfig.svg) {
-      // Don't draw a board.
-      // This is probably a regular (non-MCU) program.
-      removeBoard(boardContainer);
-      boardContainer.style.height = '0';
-      resolve([]);
-      return;
+  // Put SVGs in the schematic.
+  let partHeights = [];
+  let schematic = document.querySelector('#schematic');
+  for (let part of Object.values(parts)) {
+    if (part.svg) {
+      partsGroup.appendChild(part.createElement(schematic));
+
+      // Store the height, to calculate the minimum height of the schematic.
+      // Add a spacing of 20px so that the board has a bit of spacing around it.
+      partHeights.push('calc(' + part.height + ' + 20px)');
     }
+  }
 
-    // Determine the SVG URL, which is relative to the board config JSON file.
-    let svgUrl = new URL(boardConfig.svg, new URL('parts/', document.baseURI));
+  // Set the height of the schematic.
+  schematic.classList.toggle('d-none', partHeights.length === 0);
+  if (partHeights.length) {
+    schematic.style.height = 'max(' + partHeights.join(', ') + ')';
+  }
 
-    // Load the SVG file.
-    // Doing this with XHR because XHR allows setting responseType while the
-    // newer fetch API doesn't.
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', svgUrl);
-    xhr.responseType = 'document';
-    xhr.send();
-    xhr.onload = () => {
-      removeBoard(boardContainer);
-
-      // Add SVG to the existing SVG element (nested SVG).
-      // Use a padding of 8px.
-      let root = xhr.response.rootElement;
-      root.classList.add('board')
-      boardContainer.style.height = 'calc(' + root.getAttribute('height') + ' + 16px';
-      boardContainer.appendChild(root);
-
-      // Detect parts inside the SVG file. They have a tag like
-      // data-part="led".
-      let parts = {};
-      for (let el of root.querySelectorAll('[data-part]')) {
-        let part = {
-          id: boardConfig.name+'.'+el.dataset.part,
-          container: el,
-          leds: el.querySelectorAll('[data-type="rgbled"]'),
-        };
-        if (el.nodeName === 'CANVAS') {
-          part.context = el.getContext('2d');
-        }
-        parts[part.id] = part;
-      }
-
-      resolve(parts);
-    };
-  })
+  // Workaround for Chrome positioning bug and Firefox rendering bug.
+  fixPartsLocation();
 }
 
-// updateParts updates all parts in the UI with the given updates coming from
+// Create a 'config' struct with a flattened view of the schematic, to be sent
+// to the worker.
+function configForWorker(parts) {
+  let config = {
+    parts: [],
+    wires: [],
+  };
+  for (let [id, part] of Object.entries(parts)) {
+    if (id === 'main') {
+      config.mainPart = 'main.' + part.config.mainPart;
+    }
+    for (let subpart of part.config.parts) {
+      let obj = Object.assign({}, subpart, {id: id + '.' + subpart.id});
+      config.parts.push(obj);
+    }
+    for (let wire of part.config.wires || []) {
+      config.wires.push({
+        from: id + '.' + wire.from,
+        to: id + '.' + wire.to,
+      });
+    }
+  }
+  return config;
+}
+
+// updatePart updates a (sub)part in the UI with the given updates coming from
 // the web worker that's running the simulated program.
 function updateParts(parts, updates) {
   for (let update of updates) {
-    let part = parts[update.id];
+    let partId = update.id.split('.', 1)[0];
+    let part = parts[partId].subparts[update.id];
 
     // LED strips, like typical WS2812 strips.
     if (update.ledstrip) {
@@ -103,6 +119,7 @@ function updateParts(parts, updates) {
       part.container.style.setProperty('--' + key, value);
     }
 
+    // Main MCU that prints some text.
     if (update.logText) {
       log(update.logText);
     }
@@ -177,7 +194,7 @@ async function updateBoards() {
     if (projectObj.humanName) {
       item.querySelector('.text').textContent = projectObj.humanName;
     } else {
-      item.querySelector('.name').textContent = boardNames[projectObj.target];
+      item.querySelector('.name').textContent = projectObj.defaultHumanName;
       item.querySelector('.time').textContent = projectObj.created.toISOString();
     }
     item.classList.add('dropdown-item');
@@ -258,3 +275,179 @@ function log(msg) {
     textarea.scrollTop = textarea.scrollHeight;
   }
 }
+
+// Load all parts of the given project configuration.
+async function loadParts(datas) {
+  let promises = [];
+  // Load all the parts in parallel!
+  for (let [id, data] of Object.entries(datas)) {
+    promises.push(Part.load(id, data));
+  }
+  let parts = await Promise.all(promises);
+  let result = {};
+  for (let part of parts) {
+    result[part.id] = part;
+  }
+  return result;
+}
+
+// One independent part in the schematic. This might be a separate part like a
+// LED, or it might be a board that itself also contains parts. Parts on a board
+// are represented differently, though.
+class Part {
+  constructor(id, config, data) {
+    this.id = id;
+    this.config = config;
+    this.data = data;
+    this.subparts = {};
+  }
+
+  // Load the given part and return it (because constructor() can't be async).
+  static async load(id, data) {
+    let response = await fetch(data.location);
+    let config = await response.json();
+    return new Part(id, config, data);
+  }
+
+  // loadSVG loads the 'svg' property (this.svg) of this object.
+  async loadSVG() {
+    return new Promise((resolve, reject) => {
+      // Determine the SVG URL, which is relative to the board config JSON file.
+      let svgUrl = new URL(this.config.svg, new URL('parts/', document.baseURI));
+
+      // Load the SVG file.
+      // Doing this with XHR because XHR allows setting responseType while the
+      // newer fetch API doesn't.
+      let xhr = new XMLHttpRequest();
+      xhr.open('GET', svgUrl);
+      xhr.responseType = 'document';
+      xhr.send();
+      xhr.onload = (() => {
+        this.svg = xhr.response.rootElement;
+        this.width = this.svg.getAttribute('width');
+        this.height = this.svg.getAttribute('height');
+        resolve();
+      }).bind(this);
+    });
+  }
+
+  // Create the wrapper for the part SVG and initialize it.
+  createElement(schematic) {
+    this.wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    this.wrapper.setAttribute('class', 'board-wrapper');
+
+    // Add SVG to the schematic at the correct location.
+    this.wrapper.appendChild(this.svg);
+    this.updatePosition();
+    this.makeDraggable(schematic);
+
+    // Detect parts inside the SVG file. They have a tag like
+    // data-part="led".
+    this.subparts = {};
+    for (let el of this.svg.querySelectorAll('[data-part]')) {
+      let subpart = {
+        id: this.id+'.'+el.dataset.part,
+        container: el,
+        leds: el.querySelectorAll('[data-type="rgbled"]'),
+      };
+      if (el.nodeName === 'CANVAS') {
+        subpart.context = el.getContext('2d');
+      }
+      this.subparts[subpart.id] = subpart;
+    }
+
+    return this.wrapper;
+  }
+
+  // Set a new (x, y) position in pixels, relative to the center.
+  // The position is stored as millimeters, not as pixels.
+  setPosition(x, y) {
+    this.data.x = x / pixelsPerMillimeter;
+    this.data.y = y / pixelsPerMillimeter;
+    this.updatePosition();
+  }
+
+  // Update position according to this.data.x and this.data.y.
+  updatePosition() {
+    // Set part position relative to the center of the schematic.
+    // Do this using calc() so that it stays at the correct position when
+    // resizing the window.
+    let x = 'calc(' + this.data.x + 'mm - ' + this.width + ' / 2)';
+    let y = 'calc(' + this.data.y + 'mm - ' + this.height + ' / 2)';
+    this.wrapper.style.transform = 'translate(' + x + ', ' + y + ')';
+  }
+
+  // makeDraggable is part of the setup of adding a new part to the schematic.
+  // This method makes the part draggable with a mouse.
+  makeDraggable(schematic) {
+    this.wrapper.ondragstart = e => false;
+    this.wrapper.onmousedown = function(e) {
+      // Calculate as many things as possible in advance, so that the mousemove
+      // event doesn't have to do much.
+      // This code handles the following cases:
+      //   * Don't let parts be moved outside the available space.
+      //   * ...except if the available space is smaller than the part, in which
+      //     case it makes more sense to limit movement to stay entirely within
+      //     the available space.
+      let schematicRect = schematic.getBoundingClientRect();
+      let svgRect = this.svg.getBoundingClientRect();
+      let overflowX = Math.abs(schematicRect.width/2 - svgRect.width/2 - 10);
+      let overflowY = Math.abs(schematicRect.height/2 - svgRect.height/2 - 10);
+      partMovement = {
+        part: this,
+        shiftX: schematicRect.left + schematicRect.width/2 - svgRect.width/2 + (e.pageX - svgRect.left),
+        shiftY: schematicRect.top + schematicRect.height/2 - svgRect.height/2 + (e.pageY - svgRect.top),
+        overflowX: overflowX,
+        overflowY: overflowY,
+      };
+    }.bind(this);
+  }
+}
+
+// Code to handle dragging of parts.
+// More information: https://javascript.info/mouse-drag-and-drop
+
+let partMovement = null;
+
+document.addEventListener('mousemove', e => {
+  if (partMovement) {
+    let part = partMovement.part;
+    let x = e.pageX - partMovement.shiftX;
+    let y = e.pageY - partMovement.shiftY;
+    // Make sure the x and y coordinates stay within the allowed space, but
+    // don't 'jump' when the part is already outside the allowed space.
+    let minX = Math.min(-partMovement.overflowX, part.data.x);
+    let minY = Math.min(-partMovement.overflowY, part.data.y);
+    let maxX = Math.max(partMovement.overflowX, part.data.x);
+    let maxY = Math.max(partMovement.overflowY, part.data.y);
+    x = Math.min(maxX, Math.max(minX, x));
+    y = Math.min(maxY, Math.max(minY, y));
+    part.setPosition(x, y);
+  }
+});
+
+document.addEventListener('mouseup', e => {
+  if (partMovement){
+    saveState();
+    partMovement = null;
+  }
+});
+
+// Work around a positioning bug in Chrome and a rendering bug in Firefox.
+// It might be possible to remove this code once these bugs are fixed.
+let fixPartsLocation = (function() {
+  // The code below has multiple purposes.
+  //  1. It works around a Chrome/Safari bug. See:
+  //     https://bugs.chromium.org/p/chromium/issues/detail?id=1281085
+  //  2. It fixes SVG rendering issues on Firefox. Without it, parts of the SVG
+  //     might disappear.
+  // Both appear to be caused by the "transform: translate(50%, 50%)" style.
+  let schematic = document.querySelector('#schematic');
+  let partsGroup = document.querySelector('#schematic-parts');
+  return function() {
+    let rect = schematic.getBoundingClientRect();
+    partsGroup.style.transform = 'translate(' + rect.width / 2 + 'px, ' + rect.height / 2 + 'px)';
+  };
+})();
+window.addEventListener('load', fixPartsLocation);
+window.addEventListener('resize', fixPartsLocation);

@@ -27,7 +27,8 @@ async function update() {
   stopWorker();
   document.querySelector('#schematic').classList.add('compiling');
 
-  let parts = null;
+  // Load the UI: download the SVG file and initialize parts.
+  await refreshParts(project.parts);
 
   // Run the script in a web worker.
   let message = {
@@ -37,13 +38,10 @@ async function update() {
       method: 'POST',
       body: document.querySelector('#input').value,
     },
-    id: project.config.name,
-    mainPart: project.config.mainPart,
-    parts: project.config.parts,
-    wires: project.config.wires,
+    config: configForWorker(project.parts),
   };
   worker = new Worker('worker/webworker.js');
-  worker.postMessage(message)
+  worker.postMessage(message);
   worker.onmessage = async function(e) {
     let worker = e.target; // make sure we use the correct worker (it might have changed after a call to update())
     let msg = e.data;
@@ -54,9 +52,6 @@ async function update() {
     } else if (msg.type == 'loading') {
       // Code was compiled and response wasm is streaming in.
       clearTerminal('Loading...')
-
-      // Load the UI: download the SVG file and initialize parts.
-      parts = await refreshParts(project.config);
 
       // Request an update.
       worker.postMessage({
@@ -83,7 +78,7 @@ async function update() {
       // Received updates (such as LED state changes) from the web worker after
       // a getUpdate message.
       // Update the UI with the new state.
-      updateParts(parts, msg.updates);
+      updateParts(project.parts, msg.updates);
     } else {
       // Unknown message.
       console.log('unknown worker message:', msg);
@@ -143,6 +138,11 @@ function flashFirmware(e) {
   document.body.appendChild(form);
   form.submit();
   form.remove();
+}
+
+// Save the current project.
+function saveState() {
+  project.save();
 }
 
 // Source:
