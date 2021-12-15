@@ -38,26 +38,19 @@ body {
 #schematic {
 	border-top: 1px solid #aaa;
 	background: #222;
-	position: relative;
 	flex-grow: 1;
-	overflow: hidden;
 }
 #schematic.compiling {
 	opacity: 0.7;
 }
 
-#schematic .board-wrapper {
-	filter: drop-shadow(0 0 6px #888c);
-}
-
 #output {
 	display: flex;
 	flex-direction: column;
-	background: black;
+	background: #111;
 }
 
 #terminal-box {
-	display: flex;
 	flex-shrink: 0;
 }
 #schematic.d-none + #terminal-box {
@@ -109,33 +102,4 @@ header > *:not(h1) {
 	border: none;
 	padding: 7px;
 	resize: none;
-}
-
-/* terminal */
-
-#terminal {
-	width: 100%;
-	min-height: 10em;
-	resize: none;
-	border: 0;
-	background: #111;
-	color: white;
-	font-family: monospace;
-	font-size: 14px;
-}
-#terminal::selection {
-	background: rgba(255, 255, 255, 0.3);
-}
-#terminal.error {
-	color: #f55;
-}
-
-.part {
-	padding: 8px;
-	display: flex;
-	line-height: 1;
-}
-
-.part > .part-name {
-	padding-left: 8px;
 }

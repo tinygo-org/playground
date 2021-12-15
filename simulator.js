@@ -4,17 +4,6 @@
 // devices (LEDs etc.).
 
 
-// List of boards to show in the menu. See parts/*.json.
-var boardNames = {
-  'console': 'Console',
-  'arduino': 'Arduino Uno',
-  'arduino-nano33': 'Arduino Nano 33 IoT',
-  'circuitplay-express': 'Circuit Playground Express',
-  'hifive1b': 'HiFive1 rev B',
-  'reelboard': 'Phytec reel board',
-  'pinetime-devkit0': 'PineTime (dev kit)',
-}
-
 // The number of CSS pixels in a CSS millimeter. Yes, this is a constant,
 // defined by the CSS specification. This doesn't correspond exactly to
 // real-world pixels and millimeters, but millimeters should be pretty close.
@@ -142,110 +131,6 @@ async function getProjects() {
       }
     }
   });
-}
-
-// updateBoards updates the dropdown menu. This must be done after loading the
-// boards or updating the target selection.
-async function updateBoards() {
-  if (project) {
-    let button = document.querySelector('#target > button');
-    if (project.humanName) {
-      button.textContent = project.humanName + ' ';
-    } else if (project.created) {
-      button.textContent = project.config.humanName + ' * ';
-    } else {
-      button.textContent = project.config.humanName + ' ';
-    }
-  }
-
-  let projects = await getProjects();
-
-  let dropdown = document.querySelector('#target > .dropdown-menu');
-  dropdown.innerHTML = '';
-  for (let [name, humanName] of Object.entries(boardNames)) {
-    let item = document.createElement('a');
-    item.textContent = humanName;
-    item.classList.add('dropdown-item');
-    if (project && name == project.name) {
-      item.classList.add('active');
-    }
-    item.setAttribute('href', '');
-    item.dataset.name = name;
-    dropdown.appendChild(item);
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      setProject(item.dataset.name);
-    });
-  }
-
-  if (!projects.length) {
-    // No saved projects.
-    return;
-  }
-
-  let divider = document.createElement('div');
-  divider.classList.add('dropdown-divider');
-  dropdown.appendChild(divider);
-
-  // Add a list of projects (modified templates).
-  for (let projectObj of projects) {
-    let item = document.createElement('a');
-    item.innerHTML = '<span class="text"><span class="name"></span> – <i class="time"></i></span><span class="buttons"><button class="btn btn-light btn-sm edit-symbol rename" title="Rename">✎</button> <button class="btn btn-light btn-sm delete" title="Delete">🗑</button></span>';
-    if (projectObj.humanName) {
-      item.querySelector('.text').textContent = projectObj.humanName;
-    } else {
-      item.querySelector('.name').textContent = projectObj.defaultHumanName;
-      item.querySelector('.time').textContent = projectObj.created.toISOString();
-    }
-    item.classList.add('dropdown-item');
-    item.classList.add('project-name');
-    if (project && projectObj.name == project.name) {
-      item.classList.add('active');
-    }
-    item.setAttribute('href', '');
-    item.dataset.name = projectObj.name;
-    dropdown.appendChild(item);
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      setProject(item.dataset.name);
-    });
-
-    item.querySelector('.rename').addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      let name = e.target.parentNode.parentNode.dataset.name;
-      let humanName = prompt('Project name', project.humanName || project.config.humanName);
-      if (!humanName) {
-        return; // clicked 'cancel'
-      }
-
-      if (project.name == name) {
-        // Update name of current project.
-        project.humanName = humanName;
-      }
-      let tx = db.transaction(['projects'], 'readwrite');
-      tx.objectStore('projects').get(name).onsuccess = function(e) {
-        let obj = e.target.result;
-        obj.humanName = humanName;
-        tx.objectStore('projects').put(obj).onsuccess = function(e) {
-          updateBoards();
-        };
-      };
-    });
-
-    item.querySelector('.delete').addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      let name = e.target.parentNode.parentNode.dataset.name;
-      if (name == project.name) {
-        setProject(project.target);
-      }
-      db.transaction(['projects'], 'readwrite').objectStore('projects').delete(name);
-      updateBoards();
-    });
-  }
 }
 
 // Change the terminal to show the given error message, in red.

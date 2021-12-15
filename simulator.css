@@ -1,0 +1,46 @@
+/* CSS file for the 'output' part: the entire webview in VSCode or the right hand
+ * side of the webpage on play.tinygo.org. */
+
+/* Area at the top with all the devices */
+
+#schematic {
+    position: relative;
+    overflow: hidden;
+}
+#schematic.compiling {
+    opacity: 0.7;
+}
+
+#schematic .board-wrapper {
+    position: absolute;
+    padding: 8px;
+	filter: drop-shadow(0 0 6px #777c);
+}
+
+/* Terminal at the bottom of the screen */
+
+#terminal-box {
+    display: flex;
+    border-top: 1px solid var(--vscode-terminal-border);
+}
+
+#terminal {
+    width: 100%;
+    margin-top: 4px;
+    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 lines */
+    line-height: calc(var(--vscode-editor-font-size, 13px) + 5px);
+    font-size: var(--vscode-editor-font-size, 13px);
+    resize: none;
+    padding: 0 20px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--vscode-terminal-foreground, white);
+    font-family: var(--vscode-editor-font-family, monospace);
+}
+#terminal::selection {
+    background: var(--vscode-terminal-selectionBackground, rgba(255, 255, 255, 0.3));
+}
+#terminal.error {
+    color: var(--vscode-terminal-ansiBrightRed, #f55);
+}
