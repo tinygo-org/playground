@@ -193,6 +193,17 @@ class Schematic {
     this.sendNotifyUpdate();
   }
 
+  // Return property types for each part that has properties.
+  getPropertyTypes() {
+    let properties = [];
+    for (let part of Object.values(this.parts)) {
+      if (part.properties) {
+        properties.push(part.properties);
+      }
+    }
+    return properties;
+  }
+
   // getUpdates returns an array of updates to be applied in the UI.
   // This method changes state: after it, all parts are marked as not having an
   // update.

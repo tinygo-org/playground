@@ -79,6 +79,10 @@ async function start(msg) {
     schematic.addWire(wire.from, wire.to);
   }
   schematic.updateNets();
+  postMessage({
+    type: 'properties',
+    properties: schematic.getPropertyTypes(),
+  });
   schematic.notifyUpdate();
 
   // Do a streaming load of the WebAssembly code.

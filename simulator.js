@@ -3,6 +3,7 @@
 // This file emulates a hardware board with an MCU and a set of external
 // devices (LEDs etc.).
 
+let terminal;
 
 // The number of CSS pixels in a CSS millimeter. Yes, this is a constant,
 // defined by the CSS specification. This doesn't correspond exactly to
@@ -78,9 +79,65 @@ function configForWorker(parts) {
   return config;
 }
 
+// addProperties adds the list of part properties to the bottom "properties"
+// panel. It returns an object that should later be passed to updateParts to
+// update the needed parts.
+function addProperties(properties) {
+  let container = document.querySelector('#properties');
+  container.innerHTML = '';
+
+  let propertyElements = {};
+  for (let property of properties) {
+    // Add property name (usually the device name).
+    let nameEl = document.createElement('div');
+    container.appendChild(nameEl);
+    nameEl.textContent = property.humanName + ':';
+
+    // Add value of property.
+    let valueEl = document.createElement('div');
+    container.appendChild(valueEl);
+    if (property.type === 'text') {
+      // Simple text property.
+      propertyElements[property.id] = {text: valueEl};
+    } else if (property.type === 'ledstrip') {
+      // Display the colors of this LED strip.
+      let header = document.createElement('div');
+      valueEl.classList.add('ledstrip');
+      valueEl.appendChild(header);
+      for (let color of property.colors) {
+        let colorHeader = document.createElement('div');
+        colorHeader.textContent = color.title+':';
+        header.appendChild(colorHeader);
+      }
+
+      // Add information for each LED.
+      let stripElements = [];
+      for (let i=0; i<property.length; i++) {
+        let el = document.createElement('div');
+        valueEl.appendChild(el);
+        let ledElements = [];
+        for (let color of property.colors) {
+          let channelEl = document.createElement('div');
+          channelEl.classList.add('ledstrip-channel');
+          el.appendChild(channelEl);
+          ledElements.push(channelEl);
+        }
+        stripElements.push(ledElements);
+      }
+      propertyElements[property.id] = {
+        colors: property.colors,
+        ledstrip: stripElements,
+      };
+    } else {
+      console.warn('unknown property type:', property.type);
+    }
+  }
+  return propertyElements;
+}
+
 // updatePart updates a (sub)part in the UI with the given updates coming from
 // the web worker that's running the simulated program.
-function updateParts(parts, updates) {
+function updateParts(updates, parts, properties) {
   for (let update of updates) {
     let partId = update.id.split('.', 1)[0];
     let part = parts[partId].subparts[update.id];
@@ -110,7 +167,37 @@ function updateParts(parts, updates) {
 
     // Main MCU that prints some text.
     if (update.logText) {
-      log(update.logText);
+      terminal.log(update.logText);
+    }
+
+    // Update the properties panel at the bottom if needed.
+    // TODO: use IntersectionObserver to only update these properties when
+    // visible! That should reduce CPU usage for fast-changing properties.
+    if (update.properties) {
+      let prop = properties[update.id];
+      if (prop.text) {
+        // Simple text-based property.
+        prop.text.textContent = update.properties;
+      } else if (prop.ledstrip) {
+        // LED strip in various color combinations.
+        for (let i=0; i<prop.ledstrip.length; i++) {
+          let ledElements = prop.ledstrip[i];
+          let values = update.properties[i];
+          for (let j=0; j<ledElements.length; j++) {
+            let channel = ledElements[j];
+            let value = values[j];
+            channel.textContent = value;
+            let color = { // use the theme's ANSI colors on VS Code
+              'red': 'var(--vscode-terminal-ansiRed, #f00)',
+              'green': 'var(--vscode-terminal-ansiGreen, #0f0)',
+              'blue': 'var(--vscode-terminal-ansiBlue, #00f)',
+            }[prop.colors[j].color];
+            channel.style.backgroundImage = 'linear-gradient(to left, '+color+' '+(value/255*75)+'%, transparent 0%)';
+          }
+        }
+      } else {
+        console.warn('unknown property:', update.properties);
+      }
     }
   }
 }
@@ -133,31 +220,59 @@ async function getProjects() {
   });
 }
 
-// Change the terminal to show the given error message, in red.
-function showErrorInTerminal(message) {
-  let textarea = document.querySelector('#terminal');
-  textarea.placeholder = '';
-  textarea.value = message;
-  terminal.classList.add('error');
-}
+// Terminal at the bottom of the screen.
+class Terminal {
+  constructor(textarea) {
+    this.textarea = textarea;
+    this.observer = new IntersectionObserver(this.intersectionChange.bind(this));
+    this.observer.observe(this.textarea);
+    this.isVisible = true;
+    this.text = '';
+  }
 
-// clearTerminal clears any existing content from the terminal (including a
-// possible error message) and sets the given placeholder.
-function clearTerminal(placeholder) {
-  let textarea = document.querySelector('#terminal');
-  textarea.placeholder = placeholder;
-  textarea.value = '';
-  terminal.classList.remove('error');
-}
+  intersectionChange(entries) {
+    let isVisible = entries[0].isIntersecting;
+    if (isVisible && !this.isVisible) {
+      // Textarea became visible, so update its contents.
+      this.updateText();
+    }
+    this.isVisible = isVisible;
+  }
 
-// log writes the given message to the terminal. Note that it doesn't append a
-// newline at the end.
-function log(msg) {
-  let textarea = document.querySelector('#terminal');
-  let distanceFromBottom = textarea.scrollHeight - textarea.scrollTop - textarea.clientHeight;
-  textarea.value += msg;
-  if (distanceFromBottom < 2) {
-    textarea.scrollTop = textarea.scrollHeight;
+  // Change the terminal to show the given error message, in red.
+  showError(message) {
+    this.textarea.placeholder = '';
+    this.text = message;
+    this.textarea.value = message;
+    this.textarea.classList.add('error');
+  }
+
+  // clear any existing content from the terminal (including a possible error
+  // message) and set the given placeholder.
+  clear(placeholder) {
+    this.textarea.placeholder = placeholder;
+    this.text = '';
+    this.textarea.value = '';
+    this.textarea.classList.remove('error');
+  }
+
+  // log writes the given message to the terminal. Note that it doesn't append a
+  // newline at the end.
+  log(msg) {
+    this.text += msg;
+    if (this.isVisible) {
+      this.updateText();
+    }
+  }
+
+  // Internal function. Update the text in the textarea to reflect this.text
+  // while keeping the scroll position at the bottom if it was already there.
+  updateText() {
+    let distanceFromBottom = this.textarea.scrollHeight - this.textarea.scrollTop - this.textarea.clientHeight;
+    this.textarea.value = this.text;
+    if (distanceFromBottom < 2) {
+      this.textarea.scrollTop = this.textarea.scrollHeight;
+    }
   }
 }
 
@@ -315,6 +430,25 @@ document.addEventListener('mouseup', e => {
   if (partMovement){
     saveState();
     partMovement = null;
+  }
+});
+
+document.addEventListener('DOMContentLoaded', e => {
+  terminal = new Terminal(document.querySelector('#terminal'));
+
+  // Switch active tab on click of a tab title.
+  for (let tab of document.querySelectorAll('.tabbar > .tab')) {
+    tab.addEventListener('click', e => {
+      // Update active tab.
+      let tabbar = tab.parentNode;
+      tabbar.querySelector(':scope > .tab.active').classList.remove('active');
+      tab.classList.add('active');
+
+      // Update active tab content.
+      let parent = tabbar.parentNode;
+      parent.querySelector(':scope > .tabcontent.active').classList.remove('active');
+      parent.querySelector(tab.dataset.for).classList.add('active');
+    });
   }
 });
 

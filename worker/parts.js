@@ -89,6 +89,7 @@ class Part {
     this.type = config.type;
     this.pins = {};
     this.spiBuses = {};
+    this.properties = null;
     this.hasUpdate = false;
   }
 
@@ -169,29 +170,24 @@ class MCU extends Part {
   }
 }
 
-// LEDBase is a base class for any kind of LED (monochromatic, RGB, etc).
-class LEDBase extends Part {
-  getState() {
-    return {
-      id: this.id,
-      cssProperties: colorProperties(this.getColor()),
-    };
-  }
-}
-
 // LED is a regular monochromatic LED with two pins.
 // This implementation has the special property that if a wire is not
 // connected, it shows as "on". That's to simplify wiring of them.
-class LED extends LEDBase {
+class LED extends Part {
   constructor(schematic, config) {
     super(schematic, config);
     this.color = config.color;
     this.pins.anode = new Pin(config.id + '.anode', this);
     this.pins.cathode = new Pin(config.id + '.cathode', this);
+    this.properties = {
+      humanName: config.humanName,
+      id: this.id,
+      type: 'text',
+    };
     this.notifyUpdate();
   }
 
-  getColor() {
+  getState() {
     let anode = this.pins.anode.isConnected() ? this.pins.anode.net.isSource() : true;
     let cathode = this.pins.cathode.isConnected() ? this.pins.cathode.net.isSink() : true;
     let on = anode && cathode;
@@ -202,28 +198,50 @@ class LED extends LEDBase {
       g = 0;
       b = 0;
     }
-    return [r, g, b];
+    return {
+      id: this.id,
+      cssProperties: colorProperties([r, g, b]),
+      properties: on ? 'on' : 'off',
+    };
   }
 }
 
 // RGBLED is a typical common anode RGB LED, meaning that it has four wires of
 // which one is connected to VCC and the other three can be set to low to turn
 // them on.
-class RGBLED extends LEDBase {
+class RGBLED extends Part {
   constructor(schematic, config) {
     super(schematic, config);
     this.pins.r = new Pin(config.id + '.r', this);
     this.pins.g = new Pin(config.id + '.g', this);
     this.pins.b = new Pin(config.id + '.b', this);
+    this.properties = {
+      humanName: config.humanName,
+      id: this.id,
+      type: 'text',
+    };
     this.notifyUpdate();
   }
 
-  getColor() {
-    return [
-      this.pins.r.net.isSink() ? 255 : 0,
-      this.pins.g.net.isSink() ? 255 : 0,
-      this.pins.b.net.isSink() ? 255 : 0,
-    ];
+  getState() {
+    let r = this.pins.r.net.isSink() ? 255 : 0;
+    let g = this.pins.g.net.isSink() ? 255 : 0;
+    let b = this.pins.b.net.isSink() ? 255 : 0;
+    let colorName = {
+      '': 'off',
+      'r': 'red',
+      'g': 'green',
+      'b': 'blue',
+      'rg': 'yellow',
+      'gb': 'aqua',
+      'rb': 'fuchsia',
+      'rgb': 'white',
+    }[(r ? 'r' : '') + (g ? 'g' : '') + (b ? 'b' : '')];
+    return {
+      id: this.id,
+      cssProperties: colorProperties([r, g, b]),
+      properties: colorName,
+    };
   }
 }
 
@@ -514,6 +532,27 @@ class WS2812 extends Part {
     this.pins.din.mode = 'ws2812-din';
     this.length = config.length;
     this.data = new Uint8Array(this.length * 3);
+    this.properties = {
+      humanName: config.humanName,
+      id: this.id,
+      type: 'ledstrip',
+      colors: [
+        {
+          title: 'red',
+          color: 'red',
+        },
+        {
+          title: 'green',
+          color: 'green',
+        },
+        {
+          title: 'blue',
+          color: 'blue',
+        },
+      ],
+      length: this.length,
+    };
+    this.notifyUpdate();
   }
 
   writeWS2812(c) {
@@ -528,12 +567,14 @@ class WS2812 extends Part {
   getState() {
     // Calculate the buffer of RGB values to send to the UI.
     let data = [];
+    let properties = [];
     for (let i=0; i < this.length; i++) {
       // Extract data from the array. Note that the data is in GRB order, at
       // least on most chips. TODO: make this configurable.
       let r = this.data[i*3+1];
       let g = this.data[i*3+0];
       let b = this.data[i*3+2];
+      properties.push([r, g, b]);
 
       // Do a gamma correction. The LEDs are in linear color space, while the
       // web uses the sRGB color space (with gamma=~2.2).
@@ -549,6 +590,7 @@ class WS2812 extends Part {
     return {
       id: this.id,
       ledstrip: data,
+      properties: properties,
     };
   }
 }

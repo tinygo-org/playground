@@ -65,7 +65,8 @@ body {
 		border-top: none;
 		width: 50vw;
 	}
-	#terminal-box {
+	#terminal-box,
+	#properties {
 		width: 50vw;
 	}
 }

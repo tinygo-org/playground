@@ -17,17 +17,62 @@
 	filter: drop-shadow(0 0 6px #777c);
 }
 
+/* Panels */
+
+#panels {
+    border-top: 1px solid var(--vscode-terminal-border);
+    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tab bar */
+
+.tabbar {
+    padding: 0 10px;
+    display: flex;
+    flex: 0 0;
+}
+
+.tabbar > .tab {
+    padding: 4px 12px 3px;
+    cursor: pointer;
+}
+.tabbar > .tab a {
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--vscode-panelTitle-inactiveForeground, rgba(231, 231, 231, 0.6));
+    line-height: 27px;
+    outline: 0;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+.tabbar > .tab.active a {
+    border-bottom-color: var(--vscode-panelTitle-activeBorder, #e7e7e7);
+    color: var(--vscode-panelTitle-activeForeground, #e7e7e7);
+    display: inline-block;
+}
+.tabbar > .tab:hover a {
+    color: var(--vscode-panelTitle-activeForeground, #e7e7e7) !important;
+}
+
+.tabcontent {
+    color: var(--vscode-terminal-foreground, white);
+    flex: 1 0;
+}
+
+.tabcontent:not(.active) {
+    display: none !important;
+}
+
 /* Terminal at the bottom of the screen */
 
 #terminal-box {
     display: flex;
-    border-top: 1px solid var(--vscode-terminal-border);
 }
 
 #terminal {
     width: 100%;
-    margin-top: 4px;
-    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 lines */
     line-height: calc(var(--vscode-editor-font-size, 13px) + 5px);
     font-size: var(--vscode-editor-font-size, 13px);
     resize: none;
@@ -43,4 +88,28 @@
 }
 #terminal.error {
     color: var(--vscode-terminal-ansiBrightRed, #f55);
+}
+
+/* Properties tab at the bottom */
+
+#properties {
+    padding: 0 20px;
+    overflow: auto;
+    display: grid;
+    grid-template-columns: auto minmax(auto, 100%);
+    column-gap: 1ch;
+    align-content: start;
+    line-height: 1.5;
+}
+
+#properties .ledstrip {
+    display: flex;
+}
+#properties .ledstrip-channel {
+    text-align: right;
+    width: 4ch;
+    /* line under the number that graphically indicates the percent the channel is on */
+    background-position: bottom right;
+    background-size: 4ch 2px;
+    background-repeat: repeat-x;
 }

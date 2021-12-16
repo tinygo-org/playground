@@ -35,7 +35,7 @@ var boardNames = {
 // Compile the script and if it succeeded, display the result on the right.
 async function update() {
   // Reset terminal to the begin 'compiling' state.
-  clearTerminal('Compiling...');
+  terminal.clear('Compiling...');
 
   // Stop program and make the schematic gray.
   stopWorker();
@@ -43,6 +43,9 @@ async function update() {
 
   // Load the UI: download the SVG file and initialize parts.
   await refreshParts(project.parts);
+
+  // Property elements of the properties pane at the bottom.
+  let properties;
 
   // Run the script in a web worker.
   let message = {
@@ -62,10 +65,10 @@ async function update() {
     if (msg.type == 'error') {
       // There was an error. Terminate the worker, it has no more work to do.
       stopWorker();
-      showErrorInTerminal(msg.message);
+      terminal.showError(msg.message);
     } else if (msg.type == 'loading') {
       // Code was compiled and response wasm is streaming in.
-      clearTerminal('Loading...')
+      terminal.clear('Loading...');
 
       // Request an update.
       worker.postMessage({
@@ -74,7 +77,7 @@ async function update() {
     } else if (msg.type == 'started') {
       // WebAssembly code was loaded and will start now.
       document.querySelector('#schematic').classList.remove('compiling');
-      clearTerminal('Running...')
+      terminal.clear('Running...');
     } else if (msg.type == 'notifyUpdate') {
       // The web worker is signalling that there are updates.
       // It won't repeat this message until the updates have been read using
@@ -88,11 +91,14 @@ async function update() {
           type: 'getUpdate',
         });
       });
+    } else if (msg.type === 'properties') {
+      // Set properties in the properties panel at the bottom.
+      properties = addProperties(msg.properties);
     } else if (msg.type == 'update') {
       // Received updates (such as LED state changes) from the web worker after
       // a getUpdate message.
       // Update the UI with the new state.
-      updateParts(project.parts, msg.updates);
+      updateParts(msg.updates, project.parts, properties);
     } else {
       // Unknown message.
       console.log('unknown worker message:', msg);
