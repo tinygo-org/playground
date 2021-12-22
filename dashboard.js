@@ -11,6 +11,7 @@ var worker = null;
 var workerUpdate = null;
 var project = null;
 var db = null;
+var schematic = null;
 const defaultProjectName = 'console';
 
 // A list of source code samples used for each target. This is the default code
@@ -42,10 +43,8 @@ async function update() {
   document.querySelector('#schematic').classList.add('compiling');
 
   // Load the UI: download the SVG file and initialize parts.
-  await refreshParts(project.parts);
-
-  // Property elements of the properties pane at the bottom.
-  let properties;
+  schematic = new Schematic(project.data);
+  await schematic.refresh();
 
   // Run the script in a web worker.
   let message = {
@@ -55,7 +54,7 @@ async function update() {
       method: 'POST',
       body: document.querySelector('#input').value,
     },
-    config: configForWorker(project.parts),
+    config: schematic.configForWorker(),
   };
   worker = new Worker('worker/webworker.js');
   worker.postMessage(message);
@@ -93,12 +92,12 @@ async function update() {
       });
     } else if (msg.type === 'properties') {
       // Set properties in the properties panel at the bottom.
-      properties = addProperties(msg.properties);
+      schematic.addProperties(msg.properties);
     } else if (msg.type == 'update') {
       // Received updates (such as LED state changes) from the web worker after
       // a getUpdate message.
       // Update the UI with the new state.
-      updateParts(msg.updates, project.parts, properties);
+      schematic.update(msg.updates);
     } else {
       // Unknown message.
       console.log('unknown worker message:', msg);
@@ -123,12 +122,12 @@ function stopWorker() {
 async function updateBoards() {
   if (project) {
     let button = document.querySelector('#target > button');
-    if (project.humanName) {
-      button.textContent = project.humanName + ' ';
-    } else if (project.created) {
-      button.textContent = project.config.humanName + ' * ';
+    if (project.data.humanName) {
+      button.textContent = project.data.humanName + ' ';
+    } else if (project.data.created) {
+      button.textContent = project.data.defaultHumanName + ' * ';
     } else {
-      button.textContent = project.config.humanName + ' ';
+      button.textContent = project.data.defaultHumanName + ' ';
     }
   }
 
@@ -189,14 +188,14 @@ async function updateBoards() {
       e.stopPropagation();
 
       let name = e.target.parentNode.parentNode.dataset.name;
-      let humanName = prompt('Project name', project.humanName || project.config.humanName);
+      let humanName = prompt('Project name', project.data.humanName || project.config.humanName);
       if (!humanName) {
         return; // clicked 'cancel'
       }
 
       if (project.name == name) {
         // Update name of current project.
-        project.humanName = humanName;
+        project.data.humanName = humanName;
       }
       let tx = db.transaction(['projects'], 'readwrite');
       tx.objectStore('projects').get(name).onsuccess = function(e) {
@@ -224,7 +223,7 @@ async function updateBoards() {
 
 // setProject updates the current project to the new project name.
 async function setProject(name) {
-  if (project && project.created) {
+  if (project && project.data.created) {
     project.save(document.querySelector('#input').value);
   }
   if (worker !== null) {
@@ -234,7 +233,7 @@ async function setProject(name) {
   project = await loadProject(name);
   updateBoards();
   let input = document.querySelector('#input');
-  input.value = project.code;
+  input.value = project.data.code;
   input.disabled = false;
   update();
   localStorage.tinygo_playground_projectName = name;

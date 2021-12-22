@@ -7,29 +7,13 @@
 // layout, and some state. After saving, it can be destroyed and re-loaded
 // without losing data.
 class Project {
-  constructor(parts, data) {
-    this.parts = parts;
-    this._data = data;
+  constructor(mainPartConfig, data) {
+    this.mainPartConfig = mainPartConfig;
+    this.data = data;
   }
 
   get config() {
-    return this.parts.main.config;
-  }
-
-  get created() {
-    return this._data.created;
-  }
-
-  get humanName() {
-    return this._data.humanName;
-  }
-
-  set humanName(humanName) {
-    this._data.humanName = humanName;
-  }
-
-  get code() {
-    return this._data.code;
+    return this.mainPartConfig;
   }
 
   get target() {
@@ -37,21 +21,21 @@ class Project {
   }
 
   get name() {
-    return this._data.name || this.config.name;
+    return this.data.name || this.config.name;
   }
 
   // Save the project, if it was marked dirty.
   save(code) {
-    if (!this._data.name) {
+    if (!this.data.name) {
       // Project is saved for the first time.
-      this._data.created = new Date();
-      this._data.name = this.config.name + '-' + this._data.created.toISOString();
+      this.data.created = new Date();
+      this.data.name = this.config.name + '-' + this.data.created.toISOString();
     }
     if (code) {
-      this._data.code = code;
+      this.data.code = code;
     }
     let transaction = db.transaction(['projects'], 'readwrite');
-    transaction.objectStore('projects').put(this._data).onsuccess = function(e) {
+    transaction.objectStore('projects').put(this.data).onsuccess = function(e) {
       updateBoards();
     };
     transaction.onerror = function(e) {
@@ -64,16 +48,17 @@ class Project {
 // Load a project based on a project name.
 async function loadProject(name) {
   if (name in boardNames) {
-    let part = await Part.load('main', {
-      location: 'parts/'+name+'.json',
-      x: 0,
-      y: 0,
-    });
-    return new Project({main: part}, {
-      defaultHumanName: part.config.humanName,
-      code: examples[part.config.example],
+    let location = 'parts/'+name+'.json';
+    let partConfig = await loadJSON(location);
+    return new Project(partConfig, {
+      defaultHumanName: partConfig.humanName,
+      code: examples[partConfig.example],
       parts: {
-        main: part.data,
+        main: {
+          location: location,
+          x: 0,
+          y: 0,
+        },
       },
     });
   }
@@ -95,12 +80,12 @@ async function loadProject(name) {
         };
         delete data.target;
       }
-      let parts = await loadParts(data.parts);
+      let mainPartConfig = await loadJSON(data.parts.main.location);
       if (!data.defaultHumanName) {
         // Upgrade old data format.
-        data.defaultHumanName = parts.main.config.humanName;
+        data.defaultHumanName = mainPartConfig.humanName;
       }
-      resolve(new Project(parts, data));
+      resolve(new Project(mainPartConfig, data));
     };
   });
 }

@@ -12,191 +12,196 @@ let terminal;
 // https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units
 const pixelsPerMillimeter = 96 / 25.4;
 
-// refreshParts redraws all the SVG parts from scratch
-async function refreshParts(parts) {
-  // Load all SVG elements in parallel.
-  let promises = [];
-  for (let part of Object.values(parts)) {
-    if (part.config.svg) {
-      promises.push(part.loadSVG());
-    }
+class Schematic {
+  constructor(state) {
+    this.state = state;
+    this.schematic = document.querySelector('#schematic');
+    this.propertiesContainer = document.querySelector('#properties');
   }
 
-  // Wait until they are loaded.
-  await Promise.all(promises);
-
-  // Remove existing SVG elements.
-  let partsGroup = document.querySelector('#schematic-parts');
-  for (let child of partsGroup.children) {
-    child.remove();
-  }
-
-  // Put SVGs in the schematic.
-  let partHeights = [];
-  let schematic = document.querySelector('#schematic');
-  for (let part of Object.values(parts)) {
-    if (part.svg) {
-      partsGroup.appendChild(part.createElement(schematic));
-
-      // Store the height, to calculate the minimum height of the schematic.
-      // Add a spacing of 20px so that the board has a bit of spacing around it.
-      partHeights.push('calc(' + part.height + ' + 20px)');
+  // Remove and redraw all the SVG parts from scratch.
+  async refresh() {
+    // Load all the parts in parallel!
+    let promises = [];
+    for (let [id, data] of Object.entries(this.state.parts)) {
+      promises.push(Part.load(id, data));
     }
-  }
-
-  // Set the height of the schematic.
-  schematic.classList.toggle('d-none', partHeights.length === 0);
-  if (partHeights.length) {
-    schematic.style.height = 'max(' + partHeights.join(', ') + ')';
-  }
-
-  // Workaround for Chrome positioning bug and Firefox rendering bug.
-  fixPartsLocation();
-}
-
-// Create a 'config' struct with a flattened view of the schematic, to be sent
-// to the worker.
-function configForWorker(parts) {
-  let config = {
-    parts: [],
-    wires: [],
-  };
-  for (let [id, part] of Object.entries(parts)) {
-    if (id === 'main') {
-      config.mainPart = 'main.' + part.config.mainPart;
+    let parts = await Promise.all(promises);
+    this.parts = {};
+    for (let part of parts) {
+      this.parts[part.id] = part;
     }
-    for (let subpart of part.config.parts) {
-      let obj = Object.assign({}, subpart, {id: id + '.' + subpart.id});
-      config.parts.push(obj);
+
+    // Remove existing SVG elements.
+    let partsGroup = this.schematic.querySelector('#schematic-parts');
+    for (let child of partsGroup.children) {
+      child.remove();
     }
-    for (let wire of part.config.wires || []) {
-      config.wires.push({
-        from: id + '.' + wire.from,
-        to: id + '.' + wire.to,
-      });
-    }
-  }
-  return config;
-}
 
-// addProperties adds the list of part properties to the bottom "properties"
-// panel. It returns an object that should later be passed to updateParts to
-// update the needed parts.
-function addProperties(properties) {
-  let container = document.querySelector('#properties');
-  container.innerHTML = '';
+    // Put SVGs in the schematic.
+    let partHeights = [];
+    for (let part of Object.values(this.parts)) {
+      if (part.svg) {
+        partsGroup.appendChild(part.createElement(this.schematic));
 
-  let propertyElements = {};
-  for (let property of properties) {
-    // Add property name (usually the device name).
-    let nameEl = document.createElement('div');
-    container.appendChild(nameEl);
-    nameEl.textContent = property.humanName + ':';
-
-    // Add value of property.
-    let valueEl = document.createElement('div');
-    container.appendChild(valueEl);
-    if (property.type === 'text') {
-      // Simple text property.
-      propertyElements[property.id] = {text: valueEl};
-    } else if (property.type === 'ledstrip') {
-      // Display the colors of this LED strip.
-      let header = document.createElement('div');
-      valueEl.classList.add('ledstrip');
-      valueEl.appendChild(header);
-      for (let color of property.colors) {
-        let colorHeader = document.createElement('div');
-        colorHeader.textContent = color.title+':';
-        header.appendChild(colorHeader);
+        // Store the height, to calculate the minimum height of the schematic.
+        // Add a spacing of 20px so that the board has a bit of spacing around it.
+        partHeights.push('calc(' + part.height + ' + 20px)');
       }
+    }
 
-      // Add information for each LED.
-      let stripElements = [];
-      for (let i=0; i<property.length; i++) {
-        let el = document.createElement('div');
-        valueEl.appendChild(el);
-        let ledElements = [];
+    // Set the height of the schematic.
+    this.schematic.classList.toggle('d-none', partHeights.length === 0);
+    if (partHeights.length) {
+      this.schematic.style.height = 'max(' + partHeights.join(', ') + ')';
+    }
+
+    // Workaround for Chrome positioning bug and Firefox rendering bug.
+    fixPartsLocation();
+  }
+
+  // Create a 'config' struct with a flattened view of the schematic, to be sent
+  // to the worker.
+  configForWorker() {
+    let config = {
+      parts: [],
+      wires: [],
+    };
+    for (let [id, part] of Object.entries(this.parts)) {
+      if (id === 'main') {
+        config.mainPart = 'main.' + part.config.mainPart;
+      }
+      for (let subpart of part.config.parts) {
+        let obj = Object.assign({}, subpart, {id: id + '.' + subpart.id});
+        config.parts.push(obj);
+      }
+      for (let wire of part.config.wires || []) {
+        config.wires.push({
+          from: id + '.' + wire.from,
+          to: id + '.' + wire.to,
+        });
+      }
+    }
+    return config;
+  }
+
+  // addProperties adds the list of part properties to the bottom "properties"
+  // panel. It returns an object that should later be passed to updateParts to
+  // update the needed parts.
+  addProperties(properties) {
+    this.propertiesContainer.innerHTML = '';
+
+    this.propertyElements = {};
+    for (let property of properties) {
+      // Add property name (usually the device name).
+      let nameEl = document.createElement('div');
+      this.propertiesContainer.appendChild(nameEl);
+      nameEl.textContent = property.humanName + ':';
+
+      // Add value of property.
+      let valueEl = document.createElement('div');
+      this.propertiesContainer.appendChild(valueEl);
+      if (property.type === 'text') {
+        // Simple text property.
+        this.propertyElements[property.id] = {text: valueEl};
+      } else if (property.type === 'ledstrip') {
+        // Display the colors of this LED strip.
+        let header = document.createElement('div');
+        valueEl.classList.add('ledstrip');
+        valueEl.appendChild(header);
         for (let color of property.colors) {
-          let channelEl = document.createElement('div');
-          channelEl.classList.add('ledstrip-channel');
-          el.appendChild(channelEl);
-          ledElements.push(channelEl);
+          let colorHeader = document.createElement('div');
+          colorHeader.textContent = color.title+':';
+          header.appendChild(colorHeader);
         }
-        stripElements.push(ledElements);
+
+        // Add information for each LED.
+        let stripElements = [];
+        for (let i=0; i<property.length; i++) {
+          let el = document.createElement('div');
+          valueEl.appendChild(el);
+          let ledElements = [];
+          for (let color of property.colors) {
+            let channelEl = document.createElement('div');
+            channelEl.classList.add('ledstrip-channel');
+            el.appendChild(channelEl);
+            ledElements.push(channelEl);
+          }
+          stripElements.push(ledElements);
+        }
+        this.propertyElements[property.id] = {
+          colors: property.colors,
+          ledstrip: stripElements,
+        };
+      } else {
+        console.warn('unknown property type:', property.type);
       }
-      propertyElements[property.id] = {
-        colors: property.colors,
-        ledstrip: stripElements,
-      };
-    } else {
-      console.warn('unknown property type:', property.type);
     }
   }
-  return propertyElements;
-}
 
-// updatePart updates a (sub)part in the UI with the given updates coming from
-// the web worker that's running the simulated program.
-function updateParts(updates, parts, properties) {
-  for (let update of updates) {
-    let partId = update.id.split('.', 1)[0];
-    let part = parts[partId].subparts[update.id];
+  // Update a (sub)part in the UI with the given updates coming from the web
+  // worker that's running the simulated program.
+  update(updates) {
+    for (let update of updates) {
+      let partId = update.id.split('.', 1)[0];
+      let part = this.parts[partId].subparts[update.id];
 
-    // LED strips, like typical WS2812 strips.
-    if (update.ledstrip) {
-      for (let i=0; i<part.leds.length; i++) {
-        let properties = update.ledstrip[i];
-        part.leds[i].style.setProperty('--color', properties.color);
-        part.leds[i].style.setProperty('--shadow', properties.shadow);
-      }
-    }
-
-    // Displays of various sorts that render to a canvas element.
-    if (update.canvas) {
-      // TODO: do the createImageBitmap in the web worker.
-      createImageBitmap(update.canvas).then(bitmap => {
-        part.context.drawImage(bitmap, 0, 0);
-        bitmap.close();
-      });
-    }
-
-    // Simple devices (like LEDs) that only need to change some CSS properties.
-    for (let [key, value] of Object.entries(update.cssProperties || {})) {
-      part.container.style.setProperty('--' + key, value);
-    }
-
-    // Main MCU that prints some text.
-    if (update.logText) {
-      terminal.log(update.logText);
-    }
-
-    // Update the properties panel at the bottom if needed.
-    // TODO: use IntersectionObserver to only update these properties when
-    // visible! That should reduce CPU usage for fast-changing properties.
-    if (update.properties) {
-      let prop = properties[update.id];
-      if (prop.text) {
-        // Simple text-based property.
-        prop.text.textContent = update.properties;
-      } else if (prop.ledstrip) {
-        // LED strip in various color combinations.
-        for (let i=0; i<prop.ledstrip.length; i++) {
-          let ledElements = prop.ledstrip[i];
-          let values = update.properties[i];
-          for (let j=0; j<ledElements.length; j++) {
-            let channel = ledElements[j];
-            let value = values[j];
-            channel.textContent = value;
-            let color = { // use the theme's ANSI colors on VS Code
-              'red': 'var(--vscode-terminal-ansiRed, #f00)',
-              'green': 'var(--vscode-terminal-ansiGreen, #0f0)',
-              'blue': 'var(--vscode-terminal-ansiBlue, #00f)',
-            }[prop.colors[j].color];
-            channel.style.backgroundImage = 'linear-gradient(to left, '+color+' '+(value/255*75)+'%, transparent 0%)';
-          }
+      // LED strips, like typical WS2812 strips.
+      if (update.ledstrip) {
+        for (let i=0; i<part.leds.length; i++) {
+          let properties = update.ledstrip[i];
+          part.leds[i].style.setProperty('--color', properties.color);
+          part.leds[i].style.setProperty('--shadow', properties.shadow);
         }
-      } else {
-        console.warn('unknown property:', update.properties);
+      }
+
+      // Displays of various sorts that render to a canvas element.
+      if (update.canvas) {
+        // TODO: do the createImageBitmap in the web worker.
+        createImageBitmap(update.canvas).then(bitmap => {
+          part.context.drawImage(bitmap, 0, 0);
+          bitmap.close();
+        });
+      }
+
+      // Simple devices (like LEDs) that only need to change some CSS properties.
+      for (let [key, value] of Object.entries(update.cssProperties || {})) {
+        part.container.style.setProperty('--' + key, value);
+      }
+
+      // Main MCU that prints some text.
+      if (update.logText) {
+        terminal.log(update.logText);
+      }
+
+      // Update the properties panel at the bottom if needed.
+      // TODO: use IntersectionObserver to only update these properties when
+      // visible! That should reduce CPU usage for fast-changing properties.
+      if (update.properties) {
+        let prop = this.propertyElements[update.id];
+        if (prop.text) {
+          // Simple text-based property.
+          prop.text.textContent = update.properties;
+        } else if (prop.ledstrip) {
+          // LED strip in various color combinations.
+          for (let i=0; i<prop.ledstrip.length; i++) {
+            let ledElements = prop.ledstrip[i];
+            let values = update.properties[i];
+            for (let j=0; j<ledElements.length; j++) {
+              let channel = ledElements[j];
+              let value = values[j];
+              channel.textContent = value;
+              let color = { // use the theme's ANSI colors on VS Code
+                'red': 'var(--vscode-terminal-ansiRed, #f00)',
+                'green': 'var(--vscode-terminal-ansiGreen, #0f0)',
+                'blue': 'var(--vscode-terminal-ansiBlue, #00f)',
+              }[prop.colors[j].color];
+              channel.style.backgroundImage = 'linear-gradient(to left, '+color+' '+(value/255*75)+'%, transparent 0%)';
+            }
+          }
+        } else {
+          console.warn('unknown property:', update.properties);
+        }
       }
     }
   }
@@ -276,19 +281,19 @@ class Terminal {
   }
 }
 
-// Load all parts of the given project configuration.
-async function loadParts(datas) {
-  let promises = [];
-  // Load all the parts in parallel!
-  for (let [id, data] of Object.entries(datas)) {
-    promises.push(Part.load(id, data));
+// Cached JSON requests.
+var jsonRequests = {};
+
+// loadJSON returns the JSON at the given location and caches the result for
+// later re-use. The response must not be modified.
+async function loadJSON(location) {
+  if (!(location in jsonRequests)) {
+    jsonRequests[location] = (async () => {
+      let response = await fetch(location);
+      return await response.json();
+    })();
   }
-  let parts = await Promise.all(promises);
-  let result = {};
-  for (let part of parts) {
-    result[part.id] = part;
-  }
-  return result;
+  return await jsonRequests[location];
 }
 
 // One independent part in the schematic. This might be a separate part like a
@@ -304,9 +309,12 @@ class Part {
 
   // Load the given part and return it (because constructor() can't be async).
   static async load(id, data) {
-    let response = await fetch(data.location);
-    let config = await response.json();
-    return new Part(id, config, data);
+    let config = await loadJSON(data.location);
+    let part = new Part(id, config, data);
+    if (part.config.svg) {
+      await part.loadSVG();
+    }
+    return part;
   }
 
   // loadSVG loads the 'svg' property (this.svg) of this object.
