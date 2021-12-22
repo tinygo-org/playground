@@ -11,6 +11,16 @@ class Pin {
     this.mode = 'gpio';
   }
 
+  // notifyPart sends a pin update notification to the attached part if the pin
+  // is configured as an input.
+  notifyPart() {
+    if (this.state === 'low' || this.state === 'high') {
+      // Nothing to notify: can't read the state.
+      return;
+    }
+    this.part.notifyPinUpdate(this);
+  }
+
   // setState sets the output state of the pin: as low, high, or floating.
   setState(state, mode) {
     mode = mode ? mode : 'gpio';
@@ -137,6 +147,22 @@ class Part {
     return {
       id: this.id,
     };
+  }
+}
+
+// Board implements a generic board with subparts on it. This is needed to
+// provide pins to attach wires to: the UI allows creating new wires between
+// pins on a board.
+class Board extends Part {
+  constructor(schematic, config) {
+    super(schematic, config);
+    for (let name of config.pins) {
+      this.pins[name] = new Pin(config.id + '.' + name, this);
+    }
+  }
+
+  notifyPinUpdate() {
+    // Nothing to do. Pin changes do not affect the board.
   }
 }
 
@@ -634,6 +660,7 @@ function decodeLittleEndian(buf) {
 }
 
 if (typeof module !== 'undefined') {
+  module.exports.Board = Board;
   module.exports.MCU = MCU;
   module.exports.LED = LED;
   module.exports.RGBLED = RGBLED;

@@ -10,4 +10,97 @@
     <rect width="2.0" height="1.2" fill="black"/>
     <rect width="2.0" height="1.2" style="fill: var(--color, black); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
   </g>
+  <!-- pins -->
+  <g transform="translate(3.58, 0)" fill="transparent">
+    <g data-pin="D12" transform="translate(0, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D11" transform="translate(2.54, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D10" transform="translate(5.08, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D9" transform="translate(7.62, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D8" transform="translate(10.16, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D7" transform="translate(12.7, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D6" transform="translate(15.24, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D5" transform="translate(17.78, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D4" transform="translate(20.32, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D3" transform="translate(22.86, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D2" transform="translate(25.4, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="RX0" transform="translate(33.02, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="TX1" transform="translate(35.56, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+  </g>
+  <g transform="translate(3.58, 14.96)" fill="transparent">
+    <g data-pin="D13" transform="translate(0, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A0" transform="translate(7.62, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A1" transform="translate(10.16, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A2" transform="translate(12.7, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A3" transform="translate(15.24, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A4" transform="translate(17.78, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A5" transform="translate(20.32, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A6" transform="translate(22.86, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A7" transform="translate(25.4, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+  </g>
 </svg>

@@ -36,7 +36,10 @@
       <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled>Loading...</textarea>
       <div id="output">
         <svg id="schematic">
-          <g id="schematic-parts" style="transform: translate(50%, 50%)"></g>
+          <g id="schematic-wrapper" style="transform: translate(50%, 50%)">
+            <g id="schematic-parts"></g>
+            <g id="schematic-wires"></g>
+          </g>
         </svg>
         <div id="panels">
           <div class="tabbar">

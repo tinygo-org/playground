@@ -19,12 +19,21 @@ class Schematic {
     this.propertiesContainer = document.querySelector('#properties');
   }
 
+  // getPin returns a pin object based on a given ID (such as main.D13).
+  getPin(id) {
+    let pos = id.lastIndexOf('.');
+    if (pos < 0) {
+      throw new Error('invalid pin ID');
+    }
+    return this.parts[id.slice(0, pos)].pins[id.slice(pos+1)];
+  }
+
   // Remove and redraw all the SVG parts from scratch.
   async refresh() {
     // Load all the parts in parallel!
     let promises = [];
     for (let [id, data] of Object.entries(this.state.parts)) {
-      promises.push(Part.load(id, data));
+      promises.push(Part.load(id, data, this));
     }
     let parts = await Promise.all(promises);
     this.parts = {};
@@ -34,7 +43,11 @@ class Schematic {
 
     // Remove existing SVG elements.
     let partsGroup = this.schematic.querySelector('#schematic-parts');
+    let wireGroup = this.schematic.querySelector('#schematic-wires');
     for (let child of partsGroup.children) {
+      child.remove();
+    }
+    for (let child of wireGroup.children) {
       child.remove();
     }
 
@@ -58,6 +71,18 @@ class Schematic {
 
     // Workaround for Chrome positioning bug and Firefox rendering bug.
     fixPartsLocation();
+
+    // Create wires.
+    this.wires = [];
+    for (let config of this.state.wires) {
+      let from = this.getPin(config.from);
+      let to = this.getPin(config.to);
+      let wire = new Wire(from, to);
+      this.wires.push(wire);
+      wireGroup.appendChild(wire.line);
+      wire.updateFrom();
+      wire.updateTo();
+    }
   }
 
   // Create a 'config' struct with a flattened view of the schematic, to be sent
@@ -68,9 +93,23 @@ class Schematic {
       wires: [],
     };
     for (let [id, part] of Object.entries(this.parts)) {
+      // The main part is the part running the code.
       if (id === 'main') {
         config.mainPart = 'main.' + part.config.mainPart;
       }
+
+      // Add part as a board part.
+      let board = {
+        type: 'board',
+        id: id,
+        pins: [],
+      };
+      for (let name in part.pins) {
+        board.pins.push(name);
+      }
+      config.parts.push(board);
+
+      // Add subparts.
       for (let subpart of part.config.parts) {
         let obj = Object.assign({}, subpart, {id: id + '.' + subpart.id});
         config.parts.push(obj);
@@ -82,6 +121,15 @@ class Schematic {
         });
       }
     }
+
+    // Wires manually added in the schematic.
+    for (let wire of this.wires) {
+      config.wires.push({
+        from: wire.from.id,
+        to: wire.to.id,
+      });
+    }
+
     return config;
   }
 
@@ -205,6 +253,25 @@ class Schematic {
       }
     }
   }
+
+  // findWire returns the index for the first wire between the given two pins,
+  // or -1 if no such wire exists.
+  findWire(from, to) {
+    for (let i=0; i<this.state.wires.length; i++) {
+      let wire = this.state.wires[i];
+      if (wire.from === from && wire.to === to || wire.from === to && wire.to === from) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  // removeWire removes the given wire from the schematic state. It does not
+  // remove the wire from the UI.
+  removeWire(from, to) {
+    let index = schematic.findWire(from, to);
+    schematic.state.wires.splice(index, 1);
+  }
 }
 
 // getProjects returns the complete list of project objects from the projects
@@ -300,17 +367,19 @@ async function loadJSON(location) {
 // LED, or it might be a board that itself also contains parts. Parts on a board
 // are represented differently, though.
 class Part {
-  constructor(id, config, data) {
+  constructor(id, config, data, schematic) {
     this.id = id;
     this.config = config;
     this.data = data;
+    this.schematic = schematic;
     this.subparts = {};
+    this.pins = {};
   }
 
   // Load the given part and return it (because constructor() can't be async).
-  static async load(id, data) {
+  static async load(id, data, schematic) {
     let config = await loadJSON(data.location);
-    let part = new Part(id, config, data);
+    let part = new Part(id, config, data, schematic);
     if (part.config.svg) {
       await part.loadSVG();
     }
@@ -364,6 +433,59 @@ class Part {
       this.subparts[subpart.id] = subpart;
     }
 
+    // Detect pins inside the SVG file. They have an attribute like
+    // data-pin="D5".
+    let wireGroup = document.querySelector('#schematic-wires');
+    for (let el of this.svg.querySelectorAll('[data-pin]')) {
+      // Add dot in the middle (only visible on hover).
+      let area = el.querySelector('.area');
+      let dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.classList.add('pin-hover-dot');
+      dot.style.cx = 'calc(' + area.getAttribute('width') + 'px / 2)';
+      dot.style.cy = 'calc(' + area.getAttribute('height') + 'px / 2)';
+      el.appendChild(dot);
+
+      // Create pin, to attach wires to.
+      let pin = new Pin(this, el.dataset.pin, dot);
+      this.pins[pin.name] = pin;
+
+      // Create a wire by clicking on the pin.
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (newWire === null) {
+          // Create new wire.
+          newWire = new Wire(pin, null);
+          newWire.updateFrom();
+          newWire.updateToMovement(e.pageX, e.pageY);
+          wireGroup.appendChild(newWire.line);
+        } else if (newWire.from === pin) {
+          // Cancel the creation of this wire: it doesn't go anywhere.
+          newWire.remove();
+          newWire = null;
+        } else {
+          let config = {from: newWire.from.id, to: pin.id};
+          if (this.schematic.findWire(config.from, config.to) >= 0) {
+            // This wire already exists. Remove the to-be-created wire.
+            console.warn('ignoring duplicate wire');
+            newWire.remove();
+            newWire = null;
+            return;
+          }
+          // Finish creation of the wire.
+          newWire.setTo(pin);
+          this.schematic.state.wires.push(config);
+          saveState();
+          workerPostMessage({
+            type: 'add-wire',
+            wire: config,
+          });
+          newWire.select();
+          newWire = null;
+        }
+      });
+    }
+
     return this.wrapper;
   }
 
@@ -373,6 +495,18 @@ class Part {
     this.data.x = x / pixelsPerMillimeter;
     this.data.y = y / pixelsPerMillimeter;
     this.updatePosition();
+
+    // Update wires
+    for (let pin of Object.values(this.pins)) {
+      for (let wire of pin.wires) {
+        if (wire.from === pin) {
+          wire.updateFrom();
+        }
+        if (wire.to === pin) {
+          wire.updateTo();
+        }
+      }
+    }
   }
 
   // Update position according to this.data.x and this.data.y.
@@ -390,6 +524,10 @@ class Part {
   makeDraggable(schematic) {
     this.wrapper.ondragstart = e => false;
     this.wrapper.onmousedown = function(e) {
+      if (newWire) {
+        // Don't drag while in the process of adding a new wire.
+        return;
+      }
       // Calculate as many things as possible in advance, so that the mousemove
       // event doesn't have to do much.
       // This code handles the following cases:
@@ -412,10 +550,135 @@ class Part {
   }
 }
 
-// Code to handle dragging of parts.
+// A pin wraps a visible pin in the SVG, such as a header pin or a copper area
+// on a board. Wires can be attached to such a pin.
+class Pin {
+  constructor(part, name, dot) {
+    this.part = part; // Part object
+    this.name = name; // pin name (string)
+    this.dot = dot; // SVG object to use as center point
+    this.wires = new Set();
+  }
+
+  get id() {
+    return this.part.id + '.' + this.name;
+  }
+
+  // Get the center coordinates of this pin.
+  getCoords() {
+    let dotRect = this.dot.getBoundingClientRect();
+    let x = dotRect.x + dotRect.width/2 - schematicRect.x - schematicRect.width/2;
+    let y = dotRect.y + dotRect.width/2 - schematicRect.y - schematicRect.height/2;
+    return [x, y];
+  }
+}
+
+// A wire is a manually drawn wire between two boards (or even between pins of
+// the same board).
+class Wire {
+  constructor(from, to) {
+    this.from = from;
+    from.wires.add(this);
+    if (to) {
+      this.to = to;
+      to.wires.add(this);
+    }
+    this.line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    this.line.classList.add('wire');
+    this.line.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.select();
+    });
+  }
+
+  // Update based on the coordinates of the 'from' pin.
+  updateFrom() {
+    [this.x1, this.y1] = this.from.getCoords();
+    this.line.setAttribute('x1', this.x1);
+    this.line.setAttribute('y1', this.y1);
+  }
+
+  // Update based on the coordinates of the 'to' pin.
+  updateTo() {
+    [this.x2, this.y2] = this.to.getCoords();
+    this.line.setAttribute('x2', this.x2);
+    this.line.setAttribute('y2', this.y2);
+  }
+
+  // Set 'to' pin. May be called when a wire is just created in the UI.
+  setTo(to) {
+    this.to = to;
+    this.to.wires.add(this);
+    this.updateTo();
+  }
+
+  // Update 'to' position based on the given page coordinates. Called from a
+  // mousemove event when in the process of creating a new wire.
+  updateToMovement(pageX, pageY) {
+    // Calculate x2/y2 based on pointer position.
+    this.x2 = pageX - schematicRect.x - schematicRect.width/2;
+    this.y2 = pageY - schematicRect.y - schematicRect.height/2;
+    // Reduce length of the wire slightly so that hover still works.
+    let width = this.x2 - this.x1;
+    let height = this.y2 - this.y1;
+    let length = Math.sqrt(width*width + height*height); // Pythagoras
+    const reduce = pixelsPerMillimeter + 1;
+    if (length > reduce) {
+      this.x2 -= width / length * reduce;
+      this.y2 -= height / length * reduce;
+    } else {
+      // Too close to the origin point.
+      this.x2 = this.x1;
+      this.y2 = this.y1;
+    }
+    // Update the SVG line.
+    this.line.setAttribute('x2', this.x2);
+    this.line.setAttribute('y2', this.y2);
+  }
+
+  select() {
+    if (selected) {
+      selected.deselect();
+    }
+    this.line.classList.add('selected');
+    selected = this;
+  }
+
+  deselect() {
+    this.line.classList.remove('selected');
+    selected = null;
+  }
+
+  // Remove the line everwhere: from the UI and from the associated Pin objects.
+  remove() {
+    // Remove from UI.
+    this.from.wires.delete(this);
+    if (this.to) {
+      this.to.wires.delete(this);
+    }
+    this.line.remove();
+
+    if (this.to) {
+      // Remove from saved state.
+      let schematic = this.from.part.schematic;
+      schematic.removeWire(this.from.id, this.to.id);
+
+      // Remove from running circuit.
+      workerPostMessage({
+        type: 'remove-wire',
+        wire: {from: this.from.id, to: this.to.id},
+      });
+    }
+  }
+}
+
+// Code to handle dragging of parts and creating of wires.
 // More information: https://javascript.info/mouse-drag-and-drop
 
 let partMovement = null;
+let newWire = null;
+let selected = null;
 
 document.addEventListener('mousemove', e => {
   if (partMovement) {
@@ -432,12 +695,41 @@ document.addEventListener('mousemove', e => {
     y = Math.min(maxY, Math.max(minY, y));
     part.setPosition(x, y);
   }
+  if (newWire) {
+    newWire.updateToMovement(e.pageX, e.pageY);
+  }
 });
 
 document.addEventListener('mouseup', e => {
   if (partMovement){
     saveState();
     partMovement = null;
+  }
+});
+
+document.addEventListener('click', e => {
+  if (newWire) {
+    // Clicked anywhere other than a pin while creating a new wire. Interpret
+    // this as cancelling the 'create wire' operation.
+    newWire.remove();
+    newWire = null;
+  } else if (selected) {
+    selected.deselect();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && newWire) {
+    // Cancel the creation of a new wire.
+    e.preventDefault();
+    newWire.remove();
+    newWire = null;
+  } else if (e.key === 'Escape' && selected) {
+    selected.deselect();
+  } else if (e.key === 'Delete' && selected) {
+    selected.remove();
+    selected = null;
+    saveState();
   }
 });
 
@@ -462,6 +754,9 @@ document.addEventListener('DOMContentLoaded', e => {
 
 // Work around a positioning bug in Chrome and a rendering bug in Firefox.
 // It might be possible to remove this code once these bugs are fixed.
+// https://bugs.chromium.org/p/chromium/issues/detail?id=1281085
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1747238
+let schematicRect;
 let fixPartsLocation = (function() {
   // The code below has multiple purposes.
   //  1. It works around a Chrome/Safari bug. See:
@@ -470,10 +765,10 @@ let fixPartsLocation = (function() {
   //     might disappear.
   // Both appear to be caused by the "transform: translate(50%, 50%)" style.
   let schematic = document.querySelector('#schematic');
-  let partsGroup = document.querySelector('#schematic-parts');
+  let wrapper = document.querySelector('#schematic-wrapper');
   return function() {
-    let rect = schematic.getBoundingClientRect();
-    partsGroup.style.transform = 'translate(' + rect.width / 2 + 'px, ' + rect.height / 2 + 'px)';
+    schematicRect = schematic.getBoundingClientRect();
+    wrapper.style.transform = 'translate(' + schematicRect.width / 2 + 'px, ' + schematicRect.height / 2 + 'px)';
   };
 })();
 window.addEventListener('load', fixPartsLocation);

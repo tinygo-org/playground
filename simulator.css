@@ -17,6 +17,27 @@
 	filter: drop-shadow(0 0 6px #777c);
 }
 
+#schematic .pin-hover-dot {
+    r: 1px; /* actually: 1mm */
+    fill: #0b0;
+}
+#schematic [data-pin]:not(:hover) .pin-hover-dot {
+    visibility: hidden;
+}
+
+#schematic .wire {
+    stroke: #008800;
+    stroke-width: 1mm;
+    stroke-linecap: round;
+}
+#schematic .wire:hover {
+    stroke-width: 1.5mm;
+}
+#schematic .wire.selected {
+    stroke: #00aa00;
+    stroke-width: 1.5mm;
+}
+
 /* Panels */
 
 #panels {

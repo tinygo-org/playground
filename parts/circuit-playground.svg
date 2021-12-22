@@ -33,4 +33,79 @@
     <circle data-type="rgbled" cx="40.47" cy="16.7"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
     <circle data-type="rgbled" cx="34.1"  cy="10.33" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
   </g>
+
+  <!-- pins on the edge of the board -->
+  <!-- TODO: make the black circles actually transparent -->
+  <g transform="translate(25.4, 25.4)" fill="transparent">
+    <g transform="rotate(60) translate(21.4, -2.5)">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(40) translate(21.4, -2.5)" data-pin="A0">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(20) translate(21.4, -2.5)" data-pin="A1">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(0) translate(21.4, -2.5)">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(340) translate(21.4, -2.5)" data-pin="A2">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(320) translate(21.4, -2.5)" data-pin="A3">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(300) translate(21.4, -2.5)">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(240) translate(21.4, -2.5)">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(220) translate(21.4, -2.5)" data-pin="A4">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(200) translate(21.4, -2.5)" data-pin="A5">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(180) translate(21.4, -2.5)">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(160) translate(21.4, -2.5)" data-pin="A6">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(140) translate(21.4, -2.5)" data-pin="A7">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+    <g transform="rotate(120) translate(21.4, -2.5)">
+      <path d="M 3.88 0 A 25.4 25.4 0 0 1 3.88 5 H 2.5 A 2.5 2.5 0 0 1 2.5 0 Z" fill="#997f28"/>
+      <circle cx="2" cy="2.5" r="1.5" fill="#1c1c1c"/>
+      <rect width="4" height="5" class="area"/>
+    </g>
+  </g>
 </svg>

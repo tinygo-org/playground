@@ -13,7 +13,7 @@ class Net {
   constructor(pin) {
     this.pins = new Set();
     this.addPin(pin);
-    this.state = pin.state;
+    this.state = 'unknown';
   }
 
   // addPin adds a pin to this net and replaces the pin's net property.
@@ -22,37 +22,40 @@ class Net {
     pin.net = this;
   }
 
-  // updateState updates the shared state of the net: low, high, or floating.
-  // It also notifies connected devices that they have been updated.
-  updateState() {
-    let oldState = this.state;
-    this.state = 'floating';
+  // computeState determines and returns the state of the net based on all pins
+  // that are part of it.
+  computeState() {
+    let state = 'floating';
     for (let pin of this.pins) {
       if (pin.state === 'floating') {
         // no change
       } else if (pin.state === 'low') {
-        if (this.state === 'high') {
+        if (state === 'high') {
           console.warn('short!'); // TODO: make this more informative
         }
-        this.state = 'low';
+        state = 'low';
       } else if (pin.state === 'high') {
-        if (this.state === 'low') {
+        if (state === 'low') {
           console.warn('short!'); // TODO: same here
         }
-        this.state = 'high';
+        state = 'high';
       } else {
         console.error('unknown pin state:', pin.state);
       }
     }
+    return state;
+  }
+
+  // updateState updates the shared state of the net: low, high, or floating.
+  // It also notifies connected devices that they have been updated.
+  updateState() {
+    let oldState = this.state;
+    this.state = this.computeState();
 
     // The state changed. Notify listening devices.
     if (this.state !== oldState) {
       for (let pin of this.pins) {
-        if (pin.state === 'low' || pin.state === 'high') {
-          // Nothing to notify: can't read the state.
-          continue;
-        }
-        pin.part.notifyPinUpdate(pin);
+        pin.notifyPart();
       }
     }
   }
@@ -105,6 +108,8 @@ class Schematic {
   // object.
   // This is a private method.
   makePart(part) {
+    if (part.type === 'board')
+      return new Board(this, part);
     if (part.type === 'mcu')
       return new MCU(this, part);
     if (part.type === 'led')
@@ -130,14 +135,31 @@ class Schematic {
     });
   }
 
+  // removeWire removes the given wire identified by the pin IDs. The IDs must
+  // be in the correct order.
+  // Call updateNets() afterwards to update all connections.
+  removeWire(from, to) {
+    for (let i=0; i<this.wires.length; i++) {
+      let wire = this.wires[i];
+      if (from === wire.from.id && to === wire.to.id) {
+        this.wires.splice(i, 1);
+        return;
+      }
+    }
+    // Could not find wire to remove (this is an error).
+    console.warn('could not remove wire:', from, to);
+  }
+
   // updateNets recalculates all nets so that parts can quickly know which pins
   // (of other parts) are connected to a particular pin and quickly sense its
   // state (high, low, floating).
   updateNets() {
     // Put each pin in its own net (to be merged later).
     let nets = {};
+    let oldPinStates = {};
     for (let part of Object.values(this.parts)) {
       for (let pin of Object.values(part.pins)) {
+        oldPinStates[pin.id] = pin.net ? pin.net.state : 'unknown';
         nets[pin.id] = new Net(pin);
       }
     }
@@ -152,13 +174,23 @@ class Schematic {
       }
     }
 
-    // Update state of all nets.
+    // Calculate new pin state for each net.
     let updatedNets = new Set();
     for (let net of Object.values(nets)) {
-      if (updatedNets.has(net))
+      if (updatedNets.has(net)) {
         continue;
-      net.updateState();
+      }
+      net.state = net.computeState();
       updatedNets.add(net);
+    }
+
+    // Notify the changed state, if the pin changed state.
+    for (let net of updatedNets) {
+      for (let pin of net.pins) {
+        if (net.state !== oldPinStates[pin.id]) {
+          pin.notifyPart();
+        }
+      }
     }
   }
 

@@ -10,6 +10,14 @@
             "id": "mcu",
             "type": "mcu",
             "pins": {
+                "PA02": 2,
+                "PA05": 5,
+                "PA06": 6,
+                "PA07": 7,
+                "PB03": 35,
+                "PB02": 34,
+                "PB09": 41,
+                "PB08": 40,
                 "PA17": 17,
                 "PB23": 55
             }
@@ -28,6 +36,14 @@
         }
     ],
     "wires": [
+        {"from": "mcu.PA02", "to": "A0"},
+        {"from": "mcu.PA05", "to": "A1"},
+        {"from": "mcu.PA06", "to": "A2"},
+        {"from": "mcu.PA07", "to": "A3"},
+        {"from": "mcu.PB03", "to": "A4"},
+        {"from": "mcu.PB02", "to": "A5"},
+        {"from": "mcu.PB09", "to": "A6"},
+        {"from": "mcu.PB08", "to": "A7"},
         {"from": "mcu.PA17", "to": "led.cathode"},
         {"from": "mcu.PB23", "to": "neopixels.din"}
     ]

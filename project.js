@@ -60,6 +60,7 @@ async function loadProject(name) {
           y: 0,
         },
       },
+      wires: [],
     });
   }
   return await new Promise((resolve, reject) => {
@@ -79,6 +80,9 @@ async function loadProject(name) {
           },
         };
         delete data.target;
+      }
+      if (!data.wires) {
+        data.wires = [];
       }
       let mainPartConfig = await loadJSON(data.parts.main.location);
       if (!data.defaultHumanName) {

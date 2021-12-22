@@ -9,15 +9,95 @@
   <!-- Vin port -->
   <rect x="-2" y="40.9" width="14" height="8.6" fill="#333"/>
   <!-- female header pins -->
-  <rect
-    x="44.47" y="1.27" width="20.32" height="2.54"
-    fill="#4d4d4d" />
-  <rect
-    x="17.8" y="1.27" width="25.4" height="2.54"
-    fill="#4d4d4d" />
-  <rect
-    x="49.55" y="49.49" width="15.24" height="2.54"
-    fill="#4d4d4d" />
+  <g transform="translate(44.47, 1.27)" fill="transparent">
+    <rect width="20.32" height="2.54" fill="#4d4d4d"/>
+    <g data-pin="D0" transform="translate(17.78, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D1" transform="translate(15.24, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D2" transform="translate(12.7, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D3" transform="translate(10.16, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D4" transform="translate(7.62, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D5" transform="translate(5.08, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D6" transform="translate(2.54, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D7" transform="translate(0, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+  </g>
+  <g transform="translate(17.8, 1.27)" fill="transparent">
+    <rect width="25.4" height="2.54" fill="#4d4d4d"/>
+    <g data-pin="D8" transform="translate(22.86, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D9" transform="translate(20.32, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D10" transform="translate(17.78, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D11" transform="translate(15.24, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D12" transform="translate(12.7, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="D13" transform="translate(10.16, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+  </g>
+  <g transform="translate(49.55, 49.49)" fill="transparent">
+    <rect width="15.24" height="2.54" fill="#4d4d4d" />
+    <g data-pin="A0" transform="translate(0, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A1" transform="translate(2.54, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A2" transform="translate(5.08, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A3" transform="translate(7.62, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A4" transform="translate(10.16, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="A5" transform="translate(12.7, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#d4af37"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+  </g>
   <rect
     x="27.96" y="49.49" width="20.32" height="2.54"
     fill="#4d4d4d" />

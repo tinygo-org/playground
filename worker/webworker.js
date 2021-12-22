@@ -33,6 +33,12 @@ function handleIncomingMessage(message) {
       type: 'update',
       updates: schematic.getUpdates(),
     });
+  } else if (message.type === 'add-wire') {
+    schematic.addWire(message.wire.from, message.wire.to);
+    schematic.updateNets();
+  } else if (message.type === 'remove-wire') {
+    schematic.removeWire(message.wire.from, message.wire.to);
+    schematic.updateNets();
   } else {
     console.log('unknown message:', message);
   }

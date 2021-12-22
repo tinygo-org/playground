@@ -268,6 +268,10 @@ function saveState() {
   project.save();
 }
 
+function workerPostMessage(message) {
+  worker.postMessage(message);
+}
+
 // Source:
 // https://www.everythingfrontend.com/posts/insert-text-into-textarea-at-cursor-position.html
 function insertAtCursor (input, textToInsert) {
