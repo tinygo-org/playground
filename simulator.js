@@ -54,7 +54,7 @@ class Schematic {
     // Put SVGs in the schematic.
     let partHeights = [];
     for (let part of Object.values(this.parts)) {
-      if (part.svg) {
+      if (part.rootElement) {
         partsGroup.appendChild(part.createElement(this.schematic));
 
         // Store the height, to calculate the minimum height of the schematic.
@@ -98,22 +98,26 @@ class Schematic {
         config.mainPart = 'main.' + part.config.mainPart;
       }
 
-      // Add part as a board part.
-      let board = {
-        type: 'board',
-        id: id,
-        pins: [],
-      };
-      for (let name in part.pins) {
-        board.pins.push(name);
+      // Add this part.
+      if (part.config.type) {
+        // Regular part (probably sitting on a board).
+        let subconfig = Object.assign({}, part.config, {id: part.id});
+        config.parts.push(subconfig);
+      } else {
+        // Add part as a board part. Boards aren't active, they only provide
+        // pins to attach to.
+        let subconfig = {
+          type: 'board',
+          id: part.id,
+          pins: [],
+        };
+        for (let name in part.pins) {
+          subconfig.pins.push(name);
+        }
+        config.parts.push(subconfig);
       }
-      config.parts.push(board);
 
-      // Add subparts.
-      for (let subpart of part.config.parts) {
-        let obj = Object.assign({}, subpart, {id: id + '.' + subpart.id});
-        config.parts.push(obj);
-      }
+      // Add internal wires. Think of them as copper traces on a board.
       for (let wire of part.config.wires || []) {
         config.wires.push({
           from: id + '.' + wire.from,
@@ -191,8 +195,7 @@ class Schematic {
   // worker that's running the simulated program.
   update(updates) {
     for (let update of updates) {
-      let partId = update.id.split('.', 1)[0];
-      let part = this.parts[partId].subparts[update.id];
+      let part = this.parts[update.id];
 
       // LED strips, like typical WS2812 strips.
       if (update.ledstrip) {
@@ -214,7 +217,7 @@ class Schematic {
 
       // Simple devices (like LEDs) that only need to change some CSS properties.
       for (let [key, value] of Object.entries(update.cssProperties || {})) {
-        part.container.style.setProperty('--' + key, value);
+        part.rootElement.style.setProperty('--' + key, value);
       }
 
       // Main MCU that prints some text.
@@ -400,9 +403,9 @@ class Part {
       xhr.responseType = 'document';
       xhr.send();
       xhr.onload = (() => {
-        this.svg = xhr.response.rootElement;
-        this.width = this.svg.getAttribute('width');
-        this.height = this.svg.getAttribute('height');
+        this.rootElement = xhr.response.rootElement;
+        this.width = this.rootElement.getAttribute('width');
+        this.height = this.rootElement.getAttribute('height');
         resolve();
       }).bind(this);
     });
@@ -414,29 +417,33 @@ class Part {
     this.wrapper.setAttribute('class', 'board-wrapper');
 
     // Add SVG to the schematic at the correct location.
-    this.wrapper.appendChild(this.svg);
+    this.wrapper.appendChild(this.rootElement);
     this.updatePosition();
     this.makeDraggable(schematic);
 
     // Detect parts inside the SVG file. They have a tag like
     // data-part="led".
     this.subparts = {};
-    for (let el of this.svg.querySelectorAll('[data-part]')) {
-      let subpart = {
-        id: this.id+'.'+el.dataset.part,
-        container: el,
-        leds: el.querySelectorAll('[data-type="rgbled"]'),
-      };
+    for (let subconfig of this.config.parts || []) {
+      let id = this.id + '.' + subconfig.id;
+      let subpart = new Part(id, subconfig, {}, this.schematic);
+      this.subparts[id] = subpart;
+      this.schematic.parts[subpart.id] = subpart;
+    }
+    for (let el of this.rootElement.querySelectorAll('[data-part]')) {
+      let id = this.id+'.'+el.dataset.part;
+      let subpart = this.subparts[id];
+      subpart.rootElement = el;
+      subpart.leds = el.querySelectorAll('[data-type="rgbled"]');
       if (el.nodeName === 'CANVAS') {
         subpart.context = el.getContext('2d');
       }
-      this.subparts[subpart.id] = subpart;
     }
 
     // Detect pins inside the SVG file. They have an attribute like
     // data-pin="D5".
     let wireGroup = document.querySelector('#schematic-wires');
-    for (let el of this.svg.querySelectorAll('[data-pin]')) {
+    for (let el of this.rootElement.querySelectorAll('[data-pin]')) {
       // Add dot in the middle (only visible on hover).
       let area = el.querySelector('.area');
       let dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -536,7 +543,7 @@ class Part {
       //     case it makes more sense to limit movement to stay entirely within
       //     the available space.
       let schematicRect = schematic.getBoundingClientRect();
-      let svgRect = this.svg.getBoundingClientRect();
+      let svgRect = this.rootElement.getBoundingClientRect();
       let overflowX = Math.abs(schematicRect.width/2 - svgRect.width/2 - 10);
       let overflowY = Math.abs(schematicRect.height/2 - svgRect.height/2 - 10);
       partMovement = {
