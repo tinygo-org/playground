@@ -102,6 +102,7 @@ class Schematic {
   addPart(part) {
     let instance = this.makePart(part);
     this.parts[part.id] = instance;
+    return instance;
   }
 
   // makePart creates a new part object, based on the input configuration
@@ -124,6 +125,12 @@ class Schematic {
       return new ST7789(this, part);
     console.error('part: ' + part.type);
     throw 'unknown part';
+  }
+
+  // removePart removes the part with the given ID. Call updateNets()
+  // afterwards to update all connections (if any).
+  removePart(id) {
+    delete this.parts[id];
   }
 
   // addWire adds a new wire between two parts identified by its full ID.

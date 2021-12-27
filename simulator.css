@@ -10,11 +10,19 @@
 #schematic.compiling {
     opacity: 0.7;
 }
+body.no-schematic #schematic {
+    display: none;
+}
 
 #schematic .board-wrapper {
     position: absolute;
-    padding: 8px;
-	filter: drop-shadow(0 0 6px #777c);
+    filter: drop-shadow(0 0 6px #777c);
+}
+#schematic .board-wrapper > .background {
+    fill: transparent;
+}
+#schematic .board-wrapper.selected > .background {
+    outline: 1.7px dashed gray;
 }
 
 #schematic .pin-hover-dot {
@@ -37,12 +45,15 @@
     stroke: #00aa00;
     stroke-width: 1.5mm;
 }
+body.adding-wire .wire {
+    /* ignore clicks on other wires (they only get in the way) */
+    pointer-events: none;
+}
 
 /* Panels */
 
 #panels {
     border-top: 1px solid var(--vscode-terminal-border);
-    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
     display: flex;
     flex-direction: column;
 }
@@ -80,10 +91,16 @@
 .tabcontent {
     color: var(--vscode-terminal-foreground, white);
     flex: 1 0;
+    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
+    height:     calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
 }
 
 .tabcontent:not(.active) {
     display: none !important;
+}
+
+body.no-schematic .tab:not([data-for="#terminal-box"]) {
+    display: none;
 }
 
 /* Terminal at the bottom of the screen */
@@ -113,7 +130,7 @@
 
 /* Properties tab at the bottom */
 
-#properties {
+#properties > .content {
     padding: 0 20px;
     overflow: auto;
     display: grid;
@@ -121,6 +138,7 @@
     column-gap: 1ch;
     align-content: start;
     line-height: 1.5;
+    height: inherit;
 }
 
 #properties .ledstrip {
@@ -133,4 +151,46 @@
     background-position: bottom right;
     background-size: 4ch 2px;
     background-repeat: repeat-x;
+}
+
+/* Add parts tab */
+
+#add {
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: auto minmax(auto, 100%) auto auto;
+    column-gap: 1ch;
+    align-content: start;
+}
+
+body.adding-part #add {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+#add .part-image {
+    filter: drop-shadow(0 0 6px #777c);
+    border: 0;
+    width: 10mm;
+    height: 10mm;
+}
+
+#add select {
+    /* Not exactly the same as in VSCode but close enough */
+    background-color: var(--vscode-settings-dropdownBackground, #3c3c3c);
+    border: 1px solid var(--vscode-settings-dropdownBorder, #3c3c3c);
+    color: var(--vscode-settings-dropdownForeground, inherit);
+    padding: 2px 8px;
+}
+
+#add button {
+    display: inline-block;
+    border: 0px;
+    padding: 2px 14px;
+    color: var(--vscode-button-foreground, inherit);
+    background: var(--vscode-button-background, #0e639c);
+    font-size: 13px;
+}
+#add button:hover {
+    background: var(--vscode-button-hoverBackground, #1177bb);
 }

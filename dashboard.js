@@ -92,7 +92,7 @@ async function update() {
       });
     } else if (msg.type === 'properties') {
       // Set properties in the properties panel at the bottom.
-      schematic.addProperties(msg.properties);
+      schematic.setProperties(msg.properties);
     } else if (msg.type == 'update') {
       // Received updates (such as LED state changes) from the web worker after
       // a getUpdate message.

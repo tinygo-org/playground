@@ -214,9 +214,11 @@ class LED extends Part {
   }
 
   getState() {
-    let anode = this.pins.anode.isConnected() ? this.pins.anode.net.isSource() : true;
-    let cathode = this.pins.cathode.isConnected() ? this.pins.cathode.net.isSink() : true;
-    let on = anode && cathode;
+    let anodeConnected = this.pins.anode.isConnected();
+    let cathodeConnected = this.pins.cathode.isConnected();
+    let anode = anodeConnected ? this.pins.anode.net.isSource() : true;
+    let cathode = cathodeConnected ? this.pins.cathode.net.isSink() : true;
+    let on = anode && cathode && (anodeConnected || cathodeConnected);
     let [r, g, b] = this.color;
     if (!on) {
       // Turn off the LED entirely.
@@ -585,6 +587,7 @@ class WS2812 extends Part {
     // TODO: support incomplete writes with timeouts.
     // TODO: do something smarter than a memcpy here. It's fine for small LED
     // strips but it may be rather expensive with long strips as it's O(n²).
+    this.pins.dout.writeWS2812(this.data[this.data.length-1]);
     this.data.set(this.data.slice(0, -1), 1);
     this.data[0] = c;
     this.notifyUpdate();

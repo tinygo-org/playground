@@ -1,0 +1,26 @@
+{
+  "parts": [
+    {
+      "config": {
+        "type": "led",
+        "humanName": "LED",
+        "svg": "led-tht-5mm.svg"
+      },
+      "options": {
+        "color": {
+          "Red": [255, 0, 0],
+          "Yellow": [255, 255, 0],
+          "Green": [51, 204, 0]
+        }
+      }
+    },
+    {
+      "config": {
+        "type": "ws2812",
+        "humanName": "WS2812",
+        "svg": "ws2812.svg",
+        "length": 1
+      }
+    }
+  ]
+}

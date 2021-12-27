@@ -16,7 +16,7 @@ class Schematic {
   constructor(state) {
     this.state = state;
     this.schematic = document.querySelector('#schematic');
-    this.propertiesContainer = document.querySelector('#properties');
+    this.propertiesContainer = document.querySelector('#properties .content');
   }
 
   // getPin returns a pin object based on a given ID (such as main.D13).
@@ -36,37 +36,32 @@ class Schematic {
       promises.push(Part.load(id, data, this));
     }
     let parts = await Promise.all(promises);
-    this.parts = {};
-    for (let part of parts) {
-      this.parts[part.id] = part;
-    }
 
     // Remove existing SVG elements.
     let partsGroup = this.schematic.querySelector('#schematic-parts');
     let wireGroup = this.schematic.querySelector('#schematic-wires');
-    for (let child of partsGroup.children) {
-      child.remove();
-    }
-    for (let child of wireGroup.children) {
-      child.remove();
-    }
+    partsGroup.innerHTML = '';
+    wireGroup.innerHTML = '';
 
     // Put SVGs in the schematic.
+    this.parts = {};
     let partHeights = [];
-    for (let part of Object.values(this.parts)) {
-      if (part.rootElement) {
-        partsGroup.appendChild(part.createElement(this.schematic));
+    for (let part of parts) {
+      this.addPart(part);
 
-        // Store the height, to calculate the minimum height of the schematic.
-        // Add a spacing of 20px so that the board has a bit of spacing around it.
+      // Store the height, to calculate the minimum height of the schematic.
+      // Add a spacing of 20px so that the board has a bit of spacing around it.
+      if (part.rootElement) {
         partHeights.push('calc(' + part.height + ' + 20px)');
       }
     }
 
     // Set the height of the schematic.
-    this.schematic.classList.toggle('d-none', partHeights.length === 0);
+    document.body.classList.toggle('no-schematic', partHeights.length === 0);
     if (partHeights.length) {
       this.schematic.style.height = 'max(' + partHeights.join(', ') + ')';
+    } else {
+      document.querySelector('.tab[data-for="#terminal-box"]').click();
     }
 
     // Workaround for Chrome positioning bug and Firefox rendering bug.
@@ -85,6 +80,18 @@ class Schematic {
     }
   }
 
+  addPart(part) {
+    this.parts[part.id] = part;
+    part.createSubParts();
+    for (let [id, subpart] of Object.entries(part.subparts)) {
+      this.parts[id] = subpart;
+    }
+    if (part.rootElement) {
+      let partsGroup = this.schematic.querySelector('#schematic-parts');
+      partsGroup.appendChild(part.createElement(this.schematic));
+    }
+  }
+
   // Create a 'config' struct with a flattened view of the schematic, to be sent
   // to the worker.
   configForWorker() {
@@ -99,23 +106,7 @@ class Schematic {
       }
 
       // Add this part.
-      if (part.config.type) {
-        // Regular part (probably sitting on a board).
-        let subconfig = Object.assign({}, part.config, {id: part.id});
-        config.parts.push(subconfig);
-      } else {
-        // Add part as a board part. Boards aren't active, they only provide
-        // pins to attach to.
-        let subconfig = {
-          type: 'board',
-          id: part.id,
-          pins: [],
-        };
-        for (let name in part.pins) {
-          subconfig.pins.push(name);
-        }
-        config.parts.push(subconfig);
-      }
+      config.parts.push(part.workerConfig());
 
       // Add internal wires. Think of them as copper traces on a board.
       for (let wire of part.config.wires || []) {
@@ -137,10 +128,9 @@ class Schematic {
     return config;
   }
 
-  // addProperties adds the list of part properties to the bottom "properties"
-  // panel. It returns an object that should later be passed to updateParts to
-  // update the needed parts.
-  addProperties(properties) {
+  // setProperties sets the list of part properties to the bottom "properties"
+  // panel.
+  setProperties(properties) {
     this.propertiesContainer.innerHTML = '';
 
     this.propertyElements = {};
@@ -351,19 +341,41 @@ class Terminal {
   }
 }
 
-// Cached JSON requests.
-var jsonRequests = {};
+// Cached JSON and SVG requests.
+var requestCache = {};
 
 // loadJSON returns the JSON at the given location and caches the result for
 // later re-use. The response must not be modified.
 async function loadJSON(location) {
-  if (!(location in jsonRequests)) {
-    jsonRequests[location] = (async () => {
+  if (!(location in requestCache)) {
+    requestCache[location] = (async () => {
       let response = await fetch(location);
       return await response.json();
     })();
   }
-  return await jsonRequests[location];
+  return await requestCache[location];
+}
+
+// loadSVG returns a SVG root object loaded from the given location and caches
+// the result for later re-use. The response is cloned before returning, so can
+// be modified by the caller.
+async function loadSVG(location) {
+  if (!(location in requestCache)) {
+    requestCache[location] = new Promise((resolve, reject) => {
+      // Load the SVG file.
+      // Doing this with XHR because XHR allows setting responseType while the
+      // newer fetch API doesn't.
+      let xhr = new XMLHttpRequest();
+      xhr.open('GET', location);
+      xhr.responseType = 'document';
+      xhr.send();
+      xhr.onload = (() => {
+        resolve(xhr.response.rootElement);
+      }).bind(this);
+    });
+  }
+  let svg = await requestCache[location];
+  return svg.cloneNode(true);
 }
 
 // One independent part in the schematic. This might be a separate part like a
@@ -381,7 +393,16 @@ class Part {
 
   // Load the given part and return it (because constructor() can't be async).
   static async load(id, data, schematic) {
-    let config = await loadJSON(data.location);
+    let config = {};
+    if (data.location) {
+      // Config object is stored in an external JSON file. Need to load that
+      // first.
+      config = await loadJSON(data.location);
+    } else if (data.config) {
+      // Config is stored directly in the (modifiable) data object.
+      // For example, this may be a simple part created in the Add tab.
+      config = data.config;
+    }
     let part = new Part(id, config, data, schematic);
     if (part.config.svg) {
       await part.loadSVG();
@@ -391,24 +412,22 @@ class Part {
 
   // loadSVG loads the 'svg' property (this.svg) of this object.
   async loadSVG() {
-    return new Promise((resolve, reject) => {
-      // Determine the SVG URL, which is relative to the board config JSON file.
-      let svgUrl = new URL(this.config.svg, new URL('parts/', document.baseURI));
+    // Determine the SVG URL, which is relative to the board config JSON file.
+    let svgUrl = new URL(this.config.svg, new URL('parts/', document.baseURI));
 
-      // Load the SVG file.
-      // Doing this with XHR because XHR allows setting responseType while the
-      // newer fetch API doesn't.
-      let xhr = new XMLHttpRequest();
-      xhr.open('GET', svgUrl);
-      xhr.responseType = 'document';
-      xhr.send();
-      xhr.onload = (() => {
-        this.rootElement = xhr.response.rootElement;
-        this.width = this.rootElement.getAttribute('width');
-        this.height = this.rootElement.getAttribute('height');
-        resolve();
-      }).bind(this);
-    });
+    let svg = await loadSVG(svgUrl);
+    this.setRootElement(svg);
+    this.width = this.rootElement.getAttribute('width');
+    this.height = this.rootElement.getAttribute('height');
+  }
+
+  createSubParts() {
+    this.subparts = {};
+    for (let subconfig of this.config.parts || []) {
+      let id = this.id + '.' + subconfig.id;
+      let subpart = new Part(id, subconfig, {}, this.schematic);
+      this.subparts[id] = subpart;
+    }
   }
 
   // Create the wrapper for the part SVG and initialize it.
@@ -416,28 +435,62 @@ class Part {
     this.wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     this.wrapper.setAttribute('class', 'board-wrapper');
 
+    // Add background rectangle.
+    let background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    background.classList.add('background');
+    background.setAttribute('width', this.width);
+    background.setAttribute('height', this.height);
+    this.wrapper.appendChild(background);
+
     // Add SVG to the schematic at the correct location.
     this.wrapper.appendChild(this.rootElement);
     this.updatePosition();
-    this.makeDraggable(schematic);
+
+    // Add some default styles.
+    if (this.config.type === 'led' && this.config.color) {
+      let [r, g, b] = this.config.color;
+      this.rootElement.style.setProperty('--plastic', 'rgba(' + r/2 + ', ' + g/2 + ', ' + b/2 + ', 0.8)');
+    }
+
+    // Make the part draggable with a mouse.
+    this.wrapper.ondragstart = e => false;
+    this.wrapper.onmousedown = function(e) {
+      if (newWire || newPart) {
+        // Don't drag while in the process of adding a new wire.
+        return;
+      }
+      this.select();
+      // Calculate as many things as possible in advance, so that the mousemove
+      // event doesn't have to do much.
+      // This code handles the following cases:
+      //   * Don't let parts be moved outside the available space.
+      //   * ...except if the available space is smaller than the part, in which
+      //     case it makes more sense to limit movement to stay entirely within
+      //     the available space.
+      let schematicRect = schematic.getBoundingClientRect();
+      let svgRect = this.rootElement.getBoundingClientRect();
+      let overflowX = Math.abs(schematicRect.width/2 - svgRect.width/2 - 10);
+      let overflowY = Math.abs(schematicRect.height/2 - svgRect.height/2 - 10);
+      partMovement = {
+        part: this,
+        shiftX: schematicRect.left + schematicRect.width/2 - svgRect.width/2 + (e.pageX - svgRect.left),
+        shiftY: schematicRect.top + schematicRect.height/2 - svgRect.height/2 + (e.pageY - svgRect.top),
+        overflowX: overflowX,
+        overflowY: overflowY,
+      };
+    }.bind(this);
+
+    // Make the part selectable.
+    this.wrapper.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.select();
+    });
 
     // Detect parts inside the SVG file. They have a tag like
     // data-part="led".
-    this.subparts = {};
-    for (let subconfig of this.config.parts || []) {
-      let id = this.id + '.' + subconfig.id;
-      let subpart = new Part(id, subconfig, {}, this.schematic);
-      this.subparts[id] = subpart;
-      this.schematic.parts[subpart.id] = subpart;
-    }
     for (let el of this.rootElement.querySelectorAll('[data-part]')) {
-      let id = this.id+'.'+el.dataset.part;
-      let subpart = this.subparts[id];
-      subpart.rootElement = el;
-      subpart.leds = el.querySelectorAll('[data-type="rgbled"]');
-      if (el.nodeName === 'CANVAS') {
-        subpart.context = el.getContext('2d');
-      }
+      this.subparts[this.id+'.'+el.dataset.part].setRootElement(el);
     }
 
     // Detect pins inside the SVG file. They have an attribute like
@@ -466,17 +519,16 @@ class Part {
           newWire.updateFrom();
           newWire.updateToMovement(e.pageX, e.pageY);
           wireGroup.appendChild(newWire.line);
+          document.body.classList.add('adding-wire');
         } else if (newWire.from === pin) {
           // Cancel the creation of this wire: it doesn't go anywhere.
           newWire.remove();
-          newWire = null;
         } else {
           let config = {from: newWire.from.id, to: pin.id};
           if (this.schematic.findWire(config.from, config.to) >= 0) {
             // This wire already exists. Remove the to-be-created wire.
             console.warn('ignoring duplicate wire');
             newWire.remove();
-            newWire = null;
             return;
           }
           // Finish creation of the wire.
@@ -484,16 +536,47 @@ class Part {
           this.schematic.state.wires.push(config);
           saveState();
           workerPostMessage({
-            type: 'add-wire',
-            wire: config,
+            type: 'add',
+            wires: [config],
           });
           newWire.select();
           newWire = null;
+          document.body.classList.remove('adding-wire');
         }
       });
     }
 
     return this.wrapper;
+  }
+
+  setRootElement(el) {
+    this.rootElement = el;
+    this.leds = el.querySelectorAll('[data-type="rgbled"]');
+    this.context = null;
+    if (el.nodeName === 'CANVAS') {
+      this.context = el.getContext('2d');
+    }
+  }
+
+  // workerConfig returns a config object for this part to be sent to the web
+  // worker.
+  workerConfig() {
+    if (!this.config.type) {
+      // Add part as a board part. Boards aren't active, they only provide pins
+      // to attach to.
+      let subconfig = {
+        type: 'board',
+        id: this.id,
+        pins: [],
+      };
+      for (let name in this.pins) {
+        subconfig.pins.push(name);
+      }
+      return subconfig;
+    }
+
+    // Regular part (probably sitting on a board).
+    return Object.assign({}, this.config, {id: this.id});
   }
 
   // Set a new (x, y) position in pixels, relative to the center.
@@ -526,34 +609,49 @@ class Part {
     this.wrapper.style.transform = 'translate(' + x + ', ' + y + ')';
   }
 
-  // makeDraggable is part of the setup of adding a new part to the schematic.
-  // This method makes the part draggable with a mouse.
-  makeDraggable(schematic) {
-    this.wrapper.ondragstart = e => false;
-    this.wrapper.onmousedown = function(e) {
-      if (newWire) {
-        // Don't drag while in the process of adding a new wire.
-        return;
+  select() {
+    if (selected) {
+      selected.deselect();
+    }
+    this.wrapper.classList.add('selected');
+    selected = this;
+  }
+
+  deselect() {
+    this.wrapper.classList.remove('selected');
+    selected = null;
+  }
+
+  // Remove the part everywhere, recursively, both in the UI and in the saved
+  // state. Also create a message to be sent to the web worker to remove the
+  // equivalent parts and wires there but don't send it yet: this is the job of
+  // the caller.
+  remove() {
+    // Remove all wires to start with.
+    let message = {
+      type: 'remove',
+      parts: [],
+      wires: [],
+    };
+    for (let pin of Object.values(this.pins)) {
+      for (let wire of pin.wires) {
+        let msg = wire.remove();
+        message.wires.push(...msg.wires);
       }
-      // Calculate as many things as possible in advance, so that the mousemove
-      // event doesn't have to do much.
-      // This code handles the following cases:
-      //   * Don't let parts be moved outside the available space.
-      //   * ...except if the available space is smaller than the part, in which
-      //     case it makes more sense to limit movement to stay entirely within
-      //     the available space.
-      let schematicRect = schematic.getBoundingClientRect();
-      let svgRect = this.rootElement.getBoundingClientRect();
-      let overflowX = Math.abs(schematicRect.width/2 - svgRect.width/2 - 10);
-      let overflowY = Math.abs(schematicRect.height/2 - svgRect.height/2 - 10);
-      partMovement = {
-        part: this,
-        shiftX: schematicRect.left + schematicRect.width/2 - svgRect.width/2 + (e.pageX - svgRect.left),
-        shiftY: schematicRect.top + schematicRect.height/2 - svgRect.height/2 + (e.pageY - svgRect.top),
-        overflowX: overflowX,
-        overflowY: overflowY,
-      };
-    }.bind(this);
+    }
+
+    // Remove the sub-parts.
+    for (let subpart of Object.values(this.subparts)) {
+      console.warn('todo: remove subpart', subpart.id);
+    }
+
+    // Remove the main part.
+    delete this.schematic.parts[this.id];
+    delete this.schematic.state.parts[this.id];
+    message.parts.push(this.id);
+    this.wrapper.remove();
+
+    return message;
   }
 }
 
@@ -659,6 +757,11 @@ class Wire {
 
   // Remove the line everwhere: from the UI and from the associated Pin objects.
   remove() {
+    if (this === newWire) {
+      newWire = null;
+      document.body.classList.remove('adding-wire');
+    }
+
     // Remove from UI.
     this.from.wires.delete(this);
     if (this.to) {
@@ -666,17 +769,19 @@ class Wire {
     }
     this.line.remove();
 
-    if (this.to) {
-      // Remove from saved state.
-      let schematic = this.from.part.schematic;
-      schematic.removeWire(this.from.id, this.to.id);
-
-      // Remove from running circuit.
-      workerPostMessage({
-        type: 'remove-wire',
-        wire: {from: this.from.id, to: this.to.id},
-      });
+    if (!this.to) {
+      // Not complete, so don't need to remove the wire except from the UI.
+      return;
     }
+
+    // Remove from saved state.
+    this.from.part.schematic.removeWire(this.from.id, this.to.id);
+
+    // Remove from running circuit.
+    return {
+      type: 'remove',
+      wires: [{from: this.from.id, to: this.to.id}],
+    };
   }
 }
 
@@ -685,6 +790,7 @@ class Wire {
 
 let partMovement = null;
 let newWire = null;
+let newPart = null;
 let selected = null;
 
 document.addEventListener('mousemove', e => {
@@ -701,6 +807,11 @@ document.addEventListener('mousemove', e => {
     x = Math.min(maxX, Math.max(minX, x));
     y = Math.min(maxY, Math.max(minY, y));
     part.setPosition(x, y);
+  }
+  if (newPart) {
+    let x = e.pageX - schematicRect.width/2 - schematicRect.x;
+    let y = e.pageY - schematicRect.height/2 - schematicRect.y;
+    newPart.setPosition(x, y);
   }
   if (newWire) {
     newWire.updateToMovement(e.pageX, e.pageY);
@@ -719,7 +830,6 @@ document.addEventListener('click', e => {
     // Clicked anywhere other than a pin while creating a new wire. Interpret
     // this as cancelling the 'create wire' operation.
     newWire.remove();
-    newWire = null;
   } else if (selected) {
     selected.deselect();
   }
@@ -730,13 +840,17 @@ document.addEventListener('keydown', e => {
     // Cancel the creation of a new wire.
     e.preventDefault();
     newWire.remove();
-    newWire = null;
   } else if (e.key === 'Escape' && selected) {
     selected.deselect();
   } else if (e.key === 'Delete' && selected) {
-    selected.remove();
+    if (selected.id === 'main') {
+      console.warn('not removing main part');
+      return;
+    }
+    let message = selected.remove();
     selected = null;
     saveState();
+    workerPostMessage(message);
   }
 });
 
@@ -757,7 +871,109 @@ document.addEventListener('DOMContentLoaded', e => {
       parent.querySelector(tab.dataset.for).classList.add('active');
     });
   }
+
+  // Load parts in the "Add" tab.
+  loadPartsPanel();
 });
+
+// Initialize the parts panel at the bottom, from where new parts can be added.
+async function loadPartsPanel() {
+  let panel = document.querySelector('#add');
+  let response = await fetch('parts/parts.json');
+  let json = await response.json();
+  panel.innerHTML = '';
+  for (let part of json.parts) {
+    let config = {};
+    // Show small image of the part.
+    let image = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    image.setAttribute('width', '10mm');
+    image.setAttribute('height', '10mm');
+    image.classList.add('part-image');
+    panel.appendChild(image);
+    let svgPromise = loadSVG(new URL(part.config.svg, new URL('parts/', document.baseURI)))
+    svgPromise.then((svg) => {
+      image.appendChild(svg);
+      applyOptions();
+    });
+
+    // Make sure the image looks as specified in the options (changeable via
+    // dropdowns).
+    let applyOptions = () => {
+      if (config.color) {
+        let color = 'rgb(' + config.color[0] + ',' + config.color[1] + ',' + config.color[2] + ')';
+        image.style.setProperty('--plastic', color);
+        image.style.setProperty('--shadow', color);
+      }
+    };
+
+    // Part title.
+    let titleDiv = document.createElement('div');
+    titleDiv.textContent = part.config.humanName;
+    panel.appendChild(titleDiv);
+
+    // Options, such as color.
+    let optionsDiv = document.createElement('div');
+    for (let [optionKey, optionValues] of Object.entries(part.options || {})) {
+      let select = document.createElement('select');
+      for (let [name, value] of Object.entries(optionValues)) {
+        if (!(optionKey in config)) {
+          // First option, add it to the config object as default.
+          config[optionKey] = value;
+        }
+        let option = document.createElement('option');
+        option.textContent = name;
+        option.value = JSON.stringify(value);
+        select.appendChild(option);
+      }
+      select.addEventListener('change', e => {
+        let value = JSON.parse(e.target.value);
+        config[optionKey] = value;
+        applyOptions();
+      });
+      optionsDiv.appendChild(select);
+    }
+    panel.appendChild(optionsDiv);
+
+    // Button to add the part to the schematic.
+    let buttonDiv = document.createElement('div');
+    let button = document.createElement('button');
+    button.textContent = 'Add';
+    buttonDiv.appendChild(button);
+    panel.appendChild(buttonDiv);
+
+    // Start adding a part to the schematic when clicking the button.
+    button.addEventListener('click', async e => {
+      // Add the part to the UI schematic - but don't really make it part of the
+      // running circuit yet. Imagine picking up a part and hovering just above
+      // where you want to put it down.
+      document.body.classList.add('adding-part');
+      let data = {
+        config: Object.assign({}, part.config, config, {
+          id: Math.random().toString(36).slice(2),
+        }),
+        x: e.pageX - schematicRect.width/2 - schematicRect.x,
+        y: e.pageY - schematicRect.height/2 - schematicRect.y,
+      };
+      newPart = await Part.load(data.config.id, data, schematic);
+      await newPart.loadSVG();
+      schematic.addPart(newPart);
+
+      // Truly add the part to the circuit when clicking on it.
+      let onclick = e => {
+        workerPostMessage({
+          type: 'add',
+          parts: [newPart.workerConfig()],
+        });
+        newPart.rootElement.removeEventListener('click', onclick);
+        newPart = null;
+        document.body.classList.remove('adding-part');
+        schematic.state.parts[data.config.id] = data;
+        saveState();
+      };
+      newPart.rootElement.addEventListener('click', onclick);
+    });
+  }
+}
 
 // Work around a positioning bug in Chrome and a rendering bug in Firefox.
 // It might be possible to remove this code once these bugs are fixed.

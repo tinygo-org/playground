@@ -33,11 +33,55 @@ function handleIncomingMessage(message) {
       type: 'update',
       updates: schematic.getUpdates(),
     });
-  } else if (message.type === 'add-wire') {
-    schematic.addWire(message.wire.from, message.wire.to);
+  } else if (message.type === 'add') {
+    let hasProperties = false;
+    for (let part of message.parts || []) {
+      let instance = schematic.addPart(part);
+      if (instance.properties) {
+        hasProperties = true;
+      }
+    }
+    for (let wire of message.wires || []) {
+      schematic.addWire(wire.from, wire.to);
+    }
+    if (hasProperties) {
+      // Update properties pane.
+      postMessage({
+        type: 'properties',
+        properties: schematic.getPropertyTypes(),
+      });
+      // Send new properties.
+      for (let part of Object.values(schematic.parts)) {
+        if (part.properties) {
+          part.notifyUpdate();
+        }
+      }
+    }
     schematic.updateNets();
-  } else if (message.type === 'remove-wire') {
-    schematic.removeWire(message.wire.from, message.wire.to);
+  } else if (message.type === 'remove') {
+    let hasProperties = false;
+    for (let id of message.parts || []) {
+      if (schematic.parts[id].properties) {
+        hasProperties = true;
+      }
+      schematic.removePart(id);
+    }
+    for (let wire of message.wires || []) {
+      schematic.removeWire(wire.from, wire.to);
+    }
+    if (hasProperties) {
+      // Update properties pane.
+      postMessage({
+        type: 'properties',
+        properties: schematic.getPropertyTypes(),
+      });
+      // Send new properties.
+      for (let part of Object.values(schematic.parts)) {
+        if (part.properties) {
+          part.notifyUpdate();
+        }
+      }
+    }
     schematic.updateNets();
   } else {
     console.log('unknown message:', message);
