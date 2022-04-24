@@ -1,0 +1,50 @@
+{
+    "name": "circuitplay-bluefruit",
+    "humanName": "Circuit Playground Bluefruit",
+    "example": "blinky1",
+    "firmwareFormat": "uf2",
+    "svg": "circuit-playground.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "P0_02": 2,
+                "P0_29": 29,
+                "P0_03": 3,
+                "P0_04": 4,
+                "P0_05": 5,
+                "P0_30": 30,
+                "P0_14": 14,
+                "P0_28": 28,
+                "P1_14": 46,
+                "P0_13": 13
+            }
+        },
+        {
+            "id": "led",
+            "type": "led",
+            "humanName": "LED",
+            "color": [255, 0, 0]
+        },
+        {
+            "id": "neopixels",
+            "type": "ws2812",
+            "humanName": "NeoPixels",
+            "length": 10
+        }
+    ],
+    "wires": [
+        {"from": "mcu.P0_02", "to": "A0"},
+        {"from": "mcu.P0_29", "to": "A1"},
+        {"from": "mcu.P0_03", "to": "A2"},
+        {"from": "mcu.P0_04", "to": "A3"},
+        {"from": "mcu.P0_05", "to": "A4"},
+        {"from": "mcu.P0_30", "to": "A5"},
+        {"from": "mcu.P0_14", "to": "A6"},
+        {"from": "mcu.P0_28", "to": "A7"},
+        {"from": "mcu.P1_14", "to": "led.cathode"},
+        {"from": "mcu.P0_13", "to": "neopixels.din"}
+    ]
+}
