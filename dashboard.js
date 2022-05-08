@@ -27,6 +27,7 @@ var boardNames = {
   'console': 'Console',
   'arduino': 'Arduino Uno',
   'arduino-nano33': 'Arduino Nano 33 IoT',
+  'circuitplay-bluefruit': 'Circuit Playground Bluefruit',
   'circuitplay-express': 'Circuit Playground Express',
   'hifive1b': 'HiFive1 rev B',
   'reelboard': 'Phytec reel board',
