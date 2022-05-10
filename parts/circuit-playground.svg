@@ -22,16 +22,16 @@
   <!-- NeoPixel ring -->
   <g data-part="neopixels" filter="drop-shadow(0 0 1.5px #fff0)">
     <!-- created as a ring of 12 LEDs (like a clock face) with radius 17.4 of which two LEDs are missing -->
-    <circle data-type="rgbled" cx="16.7"  cy="10.33" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="10.33" cy="16.7"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="8"     cy="25.4"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="10.33" cy="34.1"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="16.7"  cy="40.47" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="34.1"  cy="40.47" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="40.47" cy="34.1"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="42.8"  cy="25.4"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="40.47" cy="16.7"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
-    <circle data-type="rgbled" cx="34.1"  cy="10.33" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))"/>
+    <circle data-type="rgbled" cx="16.7"  cy="10.33" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="10.33" cy="16.7"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="8"     cy="25.4"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="10.33" cy="34.1"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="16.7"  cy="40.47" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="34.1"  cy="40.47" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="40.47" cy="34.1"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="42.8"  cy="25.4"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="40.47" cy="16.7"  r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    <circle data-type="rgbled" cx="34.1"  cy="10.33" r="1.5" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
   </g>
 
   <!-- pins on the edge of the board -->
