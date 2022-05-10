@@ -48,6 +48,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	background: #111;
+	position:relative;
 }
 
 #terminal-box {

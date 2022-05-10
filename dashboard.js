@@ -99,6 +99,8 @@ async function update() {
       // a getUpdate message.
       // Update the UI with the new state.
       schematic.update(msg.updates);
+    } else if (msg.type === 'speed') {
+      schematic.setSpeed(msg.speed);
     } else {
       // Unknown message.
       console.log('unknown worker message:', msg);

@@ -16,7 +16,6 @@ class Runner {
   constructor(schematic, part) {
     this.schematic = schematic;
     this.part = part;
-    this.timeout = null;
   }
 
   // Load response and prepare runner, but don't run any code yet.
@@ -28,9 +27,9 @@ class Runner {
       },
       env: {
         'runtime.ticks': () =>
-          performance.now() - this._timeOrigin,
+          this.schematic.clock.now() - this._timeOrigin,
         'runtime.sleepTicks': (timeout) =>
-          this.timeout = setTimeout(this._inst.exports.go_scheduler, timeout),
+          this.schematic.clock.setTimeout(this._inst.exports.go_scheduler, timeout),
         'syscall/js.finalizeRef': () =>
           console.error('js.finalizeRef is not supported'),
         'syscall/js.stringVal': () =>
@@ -84,7 +83,7 @@ class Runner {
       let bytes = await source.arrayBuffer();
       result = await WebAssembly.instantiate(bytes, importObject);
     }
-    this._timeOrigin = performance.now();
+    this._timeOrigin = this.schematic.clock.now();
     this._inst = result.instance;
     this._refs = new Map();
     this._values = [

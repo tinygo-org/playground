@@ -17,6 +17,7 @@ class Schematic {
     this.state = state;
     this.schematic = document.querySelector('#schematic');
     this.propertiesContainer = document.querySelector('#properties .content');
+    this.setSpeed(1);
   }
 
   // getPin returns a pin object based on a given ID (such as main.D13).
@@ -264,6 +265,18 @@ class Schematic {
   removeWire(from, to) {
     let index = schematic.findWire(from, to);
     schematic.state.wires.splice(index, 1);
+  }
+
+  // Set the speed of the simulator, which is currently assumed to be 1 (normal
+  // speed) or 0 (stopped).
+  setSpeed(speed) {
+    let button = document.querySelector('#schematic-button-pause');
+    button.disabled = false;
+    if (speed === 0) {
+      button.textContent = '▶'; // paused, so show play symbol
+    } else {
+      button.textContent = '⏸';
+    }
   }
 }
 
@@ -996,3 +1009,11 @@ let fixPartsLocation = (function() {
 })();
 window.addEventListener('load', fixPartsLocation);
 window.addEventListener('resize', fixPartsLocation);
+
+document.querySelector('#schematic-button-pause').addEventListener('click', e => {
+  e.target.disabled = true; // disable until there's a reply from the worker
+  e.stopPropagation();
+  workerPostMessage({
+    type: 'playpause',
+  });
+});

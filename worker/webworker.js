@@ -83,6 +83,16 @@ function handleIncomingMessage(message) {
       }
     }
     schematic.updateNets();
+  } else if (message.type === 'playpause') {
+    if (schematic.clock.running) {
+      schematic.clock.pause();
+    } else {
+      schematic.clock.start(); // restart from where it was paused
+    }
+    postMessage({
+      type: 'speed',
+      speed: schematic.clock.running ? 1 : 0,
+    });
   } else {
     console.log('unknown message:', message);
   }
