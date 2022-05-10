@@ -78,9 +78,20 @@ func main() {
 
 	// Run the web server.
 	http.HandleFunc("/api/compile", handleCompile)
-	http.Handle("/", http.FileServer(http.Dir(*dir)))
+	http.Handle("/", addHeaders(http.FileServer(http.Dir(*dir))))
 	log.Print("Serving " + *dir + " on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
+}
+
+func addHeaders(fs http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Add headers that enable greater accuracy of performance.now() in
+		// Firefox.
+		w.Header().Add("Cross-Origin-Opener-Policy", "same-origin")
+		w.Header().Add("Cross-Origin-Embedder-Policy", "require-corp")
+
+		fs.ServeHTTP(w, r)
+	}
 }
 
 // handleCompile handles the /api/compile API endpoint. It first tries to serve
