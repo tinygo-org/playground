@@ -77,6 +77,32 @@ body.adding-wire .wire {
     pointer-events: none;
 }
 
+/* Tooltip for pin names */
+#schematic-tooltip {
+    position: absolute;
+    border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
+    padding: 2px 8px;
+    font-size: 12px;
+    color: var(--vscode-editorHoverWidget-foreground, #cccccc);
+    background: var(--vscode-editorHoverWidget-background, #252526);
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgb(0 0 0 / 36%));
+    pointer-events: none;
+}
+#schematic-tooltip:not(.visible) {
+    opacity: 0;
+}
+#schematic-tooltip:after {
+    content: "";
+    position: absolute;
+    display: block;
+    width: 5px;
+    height: 5px;
+    transform: rotate(45deg);
+    border: solid var(--vscode-editorHoverWidget-border, #454545);
+    border-width: 0px 1px 1px 0px;
+    background: var(--vscode-editorHoverWidget-background, #252526);
+}
+
 /* Panels */
 
 #panels {

@@ -509,6 +509,7 @@ class Part {
     // Detect pins inside the SVG file. They have an attribute like
     // data-pin="D5".
     let wireGroup = document.querySelector('#schematic-wires');
+    let tooltip = document.querySelector('#schematic-tooltip');
     for (let el of this.rootElement.querySelectorAll('[data-pin]')) {
       // Add dot in the middle (only visible on hover).
       let area = el.querySelector('.area');
@@ -556,6 +557,22 @@ class Part {
           newWire = null;
           document.body.classList.remove('adding-wire');
         }
+      });
+
+      // Show a tooltip when hovering over the pin.
+      el.addEventListener('mouseenter', e => {
+        tooltip.textContent = pin.name;
+        let dotRect = pin.dot.getBoundingClientRect();
+        tooltip.style.top = (dotRect.y - schematicRect.y - 30) + 'px';
+        tooltip.style.left = (dotRect.x + dotRect.width/2 - schematicRect.x - 11.5) + 'px';
+        tooltip.classList.add('visible');
+      });
+      el.addEventListener('mouseleave', e => {
+        if (tooltip.textContent !== pin.name) {
+          // Already entered a different pin, ignore.
+          return;
+        }
+        tooltip.classList.remove('visible');
       });
     }
 
