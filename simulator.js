@@ -503,7 +503,13 @@ class Part {
     // Detect parts inside the SVG file. They have a tag like
     // data-part="led".
     for (let el of this.rootElement.querySelectorAll('[data-part]')) {
-      this.subparts[this.id+'.'+el.dataset.part].setRootElement(el);
+      let id = this.id+'.'+el.dataset.part;
+      let part = this.subparts[id];
+      if (!part) {
+        console.warn('part not found:', id);
+        continue;
+      }
+      part.setRootElement(el);
     }
 
     // Detect pins inside the SVG file. They have an attribute like
@@ -511,6 +517,10 @@ class Part {
     let wireGroup = document.querySelector('#schematic-wires');
     let tooltip = document.querySelector('#schematic-tooltip');
     for (let el of this.rootElement.querySelectorAll('[data-pin]')) {
+      if (el.dataset.pin.includes('.')) {
+        console.warn('pin name contains dot:', el.dataset.pin);
+        continue;
+      }
       // Add dot in the middle (only visible on hover).
       let area = el.querySelector('.area');
       let dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
