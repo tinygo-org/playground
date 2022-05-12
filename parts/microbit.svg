@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Useful source for dimensions: https://tech.microbit.org/hardware/schematic/ -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 51.6 42" width="51.6mm" height="42mm">
+  <!-- PCB, first the basic rounded-off square and then cutouts for the five holes -->
+  <path x="0" y="0" fill="#111111" d="
+    M 3 42 A 3 3 0 0 1 0 39 V 3 A 3 3 0 0 1 3 0 H 48.6 A 3 3 0 0 1 51.6 3 V 39 A 3 3 0 0 1 48.6 42 Z
+    M  4.21 33.14 a 2 2 0 1 0 0.001 0 z
+    M 14.37 33.14 a 2 2 0 1 0 0.001 0 z
+    M 25.80 33.14 a 2 2 0 1 0 0.001 0 z
+    M 37.23 33.14 a 2 2 0 1 0 0.001 0 z
+    M 47.39 33.14 a 2 2 0 1 0 0.001 0 z
+    "/>
+  <xrect x="0" y="0" width="51.6" height="42" rx="3" fill="#111111"/>
+
+  <!-- three colored triangles at the top -->
+  <g fill="#de1642">
+    <path d="M 11.87 0 h -8.87 a 3 3 0 0 0 -3 3 v 8.87 z"/>
+    <path d="M 17.8  0 h -5.93 v 5.93 z"/>
+    <path d="M 20.77 0 h -2.97 v 2.97 z"/>
+  </g>
+
+  <!-- expansion connector -->
+  <g fill="transparent">
+    <g data-pin="P3" transform="translate(0.38, 37)">
+      <path d="M 0.135 0 h 1 v 4.61 A 3 3 0 0 1 0.135 3.68 z" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P0" transform="translate(1.65, 37)">
+      <path d="M 0.135 4.74 A 3 3 0 0 0 1.35 5 H 4.95 V -1.86 a 2.405 2.405 0 1 0 -4.81 0 z M 2.54 0.14 a 2 2 0 1 1 0.001 0 z" fill="#d4af37"/>
+      <text x="2.54" y="3" font-size="2.5" text-anchor="middle" fill="black" font-family="monospace" font-weight="bold">0</text>
+      <rect width="5.08" height="5" class="area"/>
+    </g>
+    <g data-pin="P4" transform="translate(6.73, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P5" transform="translate(8.00, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P6" transform="translate(9.27, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P7" transform="translate(10.54, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P1" transform="translate(11.81, 37)">
+      <path d="M 0.135 5 h 4.81 V -1.86 a 2.405 2.405 0 1 0 -4.81 0 z M 2.54 0.14 a 2 2 0 1 1 0.001 0 z" fill="#d4af37"/>
+      <text x="2.54" y="3" font-size="2.5" text-anchor="middle" fill="black" font-family="monospace" font-weight="bold">1</text>
+      <rect width="5.08" height="5" class="area"/>
+    </g>
+    <g data-pin="P8" transform="translate(16.89, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P9" transform="translate(18.16, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P10" transform="translate(19.43, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P11" transform="translate(20.70, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P12" transform="translate(21.97, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P2" transform="translate(23.24, 37)">
+      <path d="M 0.135 5 h 4.81 V -1.86 a 2.405 2.405 0 1 0 -4.81 0 z M 2.54 0.14 a 2 2 0 1 1 0.001 0 z" fill="#d4af37"/>
+      <text x="2.54" y="3" font-size="2.5" text-anchor="middle" fill="black" font-family="monospace" font-weight="bold">2</text>
+      <rect width="5.08" height="5" class="area"/>
+    </g>
+    <g data-pin="P13" transform="translate(28.36, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P14" transform="translate(29.63, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P15" transform="translate(30.90, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P16" transform="translate(32.17, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="3V3#1" data-title="3.3V" transform="translate(33.44, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="3V3#2" data-title="3.3V" transform="translate(34.71, 37)">
+      <path d="M 0.135 5 h 4.81 V -1.86 a 2.405 2.405 0 1 0 -4.81 0 z M 2.54 0.14 a 2 2 0 1 1 0.001 0 z" fill="#d4af37"/>
+      <text x="2.54" y="3" font-size="2.5" text-anchor="middle" fill="black" font-family="monospace" font-weight="bold">3V</text>
+      <rect width="5.08" height="5" class="area"/>
+    </g>
+    <g data-pin="3V3#3" data-title="3.3V" transform="translate(39.79, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P19" transform="translate(41.06, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="P20" transform="translate(42.33, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="GND#1" data-title="GND" transform="translate(43.60, 37)">
+      <rect x="0.135" y="0" width="1" height="5" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+    <g data-pin="GND#2" data-title="GND" transform="translate(44.87, 37)">
+      <path d="M 0.135 5 h 3.595 A 3 3 0 0 0 4.945 4.74 V -1.86 a 2.405 2.405 0 1 0 -4.81 0 z M 2.54 0.14 a 2 2 0 1 1 0.001 0 z" fill="#d4af37"/>
+      <text x="2.54" y="3" font-size="2.5" text-anchor="middle" fill="black" font-family="monospace" font-weight="bold">GND</text>
+      <rect width="5.08" height="5" class="area"/>
+    </g>
+    <g data-pin="GND#3" data-title="GND" transform="translate(49.95, 37)">
+      <path d="M 0.135 0 v 4.61 A 3 3 0 0 0 1.135 3.68 V 0 z" fill="#d4af37"/>
+      <rect width="1.27" height="5" class="area"/>
+    </g>
+  </g>
+
+  <!-- 5x5 LED display -->
+  <g data-part="led11" transform="translate(17.8, 14)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led12" transform="translate(21.8, 14)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led13" transform="translate(25.8, 14)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led14" transform="translate(29.8, 14)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led15" transform="translate(33.8, 14)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led21" transform="translate(17.8, 18)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led22" transform="translate(21.8, 18)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led23" transform="translate(25.8, 18)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led24" transform="translate(29.8, 18)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led25" transform="translate(33.8, 18)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led31" transform="translate(17.8, 22)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led32" transform="translate(21.8, 22)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led33" transform="translate(25.8, 22)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led34" transform="translate(29.8, 22)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led35" transform="translate(33.8, 22)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led41" transform="translate(17.8, 26)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led42" transform="translate(21.8, 26)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led43" transform="translate(25.8, 26)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led44" transform="translate(29.8, 26)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led45" transform="translate(33.8, 26)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led51" transform="translate(17.8, 30)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led52" transform="translate(21.8, 30)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led53" transform="translate(25.8, 30)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led54" transform="translate(29.8, 30)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+  <g data-part="led55" transform="translate(33.8, 30)">
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" fill="#664" rx="0.3"/>
+    <rect x="-0.75" y="-1.25" width="1.5" height="2.5" rx="0.3" style="fill: var(--shadow, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+</svg>
