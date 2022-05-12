@@ -19,84 +19,124 @@
     </foreignObject>
   </g>
 
-  <!-- Expansion Connector -->
+  <!-- Expansion Connector
+    For pinout, see:
+    https://docs.zephyrproject.org/3.0.0/boards/arm/reel_board/doc/index.html
+    https://www.phytec.eu/fileadmin/user_upload/images/content/Landingpage/PBA-D-05-1507-1-001.pdf
+  -->
   <g transform="translate(22.14, 64.37)" fill="transparent">
-    <g data-pin="P20" transform="translate(7.62, 0)">
+    <g data-pin="P3" transform="translate(0, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P19" transform="translate(8.89, 0)">
-      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
-      <rect width="1.27" height="4" class="area"/>
-    </g>
-    <g data-pin="P16" transform="translate(17.78, 0)">
-      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
-      <rect width="1.27" height="4" class="area"/>
-    </g>
-    <g data-pin="P15" transform="translate(19.05, 0)">
-      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
-      <rect width="1.27" height="4" class="area"/>
-    </g>
-    <g data-pin="P14" transform="translate(20.32, 0)">
-      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
-      <rect width="1.27" height="4" class="area"/>
-    </g>
-    <g data-pin="P13" transform="translate(21.59, 0)">
-      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
-      <rect width="1.27" height="4" class="area"/>
-    </g>
-    <g data-pin="P2" transform="translate(24.13, 0)">
+    <g data-pin="P0" data-title="P0 (x4)" transform="translate(1.27, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(1.27, 0)"/>
-      <rect width="2.54" height="4" class="area"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(2.54, 0)"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(3.81, 0)"/>
+      <rect width="5.08" height="4" class="area"/>
     </g>
-    <g data-pin="P12" transform="translate(27.94, 0)">
+    <g data-pin="P4" transform="translate(6.35, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P11" transform="translate(29.21, 0)">
+    <g data-pin="P5" transform="translate(7.62, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P10" transform="translate(30.48, 0)">
+    <g data-pin="P6" transform="translate(8.89, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P9" transform="translate(31.75, 0)">
+    <g data-pin="P7" transform="translate(10.16, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P8" transform="translate(33.02, 0)">
-      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
-      <rect width="1.27" height="4" class="area"/>
-    </g>
-    <g data-pin="P1" transform="translate(35.56, 0)">
+    <g data-pin="P1" data-title="P1 (x4)" transform="translate(11.43, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(1.27, 0)"/>
-      <rect width="2.54" height="4" class="area"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(2.54, 0)"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(3.81, 0)"/>
+      <rect width="5.08" height="4" class="area"/>
     </g>
-    <g data-pin="P7" transform="translate(39.37, 0)">
+    <g data-pin="P8" transform="translate(16.51, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P6" transform="translate(40.64, 0)">
+    <g data-pin="P9" transform="translate(17.78, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P5" transform="translate(41.91, 0)">
+    <g data-pin="P10" transform="translate(19.05, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P4" transform="translate(43.18, 0)">
+    <g data-pin="P11" transform="translate(20.32, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>
-    <g data-pin="P0" transform="translate(45.72, 0)">
+    <g data-pin="P12" transform="translate(21.59, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="P2" data-title="P2 (x4)" transform="translate(22.86, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(1.27, 0)"/>
-      <rect width="2.54" height="4" class="area"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(2.54, 0)"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(3.81, 0)"/>
+      <rect width="5.08" height="4" class="area"/>
     </g>
-    <g data-pin="P3" transform="translate(49.53, 0)">
+    <g data-pin="P13" transform="translate(27.94, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="P14" transform="translate(29.21, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="P15" transform="translate(30.48, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="P16" transform="translate(31.75, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="VDD#1" data-title="VDD" transform="translate(33.02, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="VDD#2" data-title="VDD (x4)" transform="translate(34.29, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(1.27, 0)"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(2.54, 0)"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(3.81, 0)"/>
+      <rect width="5.08" height="4" class="area"/>
+    </g>
+    <g data-pin="VDD#3" data-title="VDD" transform="translate(39.37, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="P19" transform="translate(40.64, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="P20" transform="translate(41.91, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="GND#1" data-title="GND" transform="translate(43.18, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <rect width="1.27" height="4" class="area"/>
+    </g>
+    <g data-pin="GND#2" data-title="GND (x4)" transform="translate(44.45, 0)">
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(1.27, 0)"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(2.54, 0)"/>
+      <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37" transform="translate(3.81, 0)"/>
+      <rect width="5.08" height="4" class="area"/>
+    </g>
+    <g data-pin="GND#3" data-title="GND" transform="translate(49.53, 0)">
       <path d="M 0.13 0 H 1.13 V 3.5 A 0.5 0.5 0 0 1 0.13 3.5 Z" fill="#d4af37"/>
       <rect width="1.27" height="4" class="area"/>
     </g>

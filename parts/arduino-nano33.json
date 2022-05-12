@@ -60,6 +60,7 @@
     "wires": [
         {"from": "mcu.PB22", "to": "TX1"},
         {"from": "mcu.PB23", "to": "RX0"},
+        {"from": "gnd",      "to": "GND#1"},
         {"from": "mcu.PB10", "to": "D2"},
         {"from": "mcu.PB11", "to": "D3"},
         {"from": "mcu.PA07", "to": "D4"},
@@ -72,6 +73,7 @@
         {"from": "mcu.PA16", "to": "D11"},
         {"from": "mcu.PA19", "to": "D12"},
         {"from": "mcu.PA17", "to": "D13"},
+        {"from": "vcc",      "to": "3V3"},
         {"from": "mcu.PA02", "to": "A0"},
         {"from": "mcu.PB02", "to": "A1"},
         {"from": "mcu.PA11", "to": "A2"},
@@ -80,6 +82,9 @@
         {"from": "mcu.PB09", "to": "A5"},
         {"from": "mcu.PA09", "to": "A6"},
         {"from": "mcu.PB03", "to": "A7"},
+        {"from": "vcc",      "to": "5V"},
+        {"from": "gnd",      "to": "GND#2"},
+        {"from": "vcc",      "to": "VIN"},
         {"from": "mcu.PA17", "to": "led.cathode"}
     ]
 }

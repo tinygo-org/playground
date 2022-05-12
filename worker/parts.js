@@ -159,6 +159,10 @@ class Board extends Part {
     for (let name of config.pins) {
       this.pins[name] = new Pin(config.id + '.' + name, this);
     }
+    // Standard VCC/GND pin for completeness (most development boards have some
+    // 3.3V/GND pins for example).
+    this.pins['vcc'] = new Pin(config.id + '.vcc', this, 'high');
+    this.pins['gnd'] = new Pin(config.id + '.gnd', this, 'low');
   }
 
   notifyPinUpdate() {

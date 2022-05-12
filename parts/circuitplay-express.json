@@ -36,14 +36,20 @@
         }
     ],
     "wires": [
+        {"from": "vcc",      "to": "VOUT"},
         {"from": "mcu.PA02", "to": "A0"},
         {"from": "mcu.PA05", "to": "A1"},
+        {"from": "gnd",      "to": "GND#1"},
         {"from": "mcu.PA06", "to": "A2"},
         {"from": "mcu.PA07", "to": "A3"},
+        {"from": "vcc",      "to": "3V3#1"},
+        {"from": "gnd",      "to": "GND#2"},
         {"from": "mcu.PB03", "to": "A4"},
         {"from": "mcu.PB02", "to": "A5"},
+        {"from": "vcc",      "to": "3V3#2"},
         {"from": "mcu.PB09", "to": "A6"},
         {"from": "mcu.PB08", "to": "A7"},
+        {"from": "gnd",      "to": "GND#3"},
         {"from": "mcu.PA17", "to": "led.cathode"},
         {"from": "mcu.PB23", "to": "neopixels.din"}
     ]

@@ -570,15 +570,16 @@ class Part {
       });
 
       // Show a tooltip when hovering over the pin.
+      let pinTitle = el.dataset.title || pin.name;
       el.addEventListener('mouseenter', e => {
-        tooltip.textContent = pin.name;
+        tooltip.textContent = pinTitle;
         let dotRect = pin.dot.getBoundingClientRect();
         tooltip.style.top = (dotRect.y - schematicRect.y - 30) + 'px';
         tooltip.style.left = (dotRect.x + dotRect.width/2 - schematicRect.x - 11.5) + 'px';
         tooltip.classList.add('visible');
       });
       el.addEventListener('mouseleave', e => {
-        if (tooltip.textContent !== pin.name) {
+        if (tooltip.textContent !== pinTitle) {
           // Already entered a different pin, ignore.
           return;
         }

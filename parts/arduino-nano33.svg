@@ -56,6 +56,14 @@
       <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
       <rect width="2.54" height="2.54" class="area"/>
     </g>
+    <g data-pin="GND#1" data-title="GND" transform="translate(27.94, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="RESET#1" data-title="RESET" transform="translate(30.48, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
     <g data-pin="RX0" transform="translate(33.02, 0)">
       <path transform="translate(0.45, 0)" d="M 0,0 H 1.64 V 1.32 A 0.82 0.82 0 0 1 0 1.32 Z" fill="#c2b9af"></path>
       <rect width="2.54" height="2.54" class="area"/>
@@ -67,6 +75,14 @@
   </g>
   <g transform="translate(3.58, 14.96)" fill="transparent">
     <g data-pin="D13" transform="translate(0, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="3V3" data-title="3.3V" transform="translate(2.54, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="AREF" transform="translate(5.08, 0)">
       <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
       <rect width="2.54" height="2.54" class="area"/>
     </g>
@@ -99,6 +115,22 @@
       <rect width="2.54" height="2.54" class="area"/>
     </g>
     <g data-pin="A7" transform="translate(25.4, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="5V" transform="translate(27.94, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="RESET#2" data-title="RESET" transform="translate(30.48, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="GND#2" data-title="GND" transform="translate(33.02, 0)">
+      <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="VIN" transform="translate(35.56, 0)">
       <path transform="translate(0.45, 0)" d="M 0,2.54 H 1.64 V 1.22 A 0.82 0.82 0 0 0 0 1.22 Z" fill="#c2b9af"></path>
       <rect width="2.54" height="2.54" class="area"/>
     </g>
