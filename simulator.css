@@ -54,10 +54,14 @@ body.no-schematic #schematic {
 
 #schematic .pin-hover-dot {
     r: 1px; /* actually: 1mm */
-    fill: #0b0;
+    fill: #080;
 }
 #schematic [data-pin]:not(:hover) .pin-hover-dot {
     visibility: hidden;
+}
+
+#schematic .hover-connection {
+    filter: brightness(1.4);
 }
 
 #schematic .wire {
@@ -69,7 +73,7 @@ body.no-schematic #schematic {
     stroke-width: 1.5mm;
 }
 #schematic .wire.selected {
-    stroke: #00aa00;
+    stroke: #009900;
     stroke-width: 1.5mm;
 }
 body.adding-wire .wire {

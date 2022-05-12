@@ -127,7 +127,7 @@ async function start(msg) {
 
   // The program is compiled, but not yet fully downloaded. Set up all the
   // electronics for this program in preparation of running it.
-  schematic = new Schematic(() => {
+  schematic = new Schematic(sendConnections, () => {
     postMessage({
       type: 'notifyUpdate',
     });
@@ -163,6 +163,23 @@ async function start(msg) {
     type: 'started',
   });
   runner.run();
+}
+
+// sendConnections sends the current netlist to the UI so that the UI can show
+// which pins are connected together.
+function sendConnections(nets) {
+  let connections = [];
+  for (let net of Object.values(nets)) {
+    let pinIds = [];
+    for (let pin of net.pins) {
+      pinIds.push(pin.id);
+    }
+    connections.push(pinIds);
+  }
+  postMessage({
+    type: 'connections',
+    pinLists: connections,
+  });
 }
 
 // sendError sends an error back to the UI thread, which will display it and

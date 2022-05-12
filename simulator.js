@@ -267,6 +267,22 @@ class Schematic {
     schematic.state.wires.splice(index, 1);
   }
 
+  // updateConnections updates the current netlist as calculated by the web
+  // worker. It is used to show connected pins and wires when hovering over
+  // them.
+  updateConnections(lists) {
+    for (let pinIds of lists) {
+      let pins = [];
+      for (let pinId of pinIds) {
+        let pin = this.getPin(pinId);
+        if (pin) {
+          pins.push(pin);
+          pin.connected = pins;
+        }
+      }
+    }
+  }
+
   // Set the speed of the simulator, which is currently assumed to be 1 (normal
   // speed) or 0 (stopped).
   setSpeed(speed) {
@@ -276,6 +292,33 @@ class Schematic {
       button.textContent = '▶'; // paused, so show play symbol
     } else {
       button.textContent = '⏸';
+    }
+  }
+}
+
+// highlightConnection adds the .hover-connection to all given pins and
+// connected wires.
+function highlightConnection(pins) {
+  if (!pins) {
+    return;
+  }
+  for (let connectedPin of pins) {
+    connectedPin.element.classList.add('hover-connection');
+    for (let wire of connectedPin.wires) {
+      wire.line.classList.add('hover-connection');
+    }
+  }
+}
+
+// unhighlightConnection undoes highlightConnection.
+function unhighlightConnection(pins) {
+  if (!pins) {
+    return;
+  }
+  for (let connectedPin of pins) {
+    connectedPin.element.classList.remove('hover-connection');
+    for (let wire of connectedPin.wires) {
+      wire.line.classList.remove('hover-connection');
     }
   }
 }
@@ -530,7 +573,7 @@ class Part {
       el.appendChild(dot);
 
       // Create pin, to attach wires to.
-      let pin = new Pin(this, el.dataset.pin, dot);
+      let pin = new Pin(this, el.dataset.pin, el, dot);
       this.pins[pin.name] = pin;
 
       // Create a wire by clicking on the pin.
@@ -572,6 +615,7 @@ class Part {
       // Show a tooltip when hovering over the pin.
       let pinTitle = el.dataset.title || pin.name;
       el.addEventListener('mouseenter', e => {
+        highlightConnection(pin.connected);
         tooltip.textContent = pinTitle;
         let dotRect = pin.dot.getBoundingClientRect();
         tooltip.style.top = (dotRect.y - schematicRect.y - 30) + 'px';
@@ -579,6 +623,7 @@ class Part {
         tooltip.classList.add('visible');
       });
       el.addEventListener('mouseleave', e => {
+        unhighlightConnection(pin.connected);
         if (tooltip.textContent !== pinTitle) {
           // Already entered a different pin, ignore.
           return;
@@ -699,9 +744,10 @@ class Part {
 // A pin wraps a visible pin in the SVG, such as a header pin or a copper area
 // on a board. Wires can be attached to such a pin.
 class Pin {
-  constructor(part, name, dot) {
+  constructor(part, name, element, dot) {
     this.part = part; // Part object
     this.name = name; // pin name (string)
+    this.element = element; // the containing element for this pin (with data-pin="...")
     this.dot = dot; // SVG object to use as center point
     this.wires = new Set();
   }
@@ -735,6 +781,16 @@ class Wire {
       e.preventDefault();
       e.stopPropagation();
       this.select();
+    });
+    this.line.addEventListener('mouseenter', e => {
+      if (this.from && this.to) {
+        highlightConnection(this.from.connected);
+      }
+    });
+    this.line.addEventListener('mouseleave', e => {
+      if (this.from && this.to) {
+        unhighlightConnection(this.from.connected);
+      }
     });
   }
 

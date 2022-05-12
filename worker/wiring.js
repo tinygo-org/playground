@@ -87,13 +87,14 @@ class Net {
 
 // The schematic tracks all electronic parts and the connections between them.
 class Schematic {
-  constructor(sendNotifyUpdate) {
+  constructor(sendConnections, sendNotifyUpdate) {
     this.parts = {};
     this.wires = [];
     // Don't send an update before the UI has requested an update. The UI will
     // request an update on load. The way this is implemented is by setting
     // hasUpdate to true at the beginning.
     this.hasUpdate = true;
+    this.sendConnections = sendConnections;
     this.sendNotifyUpdate = sendNotifyUpdate;
     this.clock = new Clock();
     this.clock.start();
@@ -201,6 +202,9 @@ class Schematic {
         }
       }
     }
+
+    // Send the new netlist to the frontend.
+    this.sendConnections(nets);
   }
 
   // getPin returns a pin by its full name, such as arduino.led.anode.

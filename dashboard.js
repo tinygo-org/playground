@@ -101,6 +101,8 @@ async function update() {
       // a getUpdate message.
       // Update the UI with the new state.
       schematic.update(msg.updates);
+    } else if (msg.type === 'connections') {
+      schematic.updateConnections(msg.pinLists);
     } else if (msg.type === 'speed') {
       schematic.setSpeed(msg.speed);
     } else {
