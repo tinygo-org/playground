@@ -149,6 +149,11 @@
       <rect width="2.54" height="2.54" class="area"/>
     </g>
   </g>
+  <!-- power LED -->
+  <g transform="translate(55.06, 16.4)">
+    <rect width="2.0" height="1.2" fill="black"/>
+    <rect width="2.0" height="1.2" style="fill: #0f0; filter: drop-shadow(0 0 1px #0f0) drop-shadow(0 0 1px #0f0);"/>
+  </g>
   <!-- LED -->
   <g data-part="led" transform="translate(18.3, 9.4)">
     <rect width="2.0" height="1.2" fill="black"/>

@@ -35,7 +35,7 @@
             "id": "led",
             "type": "led",
             "humanName": "LED",
-            "color": [51, 204, 0]
+            "color": [255, 165, 0]
         }
     ],
     "wires": [
