@@ -604,9 +604,11 @@ class WS2812 extends Part {
     for (let i=0; i < this.length; i++) {
       // Extract data from the array. Note that the data is in GRB order, at
       // least on most chips. TODO: make this configurable.
+      // The data is in reverse order, so in this case the order is BRG instead
+      // of GRB.
       let r = this.data[i*3+1];
-      let g = this.data[i*3+0];
-      let b = this.data[i*3+2];
+      let g = this.data[i*3+2];
+      let b = this.data[i*3+0];
       properties.push([r, g, b]);
 
       // Do a gamma correction. The LEDs are in linear color space, while the
