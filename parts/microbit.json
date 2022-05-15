@@ -193,6 +193,16 @@
             "type": "led",
             "humanName": "LED 5.5",
             "color": [255, 0, 0]
+        },
+        {
+            "id": "buttonLeft",
+            "type": "pushbutton",
+            "humanName": "Button A"
+        },
+        {
+            "id": "buttonRight",
+            "type": "pushbutton",
+            "humanName": "Button B"
         }
     ],
     "wires": [
@@ -270,6 +280,10 @@
         {"from": "mcu.P0_11", "to": "led25.cathode"},
         {"from": "mcu.P0_11", "to": "led41.cathode"},
         {"from": "mcu.P0_12", "to": "led32.cathode"},
-        {"from": "mcu.P0_12", "to": "led34.cathode"}
+        {"from": "mcu.P0_12", "to": "led34.cathode"},
+        {"from": "mcu.P0_17", "to": "buttonLeft.A"},
+        {"from": "gnd",       "to": "buttonLeft.B"},
+        {"from": "mcu.P0_26", "to": "buttonRight.A"},
+        {"from": "gnd",       "to": "buttonRight.B"}
     ]
 }

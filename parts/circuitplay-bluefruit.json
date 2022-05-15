@@ -71,6 +71,16 @@
             "type": "ws2812",
             "humanName": "NeoPixels",
             "length": 10
+        },
+        {
+            "id": "buttonLeft",
+            "type": "pushbutton",
+            "humanName": "Button A"
+        },
+        {
+            "id": "buttonRight",
+            "type": "pushbutton",
+            "humanName": "Button B"
         }
     ],
     "wires": [
@@ -89,6 +99,10 @@
         {"from": "mcu.P0_14", "to": "A7"},
         {"from": "gnd",       "to": "GND#3"},
         {"from": "mcu.P1_14", "to": "led.cathode"},
-        {"from": "mcu.P0_13", "to": "neopixels.din"}
+        {"from": "mcu.P0_13", "to": "neopixels.din"},
+        {"from": "mcu.P1_02", "to": "buttonLeft.A"},
+        {"from": "vcc",       "to": "buttonLeft.B"},
+        {"from": "mcu.P1_15", "to": "buttonRight.A"},
+        {"from": "vcc",       "to": "buttonRight.B"}
     ]
 }
