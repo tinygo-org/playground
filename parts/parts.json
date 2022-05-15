@@ -28,6 +28,15 @@
         "humanName": "Push button",
         "svg": "pushbutton.svg"
       }
+    },
+    {
+      "config": {
+        "type": "st7789",
+        "humanName": "ST7789",
+        "svg": "st7789-breakout.svg",
+        "width": 240,
+        "height": 240
+      }
     }
   ]
 }

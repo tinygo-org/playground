@@ -12,8 +12,8 @@
     <rect data-part="light3" width="23.34" height="23.34" style="--shadow: transparent; filter: drop-shadow(0 0 1.5px var(--shadow))"/>
 
     <!-- ST7789 display -->
-    <foreignObject width="23.34" height="23.34">
-      <canvas data-part="display" xmlns="http://www.w3.org/1999/xhtml" width="240" height="240" style="width: 23.34px; background: black"></canvas>
+    <foreignObject data-part="display" width="23.34" height="23.34">
+      <canvas data-type="canvas" xmlns="http://www.w3.org/1999/xhtml" width="240" height="240" style="width: 23.34px; background: black"></canvas>
     </foreignObject>
   </g>
 </svg>

@@ -676,9 +676,9 @@ class Part {
   setRootElement(el) {
     this.rootElement = el;
     this.leds = el.querySelectorAll('[data-type="rgbled"]');
-    this.context = null;
-    if (el.nodeName === 'CANVAS') {
-      this.context = el.getContext('2d');
+    let canvas = el.querySelector('[data-type="canvas"]');
+    if (canvas) {
+      this.context = canvas.getContext('2d');
     }
   }
 
@@ -1027,6 +1027,10 @@ async function loadPartsPanel() {
     panel.appendChild(image);
     let svgPromise = loadSVG(new URL(part.config.svg, new URL('parts/', document.baseURI)))
     svgPromise.then((svg) => {
+      // If needed, shrink the image to fit the available space.
+      let width = svg.getAttribute('width').replace('mm', '');
+      let height = svg.getAttribute('height').replace('mm', '');
+      svg.style.transform = `scale(min(1, min(calc(10 / ${width}), calc(10 / ${height}))))`;
       image.appendChild(svg);
       applyOptions();
     });

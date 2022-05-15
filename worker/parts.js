@@ -479,7 +479,7 @@ class ST7789 extends Part {
 
   // Handle an incoming SPI byte.
   transferSPI(sck, w) {
-    if (!this.pins.cs.net.isLow()) {
+    if (this.pins.cs.isConnected() && !this.pins.cs.net.isLow()) {
       return;
     }
     if (this.pins.dc.net.isHigh()) {

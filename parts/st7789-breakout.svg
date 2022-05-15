@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+    This is a part that is sold in some Chinese websites.
+    I couldn't quickly find an authoritative source, but this page contains a
+    useful drawing with dimensions:
+    https://www.importedelectronics.com/products/1-3-tft-color-ips-display-module-spi-st7789-240x240-arduino-lcd
+-->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 27.70 39.22" width="27.70mm" height="39.22mm">
+  <!-- PCB -->
+  <path fill="#2465ad" d="
+    M 0 0 H 27.70 V 39.22 H 0 Z
+    M 2.5  1.1   a 1.4 1.4 0 1 0 0.001 0 Z
+    M 25.2 1.1   a 1.4 1.4 0 1 0 0.001 0 Z
+    M 2.5  35.32 a 1.4 1.4 0 1 0 0.001 0 Z
+    M 25.2 35.32 a 1.4 1.4 0 1 0 0.001 0 Z
+    "/>
+
+  <!-- pins -->
+  <g transform="translate(4.96, 1.27)" fill="transparent">
+    <g data-pin="GND" transform="translate(0, 0)">
+      <rect x="0.27" y="0.27" width="2" height="2" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="VCC" transform="translate(2.54, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="sck" data-title="SCL" transform="translate(5.08, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="sdi" data-title="SDA" transform="translate(7.62, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="reset" data-title="RES" transform="translate(10.16, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="dc" data-title="DC" transform="translate(12.70, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+    <g data-pin="BLK" transform="translate(15.24, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+    </g>
+  </g>
+
+  <!-- screen -->
+  <g transform="translate(0.81, 5)">
+    <rect width="26.08" height="29.22" fill="#222"/>
+    <foreignObject width="23.34" height="23.34" transform="translate(1.37, 1.33)">
+      <canvas data-type="canvas" xmlns="http://www.w3.org/1999/xhtml" width="240" height="240" style="width: 23.34px; background: black"/>
+    </foreignObject>
+  </g>
+</svg>
