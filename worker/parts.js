@@ -152,6 +152,11 @@ class Part {
       id: this.id,
     };
   }
+
+  // handleInput is called when an input event is received from the UI.
+  handleInput() {
+    console.warn('unimplemented: handleInput for', this.type);
+  }
 }
 
 // Board implements a generic board with subparts on it. This is needed to
@@ -201,6 +206,50 @@ class MCU extends Part {
       id: this.id,
       logText: text,
     };
+  }
+}
+
+// Button implements a typical push button (single pole, normally open).
+class Button extends Part {
+  constructor(schematic, config) {
+    super(schematic, config);
+    this.pins.A = new Pin(config.id + '.A', this);
+    this.pins.B = new Pin(config.id + '.B', this);
+    this.pins.A.connected = this.pins.B;
+    this.pins.B.connected = this.pins.A;
+    this.properties = {
+      humanName: config.humanName,
+      id: this.id,
+      type: 'text',
+    };
+    this.pressed = false;
+  }
+
+  getState() {
+    return {
+      id: this.id,
+      properties: this.pressed ? 'pressed' : 'released',
+      cssProperties: {
+        pressed: this.pressed ? '1' : '0',
+      },
+    };
+  }
+
+  handleInput(data) {
+    let pressed = data.event === 'press';
+    if (pressed === this.pressed) return;
+    this.pressed = pressed;
+    if (pressed) {
+      this.pins.A.state = 'connected';
+      this.pins.B.state = 'connected';
+      this.pins.A.net.updateState();
+    } else {
+      this.pins.A.state = 'floating';
+      this.pins.B.state = 'floating';
+      this.pins.A.net.updateState();
+      this.pins.B.net.updateState();
+    }
+    this.notifyUpdate();
   }
 }
 
@@ -675,6 +724,7 @@ function decodeLittleEndian(buf) {
 if (typeof module !== 'undefined') {
   module.exports.Board = Board;
   module.exports.MCU = MCU;
+  module.exports.Button = Button;
   module.exports.LED = LED;
   module.exports.RGBLED = RGBLED;
   module.exports.WS2812 = WS2812;

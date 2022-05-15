@@ -93,6 +93,8 @@ function handleIncomingMessage(message) {
       type: 'speed',
       speed: schematic.clock.running ? 1 : 0,
     });
+  } else if (message.type === 'input') {
+    schematic.getPart(message.id).handleInput(message);
   } else {
     console.log('unknown message:', message);
   }

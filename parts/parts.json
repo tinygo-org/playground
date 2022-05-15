@@ -21,6 +21,13 @@
         "svg": "ws2812.svg",
         "length": 1
       }
+    },
+    {
+      "config": {
+        "type": "pushbutton",
+        "humanName": "Push button",
+        "svg": "pushbutton.svg"
+      }
     }
   ]
 }

@@ -26,7 +26,9 @@ class Net {
   // that are part of it.
   computeState() {
     let state = 'floating';
-    for (let pin of this.pins) {
+    let pins = new Set(this.pins);
+    let nets = new Set([this]);
+    for (let pin of pins) {
       if (pin.state === 'floating') {
         // no change
       } else if (pin.state === 'low') {
@@ -53,23 +55,33 @@ class Net {
         } else if (state === 'floating') {
           state = 'pulldown';
         }
+      } else if (pin.state === 'connected') {
+        // Special pin state that indicates this is a connection that can be
+        // broken (like in a push button or switch). Implement it by also
+        // looking at all the pins in the net of the connected pin.
+        nets.add(pin.connected.net);
+        for (let otherPin of pin.connected.net.pins) {
+          pins.add(otherPin);
+        }
       } else {
         console.error('unknown pin state:', pin.state);
       }
     }
-    return state;
+    return [state, nets];
   }
 
   // updateState updates the shared state of the net: low, high, or floating.
   // It also notifies connected devices that they have been updated.
   updateState() {
-    let oldState = this.state;
-    this.state = this.computeState();
+    let [newState, nets] = this.computeState();
 
-    // The state changed. Notify listening devices.
-    if (this.state !== oldState) {
-      for (let pin of this.pins) {
-        pin.notifyPart();
+    for (let net of nets) {
+      if (net.state !== newState) {
+        // The state changed. Notify listening parts.
+        net.state = newState;
+        for (let pin of net.pins) {
+          pin.notifyPart();
+        }
       }
     }
   }
@@ -130,6 +142,8 @@ class Schematic {
       return new Board(this, part);
     if (part.type === 'mcu')
       return new MCU(this, part);
+    if (part.type === 'pushbutton')
+      return new Button(this, part);
     if (part.type === 'led')
       return new LED(this, part);
     if (part.type === 'rgbled')
@@ -204,7 +218,8 @@ class Schematic {
       if (updatedNets.has(net)) {
         continue;
       }
-      net.state = net.computeState();
+      let [newState, nets] = net.computeState();
+      net.state = newState;
       updatedNets.add(net);
     }
 

@@ -221,7 +221,9 @@ class Schematic {
       // visible! That should reduce CPU usage for fast-changing properties.
       if (update.properties) {
         let prop = this.propertyElements[update.id];
-        if (prop.text) {
+        if (!prop) {
+          console.error('properties not defined for ' + update.id);
+        } else if (prop.text) {
           // Simple text-based property.
           prop.text.textContent = update.properties;
         } else if (prop.ledstrip) {
@@ -629,6 +631,42 @@ class Part {
           return;
         }
         tooltip.classList.remove('visible');
+      });
+    }
+
+    // Detect click areas within the SVG file.
+    // This is used for buttons and similar inputs.
+    for (let el of this.rootElement.querySelectorAll('[data-clickarea]')) {
+      let id = el.dataset.part ? this.id+'.'+el.dataset.part : this.id;
+      let wasPressed = false;
+      let setPressed = (pressed) => {
+        if (pressed !== wasPressed) {
+          if (document.body.classList.contains('adding-part')) {
+            // Don't fire input events before the part has been fully added.
+            return;
+          }
+          wasPressed = pressed;
+          workerPostMessage({
+            type: 'input',
+            id: id,
+            event: pressed ? 'press' : 'release',
+          });
+        }
+      };
+      el.addEventListener('mousedown', e => {
+        setPressed(true);
+      });
+      el.addEventListener('mouseup', e => {
+        setPressed(false);
+      });
+      el.addEventListener('mouseenter', e => {
+        el.style.setProperty('--hover', '1');
+      })
+      el.addEventListener('mouseleave', e => {
+        el.style.setProperty('--hover', '0');
+        // This can sometimes happen when pressing and dragging. Without the
+        // mouseleave event, the button would remain in the 'pressed' state.
+        setPressed(false);
       });
     }
 

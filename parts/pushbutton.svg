@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- 6mm by 6mm push button, like on the BBC micro:bit -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-2 -2 10 10" width="10mm" height="10mm">
+  <!-- pins -->
+  <g data-pin="A" transform="translate(-2, 0)">
+    <line x1="0" y1="3" x2="2" y2="3" stroke="#c3b9af"/>
+    <rect class="area" width="2" height="6" fill="transparent"/>
+  </g>
+  <g data-pin="B" transform="translate(6, 0)">
+    <line x1="0" y1="3" x2="2" y2="3" stroke="#c3b9af"/>
+    <rect class="area" width="2" height="6" fill="transparent"/>
+  </g>
+
+  <!-- The button itself -->
+  <g data-clickarea="">
+    <rect width="6" height="6" rx="0.5" stroke="#777" stroke-width="0.7" style="opacity: var(--hover, 0)"/>
+    <rect width="6" height="6" rx="0.5" fill="#999"/>
+    <circle cx="1" cy="1" r="0.6" fill="#855528"/>
+    <circle cx="1" cy="5" r="0.6" fill="#855528"/>
+    <circle cx="5" cy="1" r="0.6" fill="#855528"/>
+    <circle cx="5" cy="5" r="0.6" fill="#855528"/>
+    <circle cx="3" cy="3" r="1.75" fill="black"/>
+    <circle cx="3" cy="3" r="1.80" fill="#666" style="opacity: var(--pressed, 0)"/>
+  </g>
+</svg>
