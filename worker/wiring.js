@@ -39,6 +39,20 @@ class Net {
           console.warn('short!'); // TODO: same here
         }
         state = 'high';
+      } else if (pin.state === 'pullup') {
+        if (state === 'pulldown') {
+          console.warn('pulldown+pullup, reverting back to floating');
+          state = 'floating';
+        } else if (state === 'floating') {
+          state = 'pullup';
+        }
+      } else if (pin.state === 'pulldown') {
+        if (state === 'pullup') {
+          console.warn('pulldown+pullup, reverting back to floating');
+          state = 'floating';
+        } else if (state === 'floating') {
+          state = 'pulldown';
+        }
       } else {
         console.error('unknown pin state:', pin.state);
       }
@@ -63,13 +77,13 @@ class Net {
   // isHigh returns whether this pin is currently pulled high. It returns false
   // for floating pins. Used for digital inputs.
   isHigh() {
-    return this.state == 'high';
+    return this.state === 'high' || this.state === 'pullup';
   }
 
   // isLow returns whether this pin is currently pulled low. It returns false
   // for floating pins. Used for digital inputs.
   isLow() {
-    return this.state == 'low';
+    return this.state === 'low' || this.state === 'pulldown';
   }
 
   // isSource returns whether this pin is a source of current (such as VCC or a

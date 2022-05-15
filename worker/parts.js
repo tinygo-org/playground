@@ -59,6 +59,10 @@ class Pin {
       // (This is not exactly accurate, but perhaps more accurate than
       // returning a fixed 'high' or 'low').
       return Math.random() < 0.5;
+    } else if (state === 'pullup') {
+      return true;
+    } else if (state === 'pulldown') {
+      return false;
     } else {
       console.warn('unknown state: ' + state);
       return false;

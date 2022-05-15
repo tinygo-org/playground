@@ -60,6 +60,8 @@ class Runner {
           this.part.getPin(pin).setState({
             0: 'floating',
             1: 'low',
+            2: 'pullup',
+            3: 'pulldown',
           }[mode]),
         __tinygo_spi_configure: (bus, sck, sdo, sdi) => {
           this.part.getSPI(bus).configureAsController(this.part.getPin(sck), this.part.getPin(sdo), this.part.getPin(sdi));
