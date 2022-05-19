@@ -291,9 +291,9 @@ class Schematic {
     let button = document.querySelector('#schematic-button-pause');
     button.disabled = false;
     if (speed === 0) {
-      button.textContent = '▶'; // paused, so show play symbol
+      button.innerHTML = '&#xeb2c'; // paused, so show play symbol
     } else {
-      button.textContent = '⏸';
+      button.innerHTML = '&#xead1'; // pause symbol
     }
   }
 }

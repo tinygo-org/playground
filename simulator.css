@@ -1,6 +1,17 @@
 /* CSS file for the 'output' part: the entire webview in VSCode or the right hand
  * side of the webpage on play.tinygo.org. */
 
+/* Generic styles */
+
+/* Codicons from VS Code: https://github.com/microsoft/vscode-codicons */
+@font-face {
+	font-family: codicon;
+	src: url(resources/codicon/codicon.ttf);
+}
+.codicon {
+    font-family: codicon;
+}
+
 /* Area at the top with all the devices */
 
 #schematic {
@@ -25,7 +36,6 @@ body.no-schematic #schematic {
     width: 32px;
     height: 32px;
     padding: 0;
-    font-family: Symbola;
     color: white;
     line-height: 1;
     font-size: 24px;
