@@ -517,6 +517,10 @@ class Part {
         // Don't drag while in the process of adding a new wire.
         return;
       }
+      if (e.button !== 0) {
+        // Only handle button presses with the left button.
+        return;
+      }
       this.select();
       // Calculate as many things as possible in advance, so that the mousemove
       // event doesn't have to do much.
