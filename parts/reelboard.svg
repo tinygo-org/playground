@@ -14,8 +14,8 @@
 
   <!-- e-paper display -->
   <g transform="translate(20, 19) translate(0, 24.4) rotate(270)">
-    <foreignObject width="24.4" height="50">
-      <canvas data-part="display" xmlns="http://www.w3.org/1999/xhtml" width="122" height="250" style="width: 24.4px; background: white"></canvas>
+    <foreignObject data-part="display" width="24.4" height="50">
+      <canvas data-type="canvas" xmlns="http://www.w3.org/1999/xhtml" width="122" height="250" style="width: 24.4px; background: white"></canvas>
     </foreignObject>
   </g>
 
