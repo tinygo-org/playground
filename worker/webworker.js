@@ -18,6 +18,7 @@ if (typeof module === 'undefined') {
   let wiring = require('./wiring.js');
   global.Runner = runner.Runner;
   global.Schematic = wiring.Schematic;
+  global.SPIBus = wiring.SPIBus;
   parentPort.addListener('message', handleIncomingMessage);
 }
 

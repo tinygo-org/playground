@@ -426,4 +426,5 @@ class Clock {
 
 if (typeof module !== 'undefined') {
   module.exports.Schematic = Schematic;
+  module.exports.SPIBus = SPIBus;
 }
