@@ -200,7 +200,8 @@ class Schematic {
       // Displays of various sorts that render to a canvas element.
       if (update.canvas) {
         // TODO: do the createImageBitmap in the web worker.
-        createImageBitmap(update.canvas).then(bitmap => {
+        let imageData = new ImageData(update.canvas, part.config.width, part.config.height);
+        createImageBitmap(imageData).then(bitmap => {
           part.context.drawImage(bitmap, 0, 0);
           bitmap.close();
         });

@@ -402,22 +402,22 @@ class EPD2IN13 extends Part {
 
   getState() {
     // Create a new image buffer to be drawn in the UI.
-    let imageData = new ImageData(this.width, this.height);
+    let imageData = new Uint8ClampedArray(this.width * this.height * 4);
     for (let x=0; x<this.width; x++) {
       for (let y=0; y<this.height; y++) {
         let byteIndex = Math.floor((x + y*this.bufferWidth) / 8);
         let whiteSet = this.buffer[byteIndex] & (0x80 >> x%8);
         let index = 4 * (y*this.width + x);
         if (whiteSet) {
-          imageData.data[index+0] = 255; // R
-          imageData.data[index+1] = 255; // G
-          imageData.data[index+2] = 255; // B
+          imageData[index+0] = 255; // R
+          imageData[index+1] = 255; // G
+          imageData[index+2] = 255; // B
         } else {
-          imageData.data[index+0] = 0; // R
-          imageData.data[index+1] = 0; // G
-          imageData.data[index+2] = 0; // B
+          imageData[index+0] = 0; // R
+          imageData[index+1] = 0; // G
+          imageData[index+2] = 0; // B
         }
-        imageData.data[index+3] = 255; // A
+        imageData[index+3] = 255; // A
       }
     }
 
@@ -445,7 +445,7 @@ class ST7789 extends Part {
     this.spi = new SPIBus();
     this.spi.configureAsPeripheral(this.pins.sck, null, this.pins.sdi);
 
-    this.imageData = new ImageData(this.width, this.height);
+    this.imageData = new Uint8ClampedArray(this.width * this.height * 4);
     this.inReset = false;
     this.command = 0x00; // nop
     this.dataBuf = null;
@@ -521,10 +521,10 @@ class ST7789 extends Part {
             let green = Math.round(((word >> 5) & 63) * 255 / 63);
             let blue = Math.round((word & 31) * 255 / 31);
             let index = 4 * (y*this.height + x);
-            this.imageData.data[index+0] = red;
-            this.imageData.data[index+1] = green;
-            this.imageData.data[index+2] = blue;
-            this.imageData.data[index+3] = 0xff; // alpha channel
+            this.imageData[index+0] = red;
+            this.imageData[index+1] = green;
+            this.imageData[index+2] = blue;
+            this.imageData[index+3] = 0xff; // alpha channel
             this.notifyUpdate();
           }
 
