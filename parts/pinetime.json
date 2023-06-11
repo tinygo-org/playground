@@ -1,6 +1,6 @@
 {
-    "name": "pinetime-devkit0",
-    "humanName": "PineTime (dev kit)",
+    "name": "pinetime",
+    "humanName": "PineTime",
     "example": "blinky1",
     "firmwareFormat": "hex",
     "svg": "pinetime.svg",

@@ -33,7 +33,7 @@ var boardNames = {
   'hifive1b': 'HiFive1 rev B',
   'microbit': 'BBC micro:bit v1',
   'reelboard': 'Phytec reel board',
-  'pinetime-devkit0': 'PineTime (dev kit)',
+  'pinetime': 'PineTime',
 };
 
 // Compile the script and if it succeeded, display the result on the right.
