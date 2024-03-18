@@ -104,11 +104,25 @@ func (job compilerJob) Run() error {
 	// Cache miss, compile now.
 	// But first write the Go source code to a file so it can be read by the
 	// compiler.
-	infile, err := ioutil.TempFile("", "tinygo-playground-source-*.go")
+	tmpdir, err := os.MkdirTemp("", "tinygo-playground-*")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(infile.Name())
+	defer os.RemoveAll(tmpdir)
+	for _, fn := range []string{"go.mod", "go.sum"} {
+		data, err := os.ReadFile("tinygo-template/" + fn)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(tmpdir+"/"+fn, data, 0o666)
+		if err != nil {
+			return err
+		}
+	}
+	infile, err := os.Create(tmpdir + "/main.go")
+	if err != nil {
+		return err
+	}
 	if _, err := infile.Write([]byte("//line main.go:1\n")); err != nil {
 		return err
 	}
@@ -129,8 +143,8 @@ func (job compilerJob) Run() error {
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
-	cmd.Dir = filepath.Dir(infile.Name())             // avoid long relative paths in error messages
-	cmd.Env = append(os.Environ(), "GO111MODULE=off") // fix build error when importing drivers repo, TODO: start using Go modules
+	cmd.Dir = filepath.Dir(infile.Name())         // avoid long relative paths in error messages
+	cmd.Env = append(os.Environ(), "GOPROXY=off") // don't download dependencies
 	finishedChan := make(chan struct{})
 	func() {
 		defer close(finishedChan)

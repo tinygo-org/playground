@@ -16,6 +16,7 @@ class Runner {
   constructor(schematic, part) {
     this.schematic = schematic;
     this.part = part;
+    this.reinterpretBuf = new DataView(new ArrayBuffer(8));
   }
 
   // Load response and prepare runner, but don't run any code yet.
@@ -25,7 +26,7 @@ class Runner {
       wasi_snapshot_preview1: {
         fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr),
       },
-      env: {
+      gojs: {
         'runtime.ticks': () =>
           this.schematic.clock.now() - this._timeOrigin,
         'runtime.sleepTicks': (timeout) =>
@@ -36,22 +37,20 @@ class Runner {
           console.error('js.stringVal is not supported'),
         'syscall/js.valueCall': () =>
           console.error('js.FuncOf is not supported'),
-        'syscall/js.valueNew': () =>
-          console.error('js.New is not supported'),
-        'syscall/js.valueSetIndex': () =>
-          console.error('js.Value.SetIndex is not supported'),
-        'syscall/js.valueGet': (retval, v_addr, p_ptr, p_len) =>
-          this.envValueGet(retval, v_addr, p_ptr, p_len),
+        'syscall/js.valueGet': (v_ref, p_ptr, p_len) =>
+          this.envValueGet(v_ref, p_ptr, p_len),
         'syscall/js.valueIndex': () =>
           console.error('js.valueIndexis not supported'),
         'syscall/js.valueLength': () =>
           console.error('js.valueLength is not supported'),
-        'syscall/js.valueLoadString': (v_addr, slice_ptr, slice_len, slice_cap) =>
-          this.envValueLoadString(v_addr, slice_ptr, slice_len, slice_cap),
-        'syscall/js.valuePrepareString': (ret_addr, v_addr) =>
-          this.envValuePrepareString(ret_addr, v_addr),
+        'syscall/js.valueLoadString': () =>
+          console.error('js.valueLoadString is not supported'),
+        'syscall/js.valuePrepareString': () =>
+          console.error('js.valuePrepareString is not supported'),
         'syscall/js.valueSet': () =>
           console.error('js.valueSet is not supported'),
+      },
+      env: {
         __tinygo_gpio_set: (pin, high) =>
           this.part.getPin(pin).set(high ? true : false),
         __tinygo_gpio_get: (pin) =>
@@ -87,7 +86,7 @@ class Runner {
     }
     this._timeOrigin = this.schematic.clock.now();
     this._inst = result.instance;
-    this._refs = new Map();
+    this._ids = new Map();
     this._values = [
       NaN,
       0,
@@ -135,86 +134,67 @@ class Runner {
   }
 
   // func valueGet(v ref, p string) ref
-  envValueGet(retval, v_addr, p_ptr, p_len) {
+  envValueGet(v_ref, p_ptr, p_len) {
     let prop = (new TextDecoder('utf-8')).decode(new DataView(this._inst.exports.memory.buffer, p_ptr, p_len));
-    let value = this.envLoadValue(v_addr);
+    let value = this.unboxValue(v_ref);
     let result = Reflect.get(value, prop);
-    this.envStoreValue(retval, result);
+    return this.boxValue(result);
   }
 
-  // valuePrepareString(v ref) (ref, int)
-  envValuePrepareString(ret_addr, v_addr) {
-    const s = String(this.envLoadValue(v_addr));
-    const str = encoder.encode(s);
-    this.envStoreValue(ret_addr, str);
-    setInt64(ret_addr + 8, str.length);
-  }
-
-  envLoadValue(addr) {
-    const f = this.envMem().getFloat64(addr, true);
+  unboxValue(v_ref) {
+    this.reinterpretBuf.setBigInt64(0, v_ref, true);
+    const f = this.reinterpretBuf.getFloat64(0, true);
     if (f === 0) {
       return undefined;
     }
     if (!isNaN(f)) {
       return f;
     }
-
-    const id = this.envMem().getUint32(addr, true);
+    const id = v_ref & 0xffffffffn;
     return this._values[id];
   }
 
-  envStoreValue(addr, v) {
-    const nanHead = 0x7FF80000;
+  boxValue(v) {
+    const nanHead = 0x7FF80000n;
 
     if (typeof v === "number") {
       if (isNaN(v)) {
-        this.envMem().setUint32(addr + 4, nanHead, true);
-        this.envMem().setUint32(addr, 0, true);
-        return;
+        return nanHead << 32n;
       }
       if (v === 0) {
-        this.envMem().setUint32(addr + 4, nanHead, true);
-        this.envMem().setUint32(addr, 1, true);
-        return;
+        return (nanHead << 32n) | 1n;
       }
-      this.envMem().setFloat64(addr, v, true);
-      return;
+      this.reinterpretBuf.setFloat64(0, v, true);
+      return this.reinterpretBuf.getBigInt64(0, true);
     }
 
     switch (v) {
       case undefined:
-        this.envMem().setFloat64(addr, 0, true);
-        return;
+        return 0n;
       case null:
-        this.envMem().setUint32(addr + 4, nanHead, true);
-        this.envMem().setUint32(addr, 2, true);
-        return;
+        return (nanHead << 32n) | 2n;
       case true:
-        this.envMem().setUint32(addr + 4, nanHead, true);
-        this.envMem().setUint32(addr, 3, true);
-        return;
+        return (nanHead << 32n) | 3n;
       case false:
-        this.envMem().setUint32(addr + 4, nanHead, true);
-        this.envMem().setUint32(addr, 4, true);
-        return;
+        return (nanHead << 32n) | 4n;
     }
 
-    let ref = this._refs.get(v);
+    let ref = this._ids.get(v);
     if (ref === undefined) {
-      ref = this._values.length;
+      ref = BigInt(this._values.length);
       this._values.push(v);
-      this._refs.set(v, ref);
+      this._ids.set(v, ref);
     }
-    let typeFlag = 1;
+    let typeFlag = 1n;
     switch (typeof v) {
       case "string":
-        typeFlag = 2;
+        typeFlag = 2n;
         break;
       case "symbol":
-        typeFlag = 3;
+        typeFlag = 3n;
         break;
       case "function":
-        typeFlag = 4;
+        typeFlag = 4n;
         break;
     }
     this.envMem().setUint32(addr + 4, nanHead | typeFlag, true);
