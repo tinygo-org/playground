@@ -5,23 +5,21 @@
     <title>TinyGo Playground</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:"/>
-    <link rel="stylesheet" href="resources/bootstrap-4.3.1.min.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:"/>
+    <link rel="stylesheet" href="resources/bootstrap-5.3.3.min.css">
     <link rel="stylesheet" href="simulator.css"/>
     <link rel="stylesheet" href="dashboard.css"/>
     <link rel="icon" type="image/png" href="resources/favicon-32x32.png" sizes="32x32"/>
     <script src="simulator.js" defer></script>
     <script src="dashboard.js" defer></script>
     <script src="project.js" defer></script>
-    <script src="resources/jquery-3.3.1.slim.min.js" defer></script>
-    <script src="resources/popper-1.14.7.min.js" defer></script>
-    <script src="resources/bootstrap-4.3.1.min.js" defer></script>
+    <script src="resources/bootstrap-5.3.3.bundle.min.js" defer></script>
   </head>
   <body>
     <header>
       <h1>TinyGo Playground</h1>
       <div id="target" class="btn-group">
-        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Console
         </button>
         <div class="dropdown-menu">
@@ -30,7 +28,7 @@
         </div>
       </div>
       <button type="button" id="btn-flash" class="btn btn-secondary" disabled>Flash</button>
-      <button type="button" id="btn-about" class="btn btn-secondary" data-toggle="modal" data-target="#aboutModal">About</button>
+      <button type="button" id="btn-about" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#aboutModal">About</button>
     </header>
     <div id="middle">
       <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled>Loading...</textarea>
@@ -64,14 +62,12 @@
       </div>
     </div>
 
-    <div class="modal fade" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalTitle" aria-hidden="true">
-      <div class="modal-dialog" role="document">
+    <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalTitle" aria-hidden="true">
+      <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="aboutModalTitle">About TinyGo Playground</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
+            <h1 class="modal-title fs-5" id="exampleModalLabel">About TinyGo Playground</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <p>
@@ -114,7 +110,7 @@
             </p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
