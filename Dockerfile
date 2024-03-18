@@ -24,11 +24,23 @@ COPY worker /app/frontend/worker
 COPY tinygo-template /app/tinygo-template
 
 # Make sure all dependencies are downloaded.
-RUN cd /app/tinygo-template && go mod download
+WORKDIR /app/tinygo-template
+RUN go mod download
 
-# Finish container.
+# Warm the cache.
 USER appuser
 ENV PATH="${PATH}:/app/tinygo/bin"
+RUN tinygo build -o /tmp/outfile -target=wasm
+RUN tinygo build -o /tmp/outfile -target=arduino
+RUN tinygo build -o /tmp/outfile -target=arduino-nano33
+RUN tinygo build -o /tmp/outfile -target=circuitplay-bluefruit
+RUN tinygo build -o /tmp/outfile -target=circuitplay-express
+RUN tinygo build -o /tmp/outfile -target=hifive1b
+RUN tinygo build -o /tmp/outfile -target=microbit
+RUN tinygo build -o /tmp/outfile -target=pinetime
+RUN tinygo build -o /tmp/outfile -target=reelboard
+
+# Finish container.
 WORKDIR /app
 CMD ["./main", "-dir=/app/frontend", "-cache-type=gcs", "-bucket-name=tinygo-cache"]
 EXPOSE 8080
