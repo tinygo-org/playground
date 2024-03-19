@@ -1,7 +1,7 @@
-'use strict';
-
 // This file emulates a hardware board with an MCU and a set of external
 // devices (LEDs etc.).
+
+export { Simulator };
 
 let terminal;
 
@@ -12,11 +12,173 @@ let terminal;
 // https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units
 const pixelsPerMillimeter = 96 / 25.4;
 
+// Encapsulate a single simulator HTML node. Handles starting/stopping the
+// worker, refresh the schematic as needed, etc.
+class Simulator {
+  constructor(workerURL, saveState) {
+    this.workerURL = workerURL;
+    this.saveState = saveState;
+    this.worker = null;
+    this.workerUpdate = null;
+  }
+
+  // Do asynchronous initialization.
+  async init(root, state) {
+    this.root = root;
+    this.#setupRoot();
+    this.schematic = new Schematic(this, root, state);
+    await this.schematic.refresh();
+
+    // Load parts in the "Add" tab.
+    loadPartsPanel(this);
+  }
+
+  // Initialize this simulator by setting up events etc.
+  #setupRoot() {
+    this.root.querySelector('#schematic-button-pause').addEventListener('click', e => {
+      e.target.disabled = true; // disable until there's a reply from the worker
+      e.stopPropagation();
+      this.worker.postMessage({
+        type: 'playpause',
+      });
+    });
+
+    // TODO: this terminal should not be a global.
+    terminal = new Terminal(this.root.querySelector('#terminal'));
+
+    // Switch active tab on click of a tab title.
+    for (let tab of this.root.querySelectorAll('.tabbar > .tab')) {
+      tab.addEventListener('click', e => {
+        // Update active tab.
+        let tabbar = tab.parentNode;
+        tabbar.querySelector(':scope > .tab.active').classList.remove('active');
+        tab.classList.add('active');
+
+        // Update active tab content.
+        let parent = tabbar.parentNode;
+        parent.querySelector(':scope > .tabcontent.active').classList.remove('active');
+        parent.querySelector(tab.dataset.for).classList.add('active');
+      });
+    }
+  }
+
+  #stopWorker() {
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
+      if (this.workerUpdate !== null) {
+        cancelAnimationFrame(this.workerUpdate);
+        this.workerUpdate = null;
+      }
+    }
+  }
+
+  // Refresh simulator. This needs to be called before calling run().
+  // It also needs to be called before running new code (by calling run()
+  // again).
+  // The newState paramter can be provided if the board/schematic will change in
+  // the next run.
+  async refresh(newState) {
+    // Kill previous worker, if it is running.
+    this.#stopWorker();
+
+    // If there was a new state (for example, when switching to a different
+    // board), restart the Schematic.
+    if (newState) {
+      this.schematic = new Schematic(this, this.root, newState);
+      await this.schematic.refresh();
+    }
+
+    // Redraw screen.
+    this.schematic.schematic.classList.add('compiling');
+    terminal.clear('Compiling...');
+    await this.schematic.refresh();
+
+    // Start new worker.
+    this.worker = new Worker(this.workerURL);
+    this.worker.onmessage = (e) => {
+      this.#workerMessage(e.target, e.data);
+    };
+  }
+
+  // Run a new binary. The `refresh` method must have been called before to stop
+  // the previous run.
+  // The binary can either be a Uint8Array or an object with parameters 'url',
+  // 'method' and 'body' that can be used in a fetch() call.
+  run(binary) {
+    this.worker.postMessage({
+      type: 'start',
+      config: this.schematic.configForWorker(),
+      binary: binary,
+    });
+  }
+
+  // Show a compiler error. This can be called instead of run() to show the
+  // compiler error in the output view.
+  showCompilerError(msg) {
+    terminal.showError(msg);
+  }
+
+  #workerMessage(worker, msg) {
+    // Perhaps this worker exited and had some queued messages?
+    if (worker !== this.worker) {
+      return;
+    }
+
+    if (msg.type === 'connections') {
+      this.schematic.updateConnections(msg.pinLists);
+    } else if (msg.type === 'properties') {
+      // Set properties in the properties panel at the bottom.
+      this.schematic.setProperties(msg.properties);
+    } else if (msg.type == 'loading') {
+      // Code has started loading in the worker.
+      terminal.clear('Loading...');
+      // Request an update.
+      worker.postMessage({
+          type: 'getUpdate',
+      });
+    } else if (msg.type === 'started') {
+      // WebAssembly code was loaded and will start now.
+      this.schematic.schematic.classList.remove('compiling');
+      terminal.clear('Running...');
+    } else if (msg.type == 'notifyUpdate') {
+      // The web worker is signalling that there are updates.
+      // It won't repeat this message until the updates have been read using
+      // getUpdate.
+      // Request the updates in a requestAnimationFrame: this makes sure
+      // updates are only pushed when needed.
+      this.workerUpdate = requestAnimationFrame(() => {
+        this.workerUpdate = null;
+        // Now request these updates.
+        worker.postMessage({
+          type: 'getUpdate',
+        });
+      });
+    } else if (msg.type == 'update') {
+      // Received updates (such as LED state changes) from the web worker after
+      // a getUpdate message.
+      // Update the UI with the new state.
+      this.schematic.update(msg.updates);
+    } else if (msg.type === 'speed') {
+      // Change speed, also used to pause the worker.
+      this.schematic.setSpeed(msg.speed);
+    } else if (msg.type == 'error') {
+      // There was an error. Terminate the worker, it has no more work to do.
+      this.#stopWorker();
+      terminal.showError(msg.message);
+    } else {
+      console.warn('unknown worker message:', msg.type, msg);
+    }
+  }
+}
+
 class Schematic {
-  constructor(state) {
+  constructor(simulator, root, state) {
+    this.simulator = simulator;
+    this.root = root;
     this.state = state;
-    this.schematic = document.querySelector('#schematic');
-    this.propertiesContainer = document.querySelector('#properties .content');
+    this.schematic = root.querySelector('#schematic');
+    this.propertiesContainer = root.querySelector('#properties .content');
     this.setSpeed(1);
   }
 
@@ -73,7 +235,7 @@ class Schematic {
     for (let config of this.state.wires) {
       let from = this.getPin(config.from);
       let to = this.getPin(config.to);
-      let wire = new Wire(from, to);
+      let wire = new Wire(this, from, to);
       this.wires.push(wire);
       wireGroup.appendChild(wire.line);
       wire.updateFrom();
@@ -266,8 +428,8 @@ class Schematic {
   // removeWire removes the given wire from the schematic state. It does not
   // remove the wire from the UI.
   removeWire(from, to) {
-    let index = schematic.findWire(from, to);
-    schematic.state.wires.splice(index, 1);
+    let index = this.findWire(from, to);
+    this.state.wires.splice(index, 1);
   }
 
   // updateConnections updates the current netlist as calculated by the web
@@ -324,24 +486,6 @@ function unhighlightConnection(pins) {
       wire.line.classList.remove('hover-connection');
     }
   }
-}
-
-// getProjects returns the complete list of project objects from the projects
-// store.
-async function getProjects() {
-  // Load all projects.
-  let projects = [];
-  return await new Promise(function(resolve, reject) {
-    db.transaction(['projects'], 'readonly').objectStore('projects').openCursor().onsuccess = function(e) {
-      var cursor = e.target.result;
-      if (cursor) {
-        projects.push(cursor.value);
-        cursor.continue();
-      } else {
-        resolve(projects);
-      }
-    }
-  });
 }
 
 // Terminal at the bottom of the screen.
@@ -589,7 +733,7 @@ class Part {
         e.stopPropagation();
         if (newWire === null) {
           // Create new wire.
-          newWire = new Wire(pin, null);
+          newWire = new Wire(this.schematic, pin, null);
           newWire.updateFrom();
           newWire.updateToMovement(e.pageX, e.pageY);
           wireGroup.appendChild(newWire.line);
@@ -608,8 +752,8 @@ class Part {
           // Finish creation of the wire.
           newWire.setTo(pin);
           this.schematic.state.wires.push(config);
-          saveState();
-          workerPostMessage({
+          this.schematic.simulator.saveState();
+          this.schematic.simulator.worker.postMessage({
             type: 'add',
             wires: [config],
           });
@@ -651,7 +795,7 @@ class Part {
             return;
           }
           wasPressed = pressed;
-          workerPostMessage({
+          this.schematic.simulator.worker.postMessage({
             type: 'input',
             id: id,
             event: pressed ? 'press' : 'release',
@@ -811,7 +955,8 @@ class Pin {
 // A wire is a manually drawn wire between two boards (or even between pins of
 // the same board).
 class Wire {
-  constructor(from, to) {
+  constructor(schematic, from, to) {
+    this.schematic = schematic;
     this.from = from;
     from.wires.add(this);
     if (to) {
@@ -960,7 +1105,7 @@ document.addEventListener('mousemove', e => {
 
 document.addEventListener('mouseup', e => {
   if (partMovement){
-    saveState();
+    partMovement.part.schematic.simulator.saveState();
     partMovement = null;
   }
 });
@@ -987,37 +1132,16 @@ document.addEventListener('keydown', e => {
       console.warn('not removing main part');
       return;
     }
+    let simulator = selected.schematic.simulator;
     let message = selected.remove();
     selected = null;
-    saveState();
-    workerPostMessage(message);
+    simulator.saveState();
+    simulator.worker.postMessage(message);
   }
-});
-
-document.addEventListener('DOMContentLoaded', e => {
-  terminal = new Terminal(document.querySelector('#terminal'));
-
-  // Switch active tab on click of a tab title.
-  for (let tab of document.querySelectorAll('.tabbar > .tab')) {
-    tab.addEventListener('click', e => {
-      // Update active tab.
-      let tabbar = tab.parentNode;
-      tabbar.querySelector(':scope > .tab.active').classList.remove('active');
-      tab.classList.add('active');
-
-      // Update active tab content.
-      let parent = tabbar.parentNode;
-      parent.querySelector(':scope > .tabcontent.active').classList.remove('active');
-      parent.querySelector(tab.dataset.for).classList.add('active');
-    });
-  }
-
-  // Load parts in the "Add" tab.
-  loadPartsPanel();
 });
 
 // Initialize the parts panel at the bottom, from where new parts can be added.
-async function loadPartsPanel() {
+async function loadPartsPanel(simulator) {
   let panel = document.querySelector('#add');
   let response = await fetch('parts/parts.json');
   let json = await response.json();
@@ -1098,21 +1222,21 @@ async function loadPartsPanel() {
         x: e.pageX - schematicRect.width/2 - schematicRect.x,
         y: e.pageY - schematicRect.height/2 - schematicRect.y,
       };
-      newPart = await Part.load(data.config.id, data, schematic);
+      newPart = await Part.load(data.config.id, data, simulator.schematic);
       await newPart.loadSVG();
-      schematic.addPart(newPart);
+      simulator.schematic.addPart(newPart);
 
       // Truly add the part to the circuit when clicking on it.
       let onclick = e => {
-        workerPostMessage({
+        simulator.worker.postMessage({
           type: 'add',
           parts: [newPart.workerConfig()],
         });
         newPart.rootElement.removeEventListener('click', onclick);
         newPart = null;
         document.body.classList.remove('adding-part');
-        schematic.state.parts[data.config.id] = data;
-        saveState();
+        simulator.schematic.state.parts[data.config.id] = data;
+        simulator.saveState();
       };
       newPart.rootElement.addEventListener('click', onclick);
     });
@@ -1140,11 +1264,3 @@ let fixPartsLocation = (function() {
 })();
 window.addEventListener('load', fixPartsLocation);
 window.addEventListener('resize', fixPartsLocation);
-
-document.querySelector('#schematic-button-pause').addEventListener('click', e => {
-  e.target.disabled = true; // disable until there's a reply from the worker
-  e.stopPropagation();
-  workerPostMessage({
-    type: 'playpause',
-  });
-});

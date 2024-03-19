@@ -1,26 +1,16 @@
 'use strict';
 
-if (typeof module === 'undefined') {
-  // Running in a browser, not in VS Code.
+if (typeof Schematic === 'undefined') {
+  // Running inside a web browser, so we need to import these scripts.
+  // They are concatenated together in VSCode so we don't need to import them
+  // manually there.
   importScripts(
     'parts.js',
     'runner.js',
     'wiring.js',
   );
-  onmessage = (e) => handleIncomingMessage(e.data);
-} else {
-  // Running in a Node.js (VS Code) worker.
-  const { parentPort } = require('worker_threads');
-  var postMessage = function(message) {
-    parentPort.postMessage(message);
-  }
-  let runner = require('./runner.js');
-  let wiring = require('./wiring.js');
-  global.Runner = runner.Runner;
-  global.Schematic = wiring.Schematic;
-  global.SPIBus = wiring.SPIBus;
-  parentPort.addListener('message', handleIncomingMessage);
 }
+onmessage = (e) => handleIncomingMessage(e.data);
 
 let schematic = null;
 
@@ -105,12 +95,12 @@ function handleIncomingMessage(message) {
 // schematic.
 async function start(msg) {
   let source;
-  if (msg.binary) {
+  if (msg.binary instanceof Uint8Array) {
     source = msg.binary;
   } else {
     // Fetch (compile) the wasm file.
     try {
-      source = await fetch(msg.fetch.url, msg.fetch);
+      source = await fetch(msg.binary.url, msg.binary);
     } catch (reason) {
       // Probably a network error.
       sendError(reason);

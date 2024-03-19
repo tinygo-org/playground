@@ -1,4 +1,4 @@
-'use strict';
+import { Simulator } from './simulator.js';
 
 // This file controls the entire playground window, except for the output part
 // on the right that is shared with the VS Code extension.
@@ -36,80 +36,29 @@ var boardNames = {
   'pinetime': 'PineTime',
 };
 
+let simulator = null;
+
 // Compile the script and if it succeeded, display the result on the right.
 async function update() {
-  // Reset terminal to the begin 'compiling' state.
-  terminal.clear('Compiling...');
+  // Initialize simulator if not already done so.
+  if (!simulator) {
+    let root = document.querySelector('#output');
+    simulator = new Simulator('./worker/webworker.js', () => {
+      project.save();
+    });
+    await simulator.init(root, project.data)
+    await simulator.refresh();
+  } else {
+    // Replace schematic SVG with new data.
+    await simulator.refresh(project.data);
+  }
 
-  // Stop program and make the schematic gray.
-  stopWorker();
-  document.querySelector('#schematic').classList.add('compiling');
-
-  // Load the UI: download the SVG file and initialize parts.
-  schematic = new Schematic(project.data);
-  await schematic.refresh();
-
-  // Run the script in a web worker.
-  let message = {
-    type: 'start',
-    fetch: {
-      url: API_URL + '/compile?target=' + project.target,
-      method: 'POST',
-      body: document.querySelector('#input').value,
-    },
-    config: schematic.configForWorker(),
-  };
-  worker = new Worker('worker/webworker.js');
-  worker.postMessage(message);
-  worker.onmessage = async function(e) {
-    let worker = e.target; // make sure we use the correct worker (it might have changed after a call to update())
-    let msg = e.data;
-    if (msg.type == 'error') {
-      // There was an error. Terminate the worker, it has no more work to do.
-      stopWorker();
-      terminal.showError(msg.message);
-    } else if (msg.type == 'loading') {
-      // Code was compiled and response wasm is streaming in.
-      terminal.clear('Loading...');
-
-      // Request an update.
-      worker.postMessage({
-        type: 'getUpdate',
-      });
-    } else if (msg.type == 'started') {
-      // WebAssembly code was loaded and will start now.
-      document.querySelector('#schematic').classList.remove('compiling');
-      terminal.clear('Running...');
-    } else if (msg.type == 'notifyUpdate') {
-      // The web worker is signalling that there are updates.
-      // It won't repeat this message until the updates have been read using
-      // getUpdate.
-      // Request the updates in a requestAnimationFrame: this makes sure
-      // updates are only pushed when needed.
-      workerUpdate = requestAnimationFrame(() => {
-        workerUpdate = null;
-        // Now request these updates.
-        worker.postMessage({
-          type: 'getUpdate',
-        });
-      });
-    } else if (msg.type === 'properties') {
-      // Set properties in the properties panel at the bottom.
-      schematic.setProperties(msg.properties);
-    } else if (msg.type == 'update') {
-      // Received updates (such as LED state changes) from the web worker after
-      // a getUpdate message.
-      // Update the UI with the new state.
-      schematic.update(msg.updates);
-    } else if (msg.type === 'connections') {
-      schematic.updateConnections(msg.pinLists);
-    } else if (msg.type === 'speed') {
-      schematic.setSpeed(msg.speed);
-    } else {
-      // Unknown message.
-      console.log('unknown worker message:', msg);
-    }
-  };
+  // Run the code in a web worker.
+  simulator.run({
+    url: API_URL + '/compile?target=' + project.target,
+    method: 'POST',
+    body: document.querySelector('#input').value,
+  })
 }
 
 // Terminate the worker immediately.
@@ -270,13 +219,118 @@ function flashFirmware(e) {
   form.remove();
 }
 
-// Save the current project.
-function saveState() {
-  project.save();
+// getProjects returns the complete list of project objects from the projects
+// store.
+async function getProjects() {
+  // Load all projects.
+  let projects = [];
+  return await new Promise(function(resolve, reject) {
+    db.transaction(['projects'], 'readonly').objectStore('projects').openCursor().onsuccess = function(e) {
+      var cursor = e.target.result;
+      if (cursor) {
+        projects.push(cursor.value);
+        cursor.continue();
+      } else {
+        resolve(projects);
+      }
+    }
+  });
 }
 
-function workerPostMessage(message) {
-  worker.postMessage(message);
+// A project is an encapsulation for a combination of source code, a board
+// layout, and some state. After saving, it can be destroyed and re-loaded
+// without losing data.
+class Project {
+  constructor(mainPartConfig, data) {
+    this.mainPartConfig = mainPartConfig;
+    this.data = data;
+  }
+
+  get config() {
+    return this.mainPartConfig;
+  }
+
+  get target() {
+    return this.config.name;
+  }
+
+  get name() {
+    return this.data.name || this.config.name;
+  }
+
+  // Save the project, if it was marked dirty.
+  save(code) {
+    if (!this.data.name) {
+      // Project is saved for the first time.
+      this.data.created = new Date();
+      this.data.name = this.config.name + '-' + this.data.created.toISOString();
+    }
+    if (code) {
+      this.data.code = code;
+    }
+    let transaction = db.transaction(['projects'], 'readwrite');
+    transaction.objectStore('projects').put(this.data).onsuccess = function(e) {
+      updateBoards();
+    };
+    transaction.onerror = function(e) {
+      console.error('failed to save project:', e);
+      e.stopPropagation();
+    };
+  }
+}
+
+// Load a project based on a project name.
+async function loadProject(name) {
+  if (name in boardNames) {
+    let location = 'parts/'+name+'.json';
+    let partConfig = await loadJSON(location);
+    return new Project(partConfig, {
+      defaultHumanName: partConfig.humanName,
+      code: examples[partConfig.example],
+      parts: {
+        main: {
+          location: location,
+          x: 0,
+          y: 0,
+        },
+      },
+      wires: [],
+    });
+  }
+  return await new Promise((resolve, reject) => {
+    let transaction = db.transaction(['projects'], 'readonly');
+    transaction.objectStore('projects').get(name).onsuccess = async function(e) {
+      if (e.target.result === undefined) {
+        reject('loadProject: project does not exist in DB');
+      }
+      let data = e.target.result;
+      if (data.target) {
+        // Upgrade old data format.
+        data.parts = {
+          main: {
+            location: 'parts/'+data.target+'.json',
+            x: 0,
+            y: 0,
+          },
+        };
+        delete data.target;
+      }
+      if (!data.wires) {
+        data.wires = [];
+      }
+      let mainPartConfig = await loadJSON(data.parts.main.location);
+      if (!data.defaultHumanName) {
+        // Upgrade old data format.
+        data.defaultHumanName = mainPartConfig.humanName;
+      }
+      resolve(new Project(mainPartConfig, data));
+    };
+  });
+}
+
+async function loadJSON(location) {
+  let response = await fetch(location);
+  return await response.json();
 }
 
 // Source:

@@ -1,11 +1,5 @@
 'use strict';
 
-if (typeof module !== 'undefined') {
-  for (let [key, value] of Object.entries(require('./parts.js'))) {
-    global[key] = value;
-  }
-}
-
 // A net is a collection of pins that are all connected together through wires.
 // None of the pins in the net have a connection to a pin that's not part of
 // the net.
@@ -422,9 +416,4 @@ class Clock {
       callback();
     }, milliseconds);
   }
-}
-
-if (typeof module !== 'undefined') {
-  module.exports.Schematic = Schematic;
-  module.exports.SPIBus = SPIBus;
 }

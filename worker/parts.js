@@ -720,14 +720,3 @@ function decodeLittleEndian(buf) {
   }
   return n;
 }
-
-if (typeof module !== 'undefined') {
-  module.exports.Board = Board;
-  module.exports.MCU = MCU;
-  module.exports.Button = Button;
-  module.exports.LED = LED;
-  module.exports.RGBLED = RGBLED;
-  module.exports.WS2812 = WS2812;
-  module.exports.EPD2IN13 = EPD2IN13;
-  module.exports.ST7789 = ST7789;
-}
