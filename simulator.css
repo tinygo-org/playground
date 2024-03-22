@@ -5,8 +5,9 @@
 
 /* Codicons from VS Code: https://github.com/microsoft/vscode-codicons */
 @font-face {
-	font-family: codicon;
-	src: url(resources/codicon/codicon.ttf);
+    font-family: codicon;
+    src: url(resources/codicon/codicon.ttf);
+    font-display: block;
 }
 .codicon {
     font-family: codicon;
