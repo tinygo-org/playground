@@ -24,7 +24,13 @@ class Runner {
     let importObject = {
       // Bare minimum syscall/js environment, to get time.Sleep to work.
       wasi_snapshot_preview1: {
-        fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr),
+        fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) =>
+          this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr),
+        random_get: (bufPtr, bufLen) => {
+          let buf = new Uint8Array(this.envMem().buffer, bufPtr, bufLen);
+          crypto.getRandomValues(buf);
+          return 0;
+        },
       },
       gojs: {
         'runtime.ticks': () =>
