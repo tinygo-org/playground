@@ -1121,7 +1121,7 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && newWire) {
+  if ((e.key === 'Escape' || e.key == 'Delete') && newWire) {
     // Cancel the creation of a new wire.
     e.preventDefault();
     newWire.remove();
