@@ -36,7 +36,7 @@ class Simulator {
 
   // Initialize this simulator by setting up events etc.
   #setupRoot() {
-    this.root.querySelector('#schematic-button-pause').addEventListener('click', e => {
+    this.root.querySelector('.schematic-button-pause').addEventListener('click', e => {
       e.target.disabled = true; // disable until there's a reply from the worker
       e.stopPropagation();
       this.worker.postMessage({
@@ -342,7 +342,7 @@ class Schematic {
     if (partHeights.length) {
       this.schematic.style.height = 'max(' + partHeights.join(', ') + ')';
     } else {
-      document.querySelector('.panel-tab-terminal').click();
+      this.simulator.root.querySelector('.panel-tab-terminal').click();
     }
 
     // Workaround for Chrome positioning bug and Firefox rendering bug.
@@ -569,7 +569,7 @@ class Schematic {
   // Set the speed of the simulator, which is currently assumed to be 1 (normal
   // speed) or 0 (stopped).
   setSpeed(speed) {
-    let button = document.querySelector('#schematic-button-pause');
+    let button = this.root.querySelector('.schematic-button-pause');
     button.disabled = false;
     if (speed === 0) {
       button.innerHTML = '&#xeb2c'; // paused, so show play symbol
@@ -827,7 +827,7 @@ class Part {
 
     // Detect pins inside the SVG file. They have an attribute like
     // data-pin="D5".
-    let wireGroup = document.querySelector('#schematic-wires');
+    let wireGroup = schematic.querySelector('#schematic-wires');
     let tooltip = this.schematic.simulator.tooltip;
     for (let el of this.rootElement.querySelectorAll('[data-pin]')) {
       if (el.dataset.pin.includes('.')) {
