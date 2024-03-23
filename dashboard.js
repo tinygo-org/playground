@@ -39,7 +39,7 @@ var boardNames = {
 let simulator = null;
 
 // Compile the script and if it succeeded, display the result on the right.
-async function update() {
+async function update(fullUpdate) {
   // Initialize simulator if not already done so.
   if (!simulator) {
     let root = document.querySelector('#output');
@@ -49,8 +49,13 @@ async function update() {
     await simulator.init(root, project.data)
     await simulator.refresh();
   } else {
-    // Replace schematic SVG with new data.
-    await simulator.refresh(project.data);
+    if (fullUpdate) {
+      // Replace schematic SVG with new data.
+      await simulator.refresh(project.data);
+    } else {
+      // Just reset all state, don't recreate all SVG objects.
+      await simulator.refresh();
+    }
   }
 
   // Run the code in a web worker.
@@ -191,7 +196,7 @@ async function setProject(name) {
   let input = document.querySelector('#input');
   input.value = project.data.code;
   input.disabled = false;
-  update();
+  update(true);
   localStorage.tinygo_playground_projectName = name;
   document.querySelector('#btn-flash').disabled = project.config.firmwareFormat === undefined;
 }
@@ -390,7 +395,7 @@ document.querySelector('#input').addEventListener('input', function(e) {
   inputCompileTimeout = setTimeout(() => {
     project.save(document.querySelector('#input').value);
     localStorage.tinygo_playground_projectName = project.name;
-    update();
+    update(false);
   }, inputCompileDelay);
 })
 

@@ -27,7 +27,6 @@ class Simulator {
     this.root = root;
     this.#setupRoot();
     this.schematic = new Schematic(this, root, state);
-    await this.schematic.refresh();
 
     // Load parts in the "Add" tab.
     loadPartsPanel(this);
@@ -86,7 +85,6 @@ class Simulator {
     // board), restart the Schematic.
     if (newState) {
       this.schematic = new Schematic(this, this.root, newState);
-      await this.schematic.refresh();
     }
 
     // Redraw screen.
