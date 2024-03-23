@@ -590,6 +590,7 @@ class Part {
     this.schematic = schematic;
     this.subparts = {};
     this.pins = {};
+    this.removeTooltip = null;
   }
 
   // Load the given part and return it (because constructor() can't be async).
@@ -763,6 +764,15 @@ class Part {
 
       // Show a tooltip when hovering over the pin.
       let pinTitle = el.dataset.title || pin.name;
+      let removeTooltip = () => {
+        unhighlightConnection(pin.connected);
+        if (tooltip.textContent !== pinTitle) {
+          // Already entered a different pin, ignore.
+          return;
+        }
+        tooltip.classList.remove('visible');
+        this.removeTooltip = null;
+      }
       el.addEventListener('mouseenter', e => {
         highlightConnection(pin.connected);
         tooltip.textContent = pinTitle;
@@ -770,15 +780,9 @@ class Part {
         tooltip.style.top = (dotRect.y - schematicRect.y - 30) + 'px';
         tooltip.style.left = (dotRect.x + dotRect.width/2 - schematicRect.x - 11.5) + 'px';
         tooltip.classList.add('visible');
+        this.removeTooltip = removeTooltip;
       });
-      el.addEventListener('mouseleave', e => {
-        unhighlightConnection(pin.connected);
-        if (tooltip.textContent !== pinTitle) {
-          // Already entered a different pin, ignore.
-          return;
-        }
-        tooltip.classList.remove('visible');
-      });
+      el.addEventListener('mouseleave', removeTooltip);
     }
 
     // Detect click areas within the SVG file.
@@ -921,6 +925,11 @@ class Part {
     delete this.schematic.state.parts[this.id];
     message.parts.push(this.id);
     this.wrapper.remove();
+
+    // Remove a pin tooltip, if it is present.
+    if (this.removeTooltip !== null) {
+      this.removeTooltip();
+    }
 
     return message;
   }
