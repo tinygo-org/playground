@@ -31,8 +31,8 @@ class Simulator {
     this.#setupRoot();
     this.schematic = new Schematic(this, root, state);
 
-    // Load parts in the "Add" tab.
-    loadPartsPanel(this);
+    // Start loading the parts panel (without blocking further initialization).
+    this.#loadPartsPanel();
   }
 
   // Initialize this simulator by setting up events etc.
@@ -65,6 +65,110 @@ class Simulator {
 
     window.addEventListener('load', () => this.fixPartsLocation());
     window.addEventListener('resize', () => this.fixPartsLocation());
+  }
+
+  // Initialize the parts panel at the bottom, from where new parts can be
+  // added.
+  async #loadPartsPanel() {
+    let panel = document.querySelector('#add');
+    let response = await fetch('parts/parts.json');
+    let json = await response.json();
+    panel.innerHTML = '';
+    for (let part of json.parts) {
+      let config = {};
+      // Show small image of the part.
+      let image = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      image.setAttribute('width', '10mm');
+      image.setAttribute('height', '10mm');
+      image.classList.add('part-image');
+      panel.appendChild(image);
+      let svgPromise = loadSVG(new URL(part.config.svg, new URL('parts/', document.baseURI)))
+      svgPromise.then((svg) => {
+        // If needed, shrink the image to fit the available space.
+        let width = svg.getAttribute('width').replace('mm', '');
+        let height = svg.getAttribute('height').replace('mm', '');
+        svg.style.transform = `scale(min(1, min(calc(10 / ${width}), calc(10 / ${height}))))`;
+        image.appendChild(svg);
+        applyOptions();
+      });
+
+      // Make sure the image looks as specified in the options (changeable via
+      // dropdowns).
+      let applyOptions = () => {
+        if (config.color) {
+          let color = 'rgb(' + config.color[0] + ',' + config.color[1] + ',' + config.color[2] + ')';
+          image.style.setProperty('--plastic', color);
+          image.style.setProperty('--shadow', color);
+        }
+      };
+
+      // Part title.
+      let titleDiv = document.createElement('div');
+      titleDiv.textContent = part.config.humanName;
+      panel.appendChild(titleDiv);
+
+      // Options, such as color.
+      let optionsDiv = document.createElement('div');
+      for (let [optionKey, optionValues] of Object.entries(part.options || {})) {
+        let select = document.createElement('select');
+        for (let [name, value] of Object.entries(optionValues)) {
+          if (!(optionKey in config)) {
+            // First option, add it to the config object as default.
+            config[optionKey] = value;
+          }
+          let option = document.createElement('option');
+          option.textContent = name;
+          option.value = JSON.stringify(value);
+          select.appendChild(option);
+        }
+        select.addEventListener('change', e => {
+          let value = JSON.parse(e.target.value);
+          config[optionKey] = value;
+          applyOptions();
+        });
+        optionsDiv.appendChild(select);
+      }
+      panel.appendChild(optionsDiv);
+
+      // Button to add the part to the schematic.
+      let buttonDiv = document.createElement('div');
+      let button = document.createElement('button');
+      button.textContent = 'Add';
+      buttonDiv.appendChild(button);
+      panel.appendChild(buttonDiv);
+
+      // Start adding a part to the schematic when clicking the button.
+      button.addEventListener('click', async e => {
+        // Add the part to the UI schematic - but don't really make it part of the
+        // running circuit yet. Imagine picking up a part and hovering just above
+        // where you want to put it down.
+        document.body.classList.add('adding-part');
+        let data = {
+          config: Object.assign({}, part.config, config, {
+            id: Math.random().toString(36).slice(2),
+          }),
+          x: e.pageX - this.schematicRect.width/2 - this.schematicRect.x,
+          y: e.pageY - this.schematicRect.height/2 - this.schematicRect.y,
+        };
+        newPart = await Part.load(data.config.id, data, this.schematic);
+        await newPart.loadSVG();
+        this.schematic.addPart(newPart);
+
+        // Truly add the part to the circuit when clicking on it.
+        let onclick = e => {
+          this.worker.postMessage({
+            type: 'add',
+            parts: [newPart.workerConfig()],
+          });
+          newPart.rootElement.removeEventListener('click', onclick);
+          newPart = null;
+          document.body.classList.remove('adding-part');
+          this.schematic.state.parts[data.config.id] = data;
+          this.saveState();
+        };
+        newPart.rootElement.addEventListener('click', onclick);
+      });
+    }
   }
 
   // Work around a rendering bug in Firefox. Without it, parts of the SVG might
@@ -1169,106 +1273,3 @@ document.addEventListener('keydown', e => {
     simulator.worker.postMessage(message);
   }
 });
-
-// Initialize the parts panel at the bottom, from where new parts can be added.
-async function loadPartsPanel(simulator) {
-  let panel = document.querySelector('#add');
-  let response = await fetch('parts/parts.json');
-  let json = await response.json();
-  panel.innerHTML = '';
-  for (let part of json.parts) {
-    let config = {};
-    // Show small image of the part.
-    let image = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    image.setAttribute('width', '10mm');
-    image.setAttribute('height', '10mm');
-    image.classList.add('part-image');
-    panel.appendChild(image);
-    let svgPromise = loadSVG(new URL(part.config.svg, new URL('parts/', document.baseURI)))
-    svgPromise.then((svg) => {
-      // If needed, shrink the image to fit the available space.
-      let width = svg.getAttribute('width').replace('mm', '');
-      let height = svg.getAttribute('height').replace('mm', '');
-      svg.style.transform = `scale(min(1, min(calc(10 / ${width}), calc(10 / ${height}))))`;
-      image.appendChild(svg);
-      applyOptions();
-    });
-
-    // Make sure the image looks as specified in the options (changeable via
-    // dropdowns).
-    let applyOptions = () => {
-      if (config.color) {
-        let color = 'rgb(' + config.color[0] + ',' + config.color[1] + ',' + config.color[2] + ')';
-        image.style.setProperty('--plastic', color);
-        image.style.setProperty('--shadow', color);
-      }
-    };
-
-    // Part title.
-    let titleDiv = document.createElement('div');
-    titleDiv.textContent = part.config.humanName;
-    panel.appendChild(titleDiv);
-
-    // Options, such as color.
-    let optionsDiv = document.createElement('div');
-    for (let [optionKey, optionValues] of Object.entries(part.options || {})) {
-      let select = document.createElement('select');
-      for (let [name, value] of Object.entries(optionValues)) {
-        if (!(optionKey in config)) {
-          // First option, add it to the config object as default.
-          config[optionKey] = value;
-        }
-        let option = document.createElement('option');
-        option.textContent = name;
-        option.value = JSON.stringify(value);
-        select.appendChild(option);
-      }
-      select.addEventListener('change', e => {
-        let value = JSON.parse(e.target.value);
-        config[optionKey] = value;
-        applyOptions();
-      });
-      optionsDiv.appendChild(select);
-    }
-    panel.appendChild(optionsDiv);
-
-    // Button to add the part to the schematic.
-    let buttonDiv = document.createElement('div');
-    let button = document.createElement('button');
-    button.textContent = 'Add';
-    buttonDiv.appendChild(button);
-    panel.appendChild(buttonDiv);
-
-    // Start adding a part to the schematic when clicking the button.
-    button.addEventListener('click', async e => {
-      // Add the part to the UI schematic - but don't really make it part of the
-      // running circuit yet. Imagine picking up a part and hovering just above
-      // where you want to put it down.
-      document.body.classList.add('adding-part');
-      let data = {
-        config: Object.assign({}, part.config, config, {
-          id: Math.random().toString(36).slice(2),
-        }),
-        x: e.pageX - simulator.schematicRect.width/2 - simulator.schematicRect.x,
-        y: e.pageY - simulator.schematicRect.height/2 - simulator.schematicRect.y,
-      };
-      newPart = await Part.load(data.config.id, data, simulator.schematic);
-      await newPart.loadSVG();
-      simulator.schematic.addPart(newPart);
-
-      // Truly add the part to the circuit when clicking on it.
-      let onclick = e => {
-        simulator.worker.postMessage({
-          type: 'add',
-          parts: [newPart.workerConfig()],
-        });
-        newPart.rootElement.removeEventListener('click', onclick);
-        newPart = null;
-        document.body.classList.remove('adding-part');
-        simulator.schematic.state.parts[data.config.id] = data;
-        simulator.saveState();
-      };
-      newPart.rootElement.addEventListener('click', onclick);
-    });
-  }
-}
