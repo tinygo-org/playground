@@ -119,23 +119,14 @@ body {
 	overflow: hidden;
 }
 
-#terminal-box {
-	flex-shrink: 0;
-}
-#schematic.d-none + #terminal-box {
-	flex-grow: 1;
-}
-
 @media screen and (min-width: 800px) {
 	#middle {
 		flex-direction: row;
 	}
 	#schematic {
 		border-top: none;
-		width: 50vw;
 	}
-	#terminal-box,
-	#properties {
+	#output {
 		width: 50vw;
 	}
 }

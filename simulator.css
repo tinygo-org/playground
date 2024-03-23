@@ -22,7 +22,7 @@
 #schematic.compiling {
     opacity: 0.7;
 }
-body.no-schematic #schematic {
+.simulator.no-schematic #schematic {
     display: none;
 }
 
@@ -120,10 +120,13 @@ body.adding-wire .wire {
 
 /* Panels */
 
-#panels {
+.simulator .panels {
     border-top: 1px solid var(--vscode-terminal-border);
     display: flex;
     flex-direction: column;
+}
+.simulator.no-schematic .panels {
+    flex-grow: 1;
 }
 
 /* Tab bar */
@@ -167,13 +170,13 @@ body.adding-wire .wire {
     display: none !important;
 }
 
-body.no-schematic .tab:not([data-for="#terminal-box"]) {
+.simulator.no-schematic .tab:not(.panel-tab-terminal) {
     display: none;
 }
 
 /* Terminal at the bottom of the screen */
 
-#terminal-box {
+.simulator .terminal-box {
     display: flex;
 }
 
@@ -198,7 +201,7 @@ body.no-schematic .tab:not([data-for="#terminal-box"]) {
 
 /* Properties tab at the bottom */
 
-#properties > .content {
+.simulator .panel-properties > .content {
     padding: 0 20px;
     overflow: auto;
     display: grid;
@@ -209,10 +212,10 @@ body.no-schematic .tab:not([data-for="#terminal-box"]) {
     height: inherit;
 }
 
-#properties .ledstrip {
+.simulator .panel-properties .ledstrip {
     display: flex;
 }
-#properties .ledstrip-channel {
+.simulator .panel-properties .ledstrip-channel {
     text-align: right;
     width: 4ch;
     /* line under the number that graphically indicates the percent the channel is on */
@@ -223,7 +226,7 @@ body.no-schematic .tab:not([data-for="#terminal-box"]) {
 
 /* Add parts tab */
 
-#add {
+.simulator .panel-add {
     padding: 0 20px;
     display: grid;
     grid-template-columns: auto minmax(auto, 100%) auto auto;
@@ -231,19 +234,19 @@ body.no-schematic .tab:not([data-for="#terminal-box"]) {
     align-content: start;
 }
 
-body.adding-part #add {
+body.adding-part .simulator .panel-add {
     opacity: 0.5;
     pointer-events: none;
 }
 
-#add .part-image {
+.simulator .panel-add .part-image {
     filter: drop-shadow(0 0 6px #777c);
     border: 0;
     width: 10mm;
     height: 10mm;
 }
 
-#add select {
+.simulator .panel-add select {
     /* Not exactly the same as in VSCode but close enough */
     background-color: var(--vscode-settings-dropdownBackground, #3c3c3c);
     border: 1px solid var(--vscode-settings-dropdownBorder, #3c3c3c);
@@ -251,7 +254,7 @@ body.adding-part #add {
     padding: 2px 8px;
 }
 
-#add button {
+.simulator .panel-add button {
     display: inline-block;
     border: 0px;
     padding: 2px 14px;
@@ -259,6 +262,6 @@ body.adding-part #add {
     background: var(--vscode-button-background, #0e639c);
     font-size: 13px;
 }
-#add button:hover {
+.simulator .panel-add button:hover {
     background: var(--vscode-button-hoverBackground, #1177bb);
 }

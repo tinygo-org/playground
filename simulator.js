@@ -45,8 +45,11 @@ class Simulator {
 
     this.terminal = new Terminal(this.root.querySelector('.terminal'));
 
-    // Switch active tab on click of a tab title.
-    for (let tab of this.root.querySelectorAll('.tabbar > .tab')) {
+    // Switch active panel tab on click of a tab title.
+    let tabs = this.root.querySelectorAll('.panels > .tabbar > .tab');
+    for (let i=0; i<tabs.length; i++) {
+      let tab = tabs[i];
+      let panel = this.root.querySelectorAll('.panels > .tabcontent')[i];
       tab.addEventListener('click', e => {
         // Update active tab.
         let tabbar = tab.parentNode;
@@ -56,7 +59,7 @@ class Simulator {
         // Update active tab content.
         let parent = tabbar.parentNode;
         parent.querySelector(':scope > .tabcontent.active').classList.remove('active');
-        parent.querySelector(tab.dataset.for).classList.add('active');
+        panel.classList.add('active');
       });
     }
 
@@ -67,7 +70,7 @@ class Simulator {
   // Initialize the parts panel at the bottom, from where new parts can be
   // added.
   async #loadPartsPanel() {
-    let panel = document.querySelector('#add');
+    let panel = this.root.querySelector('.panel-add');
     let response = await fetch('parts/parts.json');
     let json = await response.json();
     panel.innerHTML = '';
@@ -292,7 +295,7 @@ class Schematic {
     this.root = root;
     this.state = state;
     this.schematic = root.querySelector('#schematic');
-    this.propertiesContainer = root.querySelector('#properties .content');
+    this.propertiesContainer = root.querySelector('.panel-properties .content');
     this.setSpeed(1);
   }
 
@@ -334,11 +337,11 @@ class Schematic {
     }
 
     // Set the height of the schematic.
-    document.body.classList.toggle('no-schematic', partHeights.length === 0);
+    this.root.classList.toggle('no-schematic', partHeights.length === 0);
     if (partHeights.length) {
       this.schematic.style.height = 'max(' + partHeights.join(', ') + ')';
     } else {
-      document.querySelector('.tab[data-for="#terminal-box"]').click();
+      document.querySelector('.panel-tab-terminal').click();
     }
 
     // Workaround for Chrome positioning bug and Firefox rendering bug.

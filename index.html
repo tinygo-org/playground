@@ -30,7 +30,7 @@
     </header>
     <div id="middle">
       <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled>Loading...</textarea>
-      <div id="output">
+      <div id="output" class="simulator">
         <div id="schematic-buttons">
           <button id="schematic-button-pause" class="codicon schematic-button" title="Pause/resume the simulation">&#xead1;</button>
         </div>
@@ -40,19 +40,19 @@
             <g id="schematic-wires"></g>
           </g>
         </svg>
-        <div id="panels">
+        <div class="panels">
           <div class="tabbar">
-            <span class="tab active" data-for="#terminal-box"><a>Terminal</a></span>
-            <span class="tab" data-for="#properties"><a>Properties</a></span>
-            <span class="tab" data-for="#add"><a>Add</a></span>
+            <span class="tab active panel-tab-terminal"><a>Terminal</a></span>
+            <span class="tab"><a>Properties</a></span>
+            <span class="tab"><a>Add</a></span>
           </div>
-          <div class="tabcontent active" id="terminal-box">
+          <div class="tabcontent active terminal-box">
             <textarea class="terminal" readonly></textarea>
           </div>
-          <div class="tabcontent" id="properties">
+          <div class="tabcontent panel-properties">
             <div class="content"></div>
           </div>
-          <div class="tabcontent" id="add">
+          <div class="tabcontent panel-add">
             Loading...
           </div>
         </div>
