@@ -87,7 +87,7 @@
     stroke: #009900;
     stroke-width: 1.5mm;
 }
-body.adding-wire .wire {
+.simulator.adding-wire .wire {
     /* ignore clicks on other wires (they only get in the way) */
     pointer-events: none;
 }
@@ -234,7 +234,7 @@ body.adding-wire .wire {
     align-content: start;
 }
 
-body.adding-part .simulator .panel-add {
+.simulator.adding-part .panel-add {
     opacity: 0.5;
     pointer-events: none;
 }

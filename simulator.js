@@ -143,7 +143,7 @@ class Simulator {
         // Add the part to the UI schematic - but don't really make it part of the
         // running circuit yet. Imagine picking up a part and hovering just above
         // where you want to put it down.
-        document.body.classList.add('adding-part');
+        this.root.classList.add('adding-part');
         let data = {
           config: Object.assign({}, part.config, config, {
             id: Math.random().toString(36).slice(2),
@@ -163,7 +163,7 @@ class Simulator {
           });
           newPart.rootElement.removeEventListener('click', onclick);
           newPart = null;
-          document.body.classList.remove('adding-part');
+          this.root.classList.remove('adding-part');
           this.schematic.state.parts[data.config.id] = data;
           this.saveState();
         };
@@ -856,7 +856,7 @@ class Part {
           newWire.updateFrom();
           newWire.updateToMovement(e.pageX, e.pageY);
           wireGroup.appendChild(newWire.line);
-          document.body.classList.add('adding-wire');
+          this.schematic.simulator.root.classList.add('adding-wire');
         } else if (newWire.from === pin) {
           // Cancel the creation of this wire: it doesn't go anywhere.
           newWire.remove();
@@ -878,7 +878,7 @@ class Part {
           });
           newWire.select();
           newWire = null;
-          document.body.classList.remove('adding-wire');
+          this.schematic.simulator.root.classList.remove('adding-wire');
         }
       });
 
@@ -913,7 +913,7 @@ class Part {
       let wasPressed = false;
       let setPressed = (pressed) => {
         if (pressed !== wasPressed) {
-          if (document.body.classList.contains('adding-part')) {
+          if (schematic.simulator.root.classList.contains('adding-part')) {
             // Don't fire input events before the part has been fully added.
             return;
           }
@@ -1026,7 +1026,7 @@ class Part {
     // If this is a part that's currently being added, cancel that.
     if (this === newPart) {
       newPart = null;
-      document.body.classList.remove('adding-part');
+      this.schematic.simulator.root.classList.remove('adding-part');
     }
 
     // Remove all wires connected to this part.
@@ -1180,7 +1180,7 @@ class Wire {
   remove() {
     if (this === newWire) {
       newWire = null;
-      document.body.classList.remove('adding-wire');
+      this.schematic.simulator.root.classList.remove('adding-wire');
     }
 
     // This connection might be highlighted right now. Make sure it is properly
