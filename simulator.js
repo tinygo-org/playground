@@ -1023,7 +1023,13 @@ class Part {
   // equivalent parts and wires there but don't send it yet: this is the job of
   // the caller.
   remove() {
-    // Remove all wires to start with.
+    // If this is a part that's currently being added, cancel that.
+    if (this === newPart) {
+      newPart = null;
+      document.body.classList.remove('adding-part');
+    }
+
+    // Remove all wires connected to this part.
     let message = {
       type: 'remove',
       parts: [],
@@ -1260,6 +1266,10 @@ document.addEventListener('keydown', e => {
     // Cancel the creation of a new wire.
     e.preventDefault();
     newWire.remove();
+  } else if ((e.key === 'Escape' || e.key == 'Delete') && newPart) {
+    // Cancel the creation of a new part.
+    e.preventDefault();
+    newPart.remove();
   } else if (e.key === 'Escape' && selected) {
     selected.deselect();
   } else if (e.key === 'Delete' && selected) {
