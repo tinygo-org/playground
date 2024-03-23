@@ -26,6 +26,7 @@ class Simulator {
     this.root = root;
     this.schematicElement = root.querySelector('#schematic');
     this.schematicWrapperElement = root.querySelector('#schematic-wrapper');
+    this.tooltip = root.querySelector('.schematic-tooltip');
     this.#setupRoot();
     this.schematic = new Schematic(this, root, state);
 
@@ -827,7 +828,7 @@ class Part {
     // Detect pins inside the SVG file. They have an attribute like
     // data-pin="D5".
     let wireGroup = document.querySelector('#schematic-wires');
-    let tooltip = document.querySelector('#schematic-tooltip');
+    let tooltip = this.schematic.simulator.tooltip;
     for (let el of this.rootElement.querySelectorAll('[data-pin]')) {
       if (el.dataset.pin.includes('.')) {
         console.warn('pin name contains dot:', el.dataset.pin);

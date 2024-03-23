@@ -93,7 +93,7 @@ body.adding-wire .wire {
 }
 
 /* Tooltip for pin names */
-#schematic-tooltip {
+.schematic-tooltip {
     position: absolute;
     border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
     padding: 2px 8px;
@@ -103,10 +103,10 @@ body.adding-wire .wire {
     box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgb(0 0 0 / 36%));
     pointer-events: none;
 }
-#schematic-tooltip:not(.visible) {
+.schematic-tooltip:not(.visible) {
     opacity: 0;
 }
-#schematic-tooltip:after {
+.schematic-tooltip:after {
     content: "";
     position: absolute;
     display: block;
