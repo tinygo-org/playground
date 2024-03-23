@@ -177,7 +177,7 @@ body.no-schematic .tab:not([data-for="#terminal-box"]) {
     display: flex;
 }
 
-#terminal {
+.terminal {
     width: 100%;
     line-height: calc(var(--vscode-editor-font-size, 13px) + 5px);
     font-size: var(--vscode-editor-font-size, 13px);
@@ -189,10 +189,10 @@ body.no-schematic .tab:not([data-for="#terminal-box"]) {
     color: var(--vscode-terminal-foreground, white);
     font-family: var(--vscode-editor-font-family, monospace);
 }
-#terminal::selection {
+.terminal::selection {
     background: var(--vscode-terminal-selectionBackground, rgba(255, 255, 255, 0.3));
 }
-#terminal.error {
+.terminal.error {
     color: var(--vscode-terminal-ansiBrightRed, #f55);
 }
 

@@ -3,8 +3,6 @@
 
 export { Simulator };
 
-let terminal;
-
 // The number of CSS pixels in a CSS millimeter. Yes, this is a constant,
 // defined by the CSS specification. This doesn't correspond exactly to
 // real-world pixels and millimeters, but millimeters should be pretty close.
@@ -45,8 +43,7 @@ class Simulator {
       });
     });
 
-    // TODO: this terminal should not be a global.
-    terminal = new Terminal(this.root.querySelector('#terminal'));
+    this.terminal = new Terminal(this.root.querySelector('.terminal'));
 
     // Switch active tab on click of a tab title.
     for (let tab of this.root.querySelectorAll('.tabbar > .tab')) {
@@ -208,7 +205,7 @@ class Simulator {
 
     // Redraw screen.
     this.schematic.schematic.classList.add('compiling');
-    terminal.clear('Compiling...');
+    this.terminal.clear('Compiling...');
     await this.schematic.refresh();
 
     // Start new worker.
@@ -233,7 +230,7 @@ class Simulator {
   // Show a compiler error. This can be called instead of run() to show the
   // compiler error in the output view.
   showCompilerError(msg) {
-    terminal.showError(msg);
+    this.terminal.showError(msg);
   }
 
   #workerMessage(worker, msg) {
@@ -249,7 +246,7 @@ class Simulator {
       this.schematic.setProperties(msg.properties);
     } else if (msg.type == 'loading') {
       // Code has started loading in the worker.
-      terminal.clear('Loading...');
+      this.terminal.clear('Loading...');
       // Request an update.
       worker.postMessage({
           type: 'getUpdate',
@@ -257,7 +254,7 @@ class Simulator {
     } else if (msg.type === 'started') {
       // WebAssembly code was loaded and will start now.
       this.schematic.schematic.classList.remove('compiling');
-      terminal.clear('Running...');
+      this.terminal.clear('Running...');
     } else if (msg.type == 'notifyUpdate') {
       // The web worker is signalling that there are updates.
       // It won't repeat this message until the updates have been read using
@@ -282,7 +279,7 @@ class Simulator {
     } else if (msg.type == 'error') {
       // There was an error. Terminate the worker, it has no more work to do.
       this.#stopWorker();
-      terminal.showError(msg.message);
+      this.terminal.showError(msg.message);
     } else {
       console.warn('unknown worker message:', msg.type, msg);
     }
@@ -493,7 +490,7 @@ class Schematic {
 
       // Main MCU that prints some text.
       if (update.logText) {
-        terminal.log(update.logText);
+        this.simulator.terminal.log(update.logText);
       }
 
       // Update the properties panel at the bottom if needed.
