@@ -1054,6 +1054,10 @@ class Wire {
       document.body.classList.remove('adding-wire');
     }
 
+    // This connection might be highlighted right now. Make sure it is properly
+    // un-highlighted.
+    unhighlightConnection(this.from.connected);
+
     // Remove from UI.
     this.from.wires.delete(this);
     if (this.to) {
