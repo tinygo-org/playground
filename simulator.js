@@ -20,11 +20,14 @@ class Simulator {
     this.saveState = saveState;
     this.worker = null;
     this.workerUpdate = null;
+    this.schematicRect = null;
   }
 
   // Do asynchronous initialization.
   async init(root, state) {
     this.root = root;
+    this.schematicElement = root.querySelector('#schematic');
+    this.schematicWrapperElement = root.querySelector('#schematic-wrapper');
     this.#setupRoot();
     this.schematic = new Schematic(this, root, state);
 
@@ -59,6 +62,18 @@ class Simulator {
         parent.querySelector(tab.dataset.for).classList.add('active');
       });
     }
+
+    window.addEventListener('load', () => this.fixPartsLocation());
+    window.addEventListener('resize', () => this.fixPartsLocation());
+  }
+
+  // Work around a rendering bug in Firefox. Without it, parts of the SVG might
+  // disappear. It is caused by "transform: translate(50%, 50%)".
+  // It might be possible to remove this code once this bug is fixed.
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1747238
+  fixPartsLocation() {
+    this.schematicRect = schematic.getBoundingClientRect();
+    this.schematicWrapperElement.style.transform = `translate(${this.schematicRect.width/2}px, ${this.schematicRect.height/2}px)`;
   }
 
   #stopWorker() {
@@ -226,7 +241,7 @@ class Schematic {
     }
 
     // Workaround for Chrome positioning bug and Firefox rendering bug.
-    fixPartsLocation();
+    this.simulator.fixPartsLocation();
 
     // Create wires.
     this.wires = [];
@@ -777,6 +792,7 @@ class Part {
         highlightConnection(pin.connected);
         tooltip.textContent = pinTitle;
         let dotRect = pin.dot.getBoundingClientRect();
+        let schematicRect = this.schematic.simulator.schematicRect;
         tooltip.style.top = (dotRect.y - schematicRect.y - 30) + 'px';
         tooltip.style.left = (dotRect.x + dotRect.width/2 - schematicRect.x - 11.5) + 'px';
         tooltip.classList.add('visible');
@@ -953,6 +969,7 @@ class Pin {
   // Get the center coordinates of this pin.
   getCoords() {
     let dotRect = this.dot.getBoundingClientRect();
+    let schematicRect = this.part.schematic.simulator.schematicRect;
     let x = dotRect.x + dotRect.width/2 - schematicRect.x - schematicRect.width/2;
     let y = dotRect.y + dotRect.width/2 - schematicRect.y - schematicRect.height/2;
     return [x, y];
@@ -1014,6 +1031,7 @@ class Wire {
   // mousemove event when in the process of creating a new wire.
   updateToMovement(pageX, pageY) {
     // Calculate x2/y2 based on pointer position.
+    let schematicRect = this.schematic.simulator.schematicRect;
     this.x2 = pageX - schematicRect.x - schematicRect.width/2;
     this.y2 = pageY - schematicRect.y - schematicRect.height/2;
     // Reduce length of the wire slightly so that hover still works.
@@ -1105,6 +1123,7 @@ document.addEventListener('mousemove', e => {
     part.setPosition(x, y);
   }
   if (newPart) {
+    let schematicRect = newPart.schematic.simulator.schematicRect;
     let x = e.pageX - schematicRect.width/2 - schematicRect.x;
     let y = e.pageY - schematicRect.height/2 - schematicRect.y;
     newPart.setPosition(x, y);
@@ -1230,8 +1249,8 @@ async function loadPartsPanel(simulator) {
         config: Object.assign({}, part.config, config, {
           id: Math.random().toString(36).slice(2),
         }),
-        x: e.pageX - schematicRect.width/2 - schematicRect.x,
-        y: e.pageY - schematicRect.height/2 - schematicRect.y,
+        x: e.pageX - simulator.schematicRect.width/2 - simulator.schematicRect.x,
+        y: e.pageY - simulator.schematicRect.height/2 - simulator.schematicRect.y,
       };
       newPart = await Part.load(data.config.id, data, simulator.schematic);
       await newPart.loadSVG();
@@ -1253,25 +1272,3 @@ async function loadPartsPanel(simulator) {
     });
   }
 }
-
-// Work around a positioning bug in Chrome and a rendering bug in Firefox.
-// It might be possible to remove this code once these bugs are fixed.
-// https://bugs.chromium.org/p/chromium/issues/detail?id=1281085
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1747238
-let schematicRect;
-let fixPartsLocation = (function() {
-  // The code below has multiple purposes.
-  //  1. It works around a Chrome/Safari bug. See:
-  //     https://bugs.chromium.org/p/chromium/issues/detail?id=1281085
-  //  2. It fixes SVG rendering issues on Firefox. Without it, parts of the SVG
-  //     might disappear.
-  // Both appear to be caused by the "transform: translate(50%, 50%)" style.
-  let schematic = document.querySelector('#schematic');
-  let wrapper = document.querySelector('#schematic-wrapper');
-  return function() {
-    schematicRect = schematic.getBoundingClientRect();
-    wrapper.style.transform = 'translate(' + schematicRect.width / 2 + 'px, ' + schematicRect.height / 2 + 'px)';
-  };
-})();
-window.addEventListener('load', fixPartsLocation);
-window.addEventListener('resize', fixPartsLocation);
