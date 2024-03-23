@@ -102,8 +102,21 @@ async function start(msg) {
     try {
       source = await fetch(msg.binary.url, msg.binary);
     } catch (reason) {
-      // Probably a network error.
+      if (reason instanceof TypeError) {
+        // Not sure why this is a TypeError, but it is.
+        // It is typically a CORS failure. More information:
+        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#checking_that_the_fetch_was_successful
+        sendError(`Could not request compiled WebAssembly module, probably due to a network error:\n${reason.message}`).
+        return;
+      }
+      // Some other error.
       sendError(reason);
+      return;
+    }
+
+    // Check for a valid response.
+    if (!source.ok) {
+      sendError(`Could not request compiled WebAssembly module: HTTP error ${source.status} ${source.statusText}`);
       return;
     }
 
@@ -112,6 +125,11 @@ async function start(msg) {
     if (source.headers.get('Content-Type') !== 'application/wasm') {
       // Probably a compile error.
       source.text().then((text) => {
+        if (text === '') {
+          // Not sure when this could happen, but it's a good thing to check
+          // this to be sure.
+          text = `Could not request compiled WebAssembly module: no response received (status: ${source.status} ${source.statusText})`;
+        }
         sendError(text);
       });
       return;
