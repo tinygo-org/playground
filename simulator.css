@@ -14,13 +14,13 @@
     display: none;
 }
 
-.schematic-buttons {
+.simulator .schematic-buttons {
     position: absolute;
     right: 0;
     top: 1px;
     z-index: 1;
 }
-.schematic-button {
+.simulator .schematic-button {
     display: inline-block;
     width: 32px;
     height: 32px;
@@ -35,11 +35,11 @@
     opacity: 0.3;
     transition: opacity 150ms;
 }
-.schematic-button:hover,
-.schematic-button:disabled {
+.simulator .schematic-button:hover,
+.simulator .schematic-button:disabled {
     opacity: 1;
 }
-.schematic-button img {
+.simulator .schematic-button img {
     filter: invert(1); /* make white instead of black */
     width: 24px;
     padding-bottom: 2px;
@@ -90,7 +90,7 @@
 }
 
 /* Tooltip for pin names */
-.schematic-tooltip {
+.simulator .schematic-tooltip {
     position: absolute;
     border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
     padding: 2px 8px;
@@ -100,10 +100,10 @@
     box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgb(0 0 0 / 36%));
     pointer-events: none;
 }
-.schematic-tooltip:not(.visible) {
+.simulator .schematic-tooltip:not(.visible) {
     opacity: 0;
 }
-.schematic-tooltip:after {
+.simulator .schematic-tooltip:after {
     content: "";
     position: absolute;
     display: block;
@@ -128,17 +128,17 @@
 
 /* Tab bar */
 
-.tabbar {
+.simulator .tabbar {
     padding: 0 10px;
     display: flex;
     flex: 0 0;
 }
 
-.tabbar > .tab {
+.simulator .tabbar > .tab {
     padding: 4px 12px 3px;
     cursor: pointer;
 }
-.tabbar > .tab a {
+.simulator .tabbar > .tab a {
     text-transform: uppercase;
     font-size: 11px;
     color: var(--vscode-panelTitle-inactiveForeground, rgba(231, 231, 231, 0.6));
@@ -147,23 +147,23 @@
     text-decoration: none;
     border-bottom: 1px solid transparent;
 }
-.tabbar > .tab.active a {
+.simulator .tabbar > .tab.active a {
     border-bottom-color: var(--vscode-panelTitle-activeBorder, #e7e7e7);
     color: var(--vscode-panelTitle-activeForeground, #e7e7e7);
     display: inline-block;
 }
-.tabbar > .tab:hover a {
+.simulator .tabbar > .tab:hover a {
     color: var(--vscode-panelTitle-activeForeground, #e7e7e7) !important;
 }
 
-.tabcontent {
+.simulator .tabcontent {
     color: var(--vscode-terminal-foreground, white);
     flex: 1 0;
     min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
     height:     calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
 }
 
-.tabcontent:not(.active) {
+.simulator .tabcontent:not(.active) {
     display: none !important;
 }
 
@@ -177,7 +177,7 @@
     display: flex;
 }
 
-.terminal {
+.simulator .terminal {
     width: 100%;
     line-height: calc(var(--vscode-editor-font-size, 13px) + 5px);
     font-size: var(--vscode-editor-font-size, 13px);
@@ -189,10 +189,10 @@
     color: var(--vscode-terminal-foreground, white);
     font-family: var(--vscode-editor-font-family, monospace);
 }
-.terminal::selection {
+.simulator .terminal::selection {
     background: var(--vscode-terminal-selectionBackground, rgba(255, 255, 255, 0.3));
 }
-.terminal.error {
+.simulator .terminal.error {
     color: var(--vscode-terminal-ansiBrightRed, #f55);
 }
 
