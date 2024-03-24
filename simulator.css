@@ -15,14 +15,14 @@
 
 /* Area at the top with all the devices */
 
-#schematic {
+.simulator .schematic {
     position: relative;
     overflow: hidden;
 }
-#schematic.compiling {
+.simulator .schematic.compiling {
     opacity: 0.7;
 }
-.simulator.no-schematic #schematic {
+.simulator.no-schematic .schematic {
     display: none;
 }
 
@@ -52,38 +52,38 @@
     opacity: 1;
 }
 
-#schematic .board-wrapper {
+.simulator .board-wrapper {
     position: absolute;
     filter: drop-shadow(0 0 6px #777c);
 }
-#schematic .board-wrapper > .background {
+.simulator .board-wrapper > .background {
     fill: transparent;
 }
-#schematic .board-wrapper.selected > .background {
+.simulator .board-wrapper.selected > .background {
     outline: 1.7px dashed gray;
 }
 
-#schematic .pin-hover-dot {
+.simulator .pin-hover-dot {
     r: 1px; /* actually: 1mm */
     fill: #080;
 }
-#schematic [data-pin]:not(:hover) .pin-hover-dot {
+.simulator [data-pin]:not(:hover) .pin-hover-dot {
     visibility: hidden;
 }
 
-#schematic .hover-connection {
+.simulator .hover-connection {
     filter: brightness(1.4);
 }
 
-#schematic .wire {
+.simulator .wire {
     stroke: #008800;
     stroke-width: 1mm;
     stroke-linecap: round;
 }
-#schematic .wire:hover {
+.simulator .wire:hover {
     stroke-width: 1.5mm;
 }
-#schematic .wire.selected {
+.simulator .wire.selected {
     stroke: #009900;
     stroke-width: 1.5mm;
 }

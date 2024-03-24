@@ -24,8 +24,8 @@ class Simulator {
   // Do asynchronous initialization.
   async init(root, state) {
     this.root = root;
-    this.schematicElement = root.querySelector('#schematic');
-    this.schematicWrapperElement = root.querySelector('#schematic-wrapper');
+    this.schematicElement = root.querySelector('.schematic');
+    this.schematicWrapperElement = root.querySelector('.schematic-wrapper');
     this.tooltip = root.querySelector('.schematic-tooltip');
     this.#setupRoot();
     this.schematic = new Schematic(this, root, state);
@@ -177,7 +177,7 @@ class Simulator {
   // It might be possible to remove this code once this bug is fixed.
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1747238
   fixPartsLocation() {
-    this.schematicRect = schematic.getBoundingClientRect();
+    this.schematicRect = this.schematicElement.getBoundingClientRect();
     this.schematicWrapperElement.style.transform = `translate(${this.schematicRect.width/2}px, ${this.schematicRect.height/2}px)`;
   }
 
@@ -295,7 +295,7 @@ class Schematic {
     this.simulator = simulator;
     this.root = root;
     this.state = state;
-    this.schematic = root.querySelector('#schematic');
+    this.schematic = root.querySelector('.schematic');
     this.propertiesContainer = root.querySelector('.panel-properties .content');
     this.setSpeed(1);
   }
@@ -319,8 +319,8 @@ class Schematic {
     let parts = await Promise.all(promises);
 
     // Remove existing SVG elements.
-    let partsGroup = this.schematic.querySelector('#schematic-parts');
-    let wireGroup = this.schematic.querySelector('#schematic-wires');
+    let partsGroup = this.schematic.querySelector('.schematic-parts');
+    let wireGroup = this.schematic.querySelector('.schematic-wires');
     partsGroup.innerHTML = '';
     wireGroup.innerHTML = '';
 
@@ -368,7 +368,7 @@ class Schematic {
       this.parts[id] = subpart;
     }
     if (part.rootElement) {
-      let partsGroup = this.schematic.querySelector('#schematic-parts');
+      let partsGroup = this.schematic.querySelector('.schematic-parts');
       partsGroup.appendChild(part.createElement(this.schematic));
     }
   }
@@ -827,7 +827,7 @@ class Part {
 
     // Detect pins inside the SVG file. They have an attribute like
     // data-pin="D5".
-    let wireGroup = schematic.querySelector('#schematic-wires');
+    let wireGroup = schematic.querySelector('.schematic-wires');
     let tooltip = this.schematic.simulator.tooltip;
     for (let el of this.rootElement.querySelectorAll('[data-pin]')) {
       if (el.dataset.pin.includes('.')) {
