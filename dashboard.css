@@ -107,9 +107,6 @@ body {
 	background: #222;
 	flex-grow: 1;
 }
-.schematic.compiling {
-	opacity: 0.7;
-}
 
 #output {
 	display: flex;

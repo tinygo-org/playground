@@ -208,7 +208,7 @@ class Simulator {
     }
 
     // Redraw screen.
-    this.schematic.schematic.classList.add('compiling');
+    this.schematic.root.classList.add('compiling');
     this.terminal.clear('Compiling...');
     await this.schematic.refresh();
 
@@ -257,7 +257,7 @@ class Simulator {
       });
     } else if (msg.type === 'started') {
       // WebAssembly code was loaded and will start now.
-      this.schematic.schematic.classList.remove('compiling');
+      this.schematic.root.classList.remove('compiling');
       this.terminal.clear('Running...');
     } else if (msg.type == 'notifyUpdate') {
       // The web worker is signalling that there are updates.

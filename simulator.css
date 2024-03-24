@@ -19,7 +19,7 @@
     position: relative;
     overflow: hidden;
 }
-.simulator .schematic.compiling {
+.simulator.compiling .schematic {
     opacity: 0.7;
 }
 .simulator.no-schematic .schematic {
