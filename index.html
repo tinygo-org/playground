@@ -5,7 +5,7 @@
     <title>TinyGo Playground</title>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"/>
     <link rel="stylesheet" href="resources/bootstrap-5.3.3.min.css">
     <link rel="stylesheet" href="simulator.css"/>
     <link rel="stylesheet" href="dashboard.css"/>
@@ -32,7 +32,11 @@
       <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled>Loading...</textarea>
       <div id="output" class="simulator">
         <div class="schematic-buttons">
-          <button class="schematic-button-pause codicon schematic-button" title="Pause/resume the simulation">&#xead1;</button>
+          <button class="schematic-button-pause schematic-button" title="Pause/resume the simulation">
+            <!-- only one of these two images is visible at a time -->
+            <img src="resources/codicon/debug-pause.svg" class="button-img-pause"/>
+            <img src="resources/codicon/play.svg" class="button-img-play"/>
+          </button>
         </div>
         <svg class="schematic">
           <g class="schematic-wrapper" style="transform: translate(50%, 50%)">

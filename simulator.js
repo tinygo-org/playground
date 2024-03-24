@@ -569,13 +569,8 @@ class Schematic {
   // Set the speed of the simulator, which is currently assumed to be 1 (normal
   // speed) or 0 (stopped).
   setSpeed(speed) {
-    let button = this.root.querySelector('.schematic-button-pause');
-    button.disabled = false;
-    if (speed === 0) {
-      button.innerHTML = '&#xeb2c'; // paused, so show play symbol
-    } else {
-      button.innerHTML = '&#xead1'; // pause symbol
-    }
+    this.root.querySelector('.schematic-button-pause').disabled = false;
+    this.root.classList.toggle('paused', speed === 0);
   }
 }
 

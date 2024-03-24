@@ -1,18 +1,6 @@
 /* CSS file for the 'output' part: the entire webview in VSCode or the right hand
  * side of the webpage on play.tinygo.org. */
 
-/* Generic styles */
-
-/* Codicons from VS Code: https://github.com/microsoft/vscode-codicons */
-@font-face {
-    font-family: codicon;
-    src: url(resources/codicon/codicon.ttf);
-    font-display: block;
-}
-.codicon {
-    font-family: codicon;
-}
-
 /* Area at the top with all the devices */
 
 .simulator .schematic {
@@ -50,6 +38,15 @@
 .schematic-button:hover,
 .schematic-button:disabled {
     opacity: 1;
+}
+.schematic-button img {
+    filter: invert(1); /* make white instead of black */
+    width: 24px;
+    padding-bottom: 2px;
+}
+.simulator.paused .button-img-pause,
+.simulator:not(.paused) .button-img-play {
+    display: none; /* hide the other button image */
 }
 
 .simulator .board-wrapper {
