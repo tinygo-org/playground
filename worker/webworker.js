@@ -106,7 +106,7 @@ async function start(msg) {
         // Not sure why this is a TypeError, but it is.
         // It is typically a CORS failure. More information:
         // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#checking_that_the_fetch_was_successful
-        sendError(`Could not request compiled WebAssembly module, probably due to a network error:\n${reason.message}`).
+        sendError(`Could not request compiled WebAssembly module, probably due to a network error:\n${reason.message}`);
         return;
       }
       // Some other error.
