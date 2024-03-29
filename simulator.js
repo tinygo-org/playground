@@ -79,9 +79,18 @@ class Simulator {
     this.input.addEventListener('input', (e) => {
       // Insert whitespace at the start of the next line.
       if (e.inputType == 'insertLineBreak') {
+        // Get the current line.
         let line = e.target.value.substr(0, e.target.selectionStart).trimRight();
         if (line.lastIndexOf('\n') >= 0) {
           line = line.substr(line.lastIndexOf('\n')+1);
+        }
+
+        // Strip comments at the end of the line.
+        // There may be false positives here, for example if a comment contains
+        // the string "//". But it's probably better than not doing this.
+        let commentStart = line.indexOf('//');
+        if (commentStart >= 0) {
+          line = line.substring(0, commentStart).trimRight();
         }
 
         // Get the number of tabs at the start of the previous line.
