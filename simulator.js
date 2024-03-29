@@ -76,6 +76,17 @@ class Simulator {
   // keep on the same column.
   #setupInput() {
     let inputCompileTimeout = null;
+
+    // Get the 'tab' key to work.
+    // This is a possible accessibility issue, but the tab key is kinda
+    // important for a code editor and I'm not sure how to do this otherwise.
+    this.input.addEventListener('keydown', (e) => {
+      if (e.key == 'Tab') {
+        e.preventDefault();
+        insertAtCursor(e.target, '\t');
+      }
+    });
+
     this.input.addEventListener('input', (e) => {
       // Insert whitespace at the start of the next line.
       if (e.inputType == 'insertLineBreak') {
@@ -1342,6 +1353,9 @@ function insertAtCursor (input, textToInsert) {
 
   // Update the cursor to be at the end of the insertion (not at the beginning).
   input.selectionStart = input.selectionEnd = start + textToInsert.length;
+
+  // Notify that the contents of the textarea have changed.
+  input.dispatchEvent(new Event('input'));
 }
 
 // Code to handle dragging of parts and creating of wires.
