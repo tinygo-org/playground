@@ -1326,23 +1326,13 @@ class Wire {
   }
 }
 
-// Source:
-// https://www.everythingfrontend.com/posts/insert-text-into-textarea-at-cursor-position.html
+// Insert text at the cursor location.
 function insertAtCursor (input, textToInsert) {
-  const couldInsert = document.execCommand("insertText", false, textToInsert);
+  const start = input.selectionStart;
+  input.setRangeText(textToInsert);
 
-  // Firefox (non-standard method)
-  if (!couldInsert && typeof input.setRangeText === "function") {
-    const start = input.selectionStart;
-    input.setRangeText(textToInsert);
-    // update cursor to be at the end of insertion
-    input.selectionStart = input.selectionEnd = start + textToInsert.length;
-
-    // Notify any possible listeners of the change
-    const e = document.createEvent("UIEvent");
-    e.initEvent("input", true, false);
-    input.dispatchEvent(e);
-  }
+  // Update the cursor to be at the end of the insertion (not at the beginning).
+  input.selectionStart = input.selectionEnd = start + textToInsert.length;
 }
 
 // Code to handle dragging of parts and creating of wires.
