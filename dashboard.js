@@ -5,13 +5,8 @@ import { Simulator } from './simulator.js';
 
 const API_URL = location.hostname == 'localhost' ? '/api' : 'https://playground-bttoqog3vq-uc.a.run.app/api';
 
-var inputCompileTimeout = null;
-const inputCompileDelay = 1000;
-var worker = null;
-var workerUpdate = null;
 var project = null;
 var db = null;
-var schematic = null;
 const defaultProjectName = 'console';
 
 // A list of source code samples used for each target. This is the default code
@@ -37,46 +32,6 @@ var boardNames = {
 };
 
 let simulator = null;
-
-// Compile the script and if it succeeded, display the result on the right.
-async function update(fullUpdate) {
-  // Initialize simulator if not already done so.
-  if (!simulator) {
-    let root = document.querySelector('#output');
-    simulator = new Simulator('./worker/webworker.js', () => {
-      project.save();
-    });
-    await simulator.init(root, project.data)
-    await simulator.refresh();
-  } else {
-    if (fullUpdate) {
-      // Replace schematic SVG with new data.
-      await simulator.refresh(project.data);
-    } else {
-      // Just reset all state, don't recreate all SVG objects.
-      await simulator.refresh();
-    }
-  }
-
-  // Run the code in a web worker.
-  simulator.run({
-    url: API_URL + '/compile?target=' + project.target,
-    method: 'POST',
-    body: document.querySelector('#input').value,
-  })
-}
-
-// Terminate the worker immediately.
-function stopWorker() {
-  if (worker === null)
-    return;
-  worker.terminate();
-  worker = null;
-  if (workerUpdate !== null) {
-    cancelAnimationFrame(workerUpdate);
-    workerUpdate = null;
-  }
-}
 
 // updateBoards updates the dropdown menu. This must be done after loading the
 // boards or updating the target selection.
@@ -187,41 +142,34 @@ async function setProject(name) {
   if (project && project.data.created) {
     project.save(document.querySelector('#input').value);
   }
-  if (worker !== null) {
-    // A previous job is running, stop it now.
-    stopWorker();
-  }
   project = await loadProject(name);
   updateBoards();
   let input = document.querySelector('#input');
   input.value = project.data.code;
-  input.disabled = false;
-  update(true);
+
+  // Load simulator if not already done so (it must only happen once).
+  if (!simulator) {
+    let root = document.querySelector('#output');
+    simulator = new Simulator({
+      root: root,
+      input: document.querySelector('#input'),
+      firmwareButton: document.querySelector('#btn-flash'),
+      apiURL: API_URL,
+      saveState: () => {
+        project.save();
+        localStorage.tinygo_playground_projectName = project.name;
+      },
+    });
+  }
+
+  // Change to the new project state.
+  await simulator.setState(project.data);
+
+  // Load the same project on a reload.
   localStorage.tinygo_playground_projectName = name;
-  document.querySelector('#btn-flash').disabled = project.config.firmwareFormat === undefined;
-}
 
-// Start a firmware file download. This can be used for drag-and-drop
-// programming supported by many modern development boards.
-function flashFirmware(e) {
-  project.save(document.querySelector('#input').value);
-  e.preventDefault();
-
-  // Create a hidden form with the correct values that sends back the file with
-  // the correct headers to make this a download:
-  //     Content-Disposition: attachment; filename=firmware.hex
-  let form = document.createElement('form');
-  form.setAttribute('method', 'POST');
-  form.setAttribute('action', API_URL + '/compile?target='+project.target+'&format='+project.config.firmwareFormat);
-  form.classList.add('d-none');
-  let input = document.createElement('input');
-  input.setAttribute('type', 'hidden');
-  input.setAttribute('name', 'code');
-  input.value = document.querySelector('#input').value;
-  form.appendChild(input);
-  document.body.appendChild(form);
-  form.submit();
-  form.remove();
+  // Enable the editor (it is diabled on first load).
+  input.disabled = false;
 }
 
 // getProjects returns the complete list of project objects from the projects
@@ -337,69 +285,6 @@ async function loadJSON(location) {
   let response = await fetch(location);
   return await response.json();
 }
-
-// Source:
-// https://www.everythingfrontend.com/posts/insert-text-into-textarea-at-cursor-position.html
-function insertAtCursor (input, textToInsert) {
-  const couldInsert = document.execCommand("insertText", false, textToInsert);
-
-  // Firefox (non-standard method)
-  if (!couldInsert && typeof input.setRangeText === "function") {
-    const start = input.selectionStart;
-    input.setRangeText(textToInsert);
-    // update cursor to be at the end of insertion
-    input.selectionStart = input.selectionEnd = start + textToInsert.length;
-
-    // Notify any possible listeners of the change
-    const e = document.createEvent("UIEvent");
-    e.initEvent("input", true, false);
-    input.dispatchEvent(e);
-  }
-}
-
-document.querySelector('#input').addEventListener('input', function(e) {
-  // Insert whitespace at the start of the next line.
-  if (e.inputType == 'insertLineBreak') {
-    let line = e.target.value.substr(0, e.target.selectionStart).trimRight();
-    if (line.lastIndexOf('\n') >= 0) {
-      line = line.substr(line.lastIndexOf('\n')+1);
-    }
-
-    // Get the number of tabs at the start of the previous line.
-    let numTabs = 0;
-    for (let i=0; i<line.length; i++) {
-      if (line.substr(i, 1) != '\t') {
-        break;
-      }
-      numTabs++;
-    }
-
-    // Increase the number of tabs if this is the start of a block.
-    if (line.substr(-1, 1) == '{' || line.substr(-1, 1) == '(') {
-      numTabs += 1;
-    }
-
-    // Insert the number of tabs at the current cursor location, which must be
-    // the start of the next line.
-    let insertBefore = '';
-    for (let i=0; i<numTabs; i++) {
-      insertBefore += '\t';
-    }
-    insertAtCursor(input, insertBefore);
-  }
-
-  // Compile the code after a certain delay of inactivity.
-  if (inputCompileTimeout !== null) {
-    clearTimeout(inputCompileTimeout);
-  }
-  inputCompileTimeout = setTimeout(() => {
-    project.save(document.querySelector('#input').value);
-    localStorage.tinygo_playground_projectName = project.name;
-    update(false);
-  }, inputCompileDelay);
-})
-
-document.querySelector('#btn-flash').addEventListener('click', flashFirmware);
 
 // loadDB loads the playground database asynchronously. It returns a promise
 // that resolves when the database is loaded.

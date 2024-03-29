@@ -10,28 +10,140 @@ export { Simulator };
 // https://developer.mozilla.org/en-US/docs/Learn/CSS/Building_blocks/Values_and_units
 const pixelsPerMillimeter = 96 / 25.4;
 
+const inputCompileDelay = 1000;
+
 // Encapsulate a single simulator HTML node. Handles starting/stopping the
 // worker, refresh the schematic as needed, etc.
 class Simulator {
-  constructor(workerURL, saveState) {
-    this.workerURL = workerURL;
-    this.saveState = saveState;
+  constructor(config) {
+    // Store configuration.
+    this.root = config.root;
+    this.input = config.input;
+    this.firmwareButton = config.firmwareButton;
+    this.baseURL = config.baseURL || document.baseURI;
+    this.apiURL = config.apiURL;
+    this.workerURL = config.workerURL || new URL('./worker/webworker.js', this.baseURL);
+    this.saveState = config.saveState || (() => {});
+
+    // Initialize member variables.
     this.worker = null;
     this.workerUpdate = null;
     this.schematicRect = null;
-  }
 
-  // Do asynchronous initialization.
-  async init(root, state) {
-    this.root = root;
-    this.schematicElement = root.querySelector('.schematic');
-    this.schematicWrapperElement = root.querySelector('.schematic-wrapper');
-    this.tooltip = root.querySelector('.schematic-tooltip');
+    // Initialize root element.
+    this.schematicElement = this.root.querySelector('.schematic');
+    this.schematicWrapperElement = this.root.querySelector('.schematic-wrapper');
+    this.tooltip = this.root.querySelector('.schematic-tooltip');
     this.#setupRoot();
-    this.schematic = new Schematic(this, root, state);
+
+    // Setup input element.
+    this.#setupInput();
+
+    // Make sure the 'download firmware' button works.
+    if (this.firmwareButton) {
+      this.firmwareButton.addEventListener('click', (e) => this.#flashFirmware(e));
+    }
 
     // Start loading the parts panel (without blocking further initialization).
     this.#loadPartsPanel();
+  }
+
+  // Set the project state. This must be done at load, and when the schematic is
+  // switched for another. It does _not_ need to happen on each input: that's
+  // something the simulator already takes care of.
+  async setState(state) {
+    // Don't allow downloading the firmware while switching the state out.
+    if (this.firmwareButton) {
+      this.firmwareButton.disabled = true;
+    }
+
+    // Redraw the schematic SVG.
+    await this.refresh(state);
+
+    // Start first compile.
+    if (this.apiURL) {
+      // Run the code in a web worker.
+      this.run({
+        url: `${this.apiURL}/compile?target=${this.schematic.parts.main.config.name}`,
+        method: 'POST',
+        body: this.input.value,
+      })
+    }
+  }
+
+  // Configure the input, which is a textarea.
+  // It has some small extra features like inserting tabs when pressing enter to
+  // keep on the same column.
+  #setupInput() {
+    let inputCompileTimeout = null;
+    this.input.addEventListener('input', (e) => {
+      // Insert whitespace at the start of the next line.
+      if (e.inputType == 'insertLineBreak') {
+        let line = e.target.value.substr(0, e.target.selectionStart).trimRight();
+        if (line.lastIndexOf('\n') >= 0) {
+          line = line.substr(line.lastIndexOf('\n')+1);
+        }
+
+        // Get the number of tabs at the start of the previous line.
+        let numTabs = 0;
+        for (let i=0; i<line.length; i++) {
+          if (line.substr(i, 1) != '\t') {
+            break;
+          }
+          numTabs++;
+        }
+
+        // Increase the number of tabs if this is the start of a block.
+        if (line.substr(-1, 1) == '{' || line.substr(-1, 1) == '(') {
+          numTabs += 1;
+        }
+
+        // Insert the number of tabs at the current cursor location, which must be
+        // the start of the next line.
+        let insertBefore = '';
+        for (let i=0; i<numTabs; i++) {
+          insertBefore += '\t';
+        }
+        insertAtCursor(this.input, insertBefore);
+      }
+
+      // Compile the code after a certain delay of inactivity.
+      if (inputCompileTimeout !== null) {
+        clearTimeout(inputCompileTimeout);
+      }
+      inputCompileTimeout = setTimeout(async () => {
+        this.schematic.state.code = this.input.value;
+        this.saveState();
+        await this.refresh();
+        this.run({
+          url: `${this.apiURL}/compile?target=${this.schematic.parts.main.config.name}`,
+          method: 'POST',
+          body: this.input.value,
+        })
+      }, inputCompileDelay);
+    });
+  }
+
+  // Start a firmware file download. This can be used for drag-and-drop
+  // programming supported by many modern development boards.
+  #flashFirmware(e) {
+    e.preventDefault();
+
+    // Create a hidden form with the correct values that sends back the file with
+    // the correct headers to make this a download:
+    //     Content-Disposition: attachment; filename=firmware.hex
+    let form = document.createElement('form');
+    form.setAttribute('method', 'POST');
+    form.setAttribute('action', `${this.apiURL}/compile?target=${this.schematic.parts.main.config.name}&format=${this.schematic.parts.main.config.firmwareFormat}`);
+    form.classList.add('d-none');
+    let input = document.createElement('input');
+    input.setAttribute('type', 'hidden');
+    input.setAttribute('name', 'code');
+    input.value = this.input.value;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
   }
 
   // Initialize this simulator by setting up events etc.
@@ -72,7 +184,8 @@ class Simulator {
   // added.
   async #loadPartsPanel() {
     let panel = this.root.querySelector('.panel-add');
-    let response = await fetch('parts/parts.json');
+    let partsURI = new URL('parts/parts.json', this.baseURL)
+    let response = await fetch(partsURI);
     let json = await response.json();
     panel.innerHTML = '';
     for (let part of json.parts) {
@@ -83,7 +196,7 @@ class Simulator {
       image.setAttribute('height', '10mm');
       image.classList.add('part-image');
       panel.appendChild(image);
-      let svgPromise = loadSVG(new URL(part.config.svg, new URL('parts/', document.baseURI)))
+      let svgPromise = loadSVG(new URL(part.config.svg, partsURI))
       svgPromise.then((svg) => {
         // If needed, shrink the image to fit the available space.
         let width = svg.getAttribute('width').replace('mm', '');
@@ -211,6 +324,11 @@ class Simulator {
     this.schematic.root.classList.add('compiling');
     this.terminal.clear('Compiling...');
     await this.schematic.refresh();
+
+    // Only set the firmware button as enabled when supported by the main part.
+    if (this.firmwareButton) {
+      this.firmwareButton.disabled = this.schematic.parts.main.config.firmwareFormat === undefined;
+    }
 
     // Start new worker.
     this.worker = new Worker(this.workerURL);
@@ -666,6 +784,9 @@ async function loadJSON(location) {
   if (!(location in requestCache)) {
     requestCache[location] = (async () => {
       let response = await fetch(location);
+      if (!response.ok) {
+        throw `Could not request JSON at ${location}: HTTP error ${response.status} ${response.statusText}`;
+      }
       return await response.json();
     })();
   }
@@ -714,7 +835,7 @@ class Part {
     if (data.location) {
       // Config object is stored in an external JSON file. Need to load that
       // first.
-      config = await loadJSON(data.location);
+      config = await loadJSON(new URL(data.location, schematic.simulator.baseURL));
     } else if (data.config) {
       // Config is stored directly in the (modifiable) data object.
       // For example, this may be a simple part created in the Add tab.
@@ -730,7 +851,7 @@ class Part {
   // loadSVG loads the 'svg' property (this.svg) of this object.
   async loadSVG() {
     // Determine the SVG URL, which is relative to the board config JSON file.
-    let svgUrl = new URL(this.config.svg, new URL('parts/', document.baseURI));
+    let svgUrl = new URL(this.config.svg, new URL('parts/', this.schematic.simulator.baseURL));
 
     let svg = await loadSVG(svgUrl);
     this.setRootElement(svg);
@@ -1202,6 +1323,25 @@ class Wire {
       type: 'remove',
       wires: [{from: this.from.id, to: this.to.id}],
     };
+  }
+}
+
+// Source:
+// https://www.everythingfrontend.com/posts/insert-text-into-textarea-at-cursor-position.html
+function insertAtCursor (input, textToInsert) {
+  const couldInsert = document.execCommand("insertText", false, textToInsert);
+
+  // Firefox (non-standard method)
+  if (!couldInsert && typeof input.setRangeText === "function") {
+    const start = input.selectionStart;
+    input.setRangeText(textToInsert);
+    // update cursor to be at the end of insertion
+    input.selectionStart = input.selectionEnd = start + textToInsert.length;
+
+    // Notify any possible listeners of the change
+    const e = document.createEvent("UIEvent");
+    e.initEvent("input", true, false);
+    input.dispatchEvent(e);
   }
 }
 

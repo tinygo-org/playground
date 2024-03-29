@@ -3,9 +3,20 @@
 
 /* Area at the top with all the devices */
 
+.simulator {
+    position: relative;
+}
+body:not(.vscode) .simulator {
+    background: #111;
+}
+
 .simulator .schematic {
     position: relative;
     overflow: hidden;
+    width: 100%;
+}
+body:not(.vscode) .simulator .schematic{
+    background: #222;
 }
 .simulator.compiling .schematic {
     opacity: 0.7;

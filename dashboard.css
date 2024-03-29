@@ -104,15 +104,12 @@ body {
 
 .schematic {
 	border-top: 1px solid #aaa;
-	background: #222;
 	flex-grow: 1;
 }
 
 #output {
 	display: flex;
 	flex-direction: column;
-	background: #111;
-	position:relative;
 	overflow: hidden;
 }
 
