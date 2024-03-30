@@ -1,4 +1,5 @@
 import { Simulator } from './simulator.js';
+import { examples, boardNames } from './boards.js';
 
 // This file controls the entire playground window, except for the output part
 // on the right that is shared with the VS Code extension.
@@ -8,28 +9,6 @@ const API_URL = location.hostname == 'localhost' ? '/api' : 'https://playground-
 var project = null;
 var db = null;
 const defaultProjectName = 'console';
-
-// A list of source code samples used for each target. This is the default code
-// set for a given configuration.
-var examples = {
-  hello: 'package main\n\nimport (\n\t"fmt"\n)\n\nfunc main() {\n\tfmt.Println("Hello, TinyGo")\n}\n',
-  blinky1: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nconst led = machine.LED\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tled.Low()\n\t\ttime.Sleep(time.Second)\n\n\t\tled.High()\n\t\ttime.Sleep(time.Second)\n\t}\n}\n',
-  microbitblink: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nfunc main() {\n\tledcol := machine.LED_COL_1\n\tledcol.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tledcol.Low()\n\n\tledrow := machine.LED_ROW_1\n\tledrow.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\tfor {\n\t\tledrow.Low()\n\t\ttime.Sleep(time.Millisecond * 500)\n\n\t\tledrow.High()\n\t\ttime.Sleep(time.Millisecond * 500)\n\t}\n}\n',
-  rgbled: 'package main\n\nimport (\n\t"machine"\n\t"time"\n)\n\nvar leds = []machine.Pin{machine.LED_RED, machine.LED_GREEN, machine.LED_BLUE}\n\nfunc main() {\n\tprintln("Hello, TinyGo")\n\tfor _, led := range leds {\n\t\tled.Configure(machine.PinConfig{Mode: machine.PinOutput})\n\t\tled.High()\n\t}\n\tfor {\n\t\tfor _, led := range leds {\n\t\t\tled.Low()\n\t\t\ttime.Sleep(time.Second)\n\t\t\tled.High()\n\t\t}\n\t}\n}\n',
-};
-
-// List of boards to show in the menu. See parts/*.json.
-var boardNames = {
-  'console': 'Console',
-  'arduino': 'Arduino Uno',
-  'arduino-nano33': 'Arduino Nano 33 IoT',
-  'circuitplay-bluefruit': 'Circuit Playground Bluefruit',
-  'circuitplay-express': 'Circuit Playground Express',
-  'hifive1b': 'HiFive1 rev B',
-  'microbit': 'BBC micro:bit v1',
-  'reelboard': 'Phytec reel board',
-  'pinetime': 'PineTime',
-};
 
 let simulator = null;
 
