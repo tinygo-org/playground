@@ -1,4 +1,4 @@
-export { examples, boardNames };
+export { boards };
 
 const exampleHello = `package main
 
@@ -78,24 +78,42 @@ func main() {
 	}
 }`;
 
-// A list of source code samples used for each target. This is the default code
-// set for a given configuration.
-const examples = {
-	hello: exampleHello,
-	blinky1: exampleBlinky1,
-	microbitblink: exampleMicrobitBlink,
-	rgbled: exampleRGBLED,
-};
-
 // List of boards to show in the menu. See parts/*.json.
-const boardNames = {
-	'console': 'Console',
-	'arduino': 'Arduino Uno',
-	'arduino-nano33': 'Arduino Nano 33 IoT',
-	'circuitplay-bluefruit': 'Circuit Playground Bluefruit',
-	'circuitplay-express': 'Circuit Playground Express',
-	'hifive1b': 'HiFive1 rev B',
-	'microbit': 'BBC micro:bit v1',
-	'reelboard': 'Phytec reel board',
-	'pinetime': 'PineTime',
+const boards = {
+	'console': {
+		humanName: 'Console',
+		code: exampleHello,
+	},
+	'arduino': {
+		humanName: 'Arduino Uno',
+		code: exampleBlinky1,
+	},
+	'arduino-nano33': {
+		humanName: 'Arduino Nano 33 IoT',
+		code: exampleBlinky1,
+	},
+	'circuitplay-bluefruit': {
+		humanName: 'Circuit Playground Bluefruit',
+		code: exampleBlinky1,
+	},
+	'circuitplay-express': {
+		humanName: 'Circuit Playground Express',
+		code: exampleBlinky1,
+	},
+	'hifive1b': {
+		humanName: 'HiFive1 rev B',
+		code: exampleRGBLED,
+	},
+	'microbit': {
+		humanName: 'BBC micro:bit v1',
+		code: exampleMicrobitBlink,
+	},
+	'reelboard': {
+		humanName: 'Phytec reel board',
+		code: exampleRGBLED,
+	},
+	'pinetime': {
+		humanName: 'PineTime',
+		code: exampleBlinky1,
+	},
 };

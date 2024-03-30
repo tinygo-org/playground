@@ -1,5 +1,5 @@
 import { Simulator } from './simulator.js';
-import { examples, boardNames } from './boards.js';
+import { boards } from './boards.js';
 
 // This file controls the entire playground window, except for the output part
 // on the right that is shared with the VS Code extension.
@@ -17,12 +17,12 @@ let simulator = null;
 async function updateBoards() {
   if (project) {
     let button = document.querySelector('#target > button');
-    if (project.data.humanName) {
-      button.textContent = project.data.humanName + ' ';
-    } else if (project.data.created) {
-      button.textContent = project.data.defaultHumanName + ' * ';
+    if (project.humanName) {
+      button.textContent = project.humanName + ' ';
+    } else if (project.created) {
+      button.textContent = project.defaultHumanName + ' * ';
     } else {
-      button.textContent = project.data.defaultHumanName + ' ';
+      button.textContent = project.defaultHumanName + ' ';
     }
   }
 
@@ -30,9 +30,9 @@ async function updateBoards() {
 
   let dropdown = document.querySelector('#target > .dropdown-menu');
   dropdown.innerHTML = '';
-  for (let [name, humanName] of Object.entries(boardNames)) {
+  for (let name in boards) {
     let item = document.createElement('a');
-    item.textContent = humanName;
+    item.textContent = boards[name].humanName;
     item.classList.add('dropdown-item');
     if (project && name == project.name) {
       item.classList.add('active');
@@ -83,14 +83,14 @@ async function updateBoards() {
       e.stopPropagation();
 
       let name = e.target.parentNode.parentNode.dataset.name;
-      let humanName = prompt('Project name', project.data.humanName || project.config.humanName);
+      let humanName = prompt('Project name', project.humanName || project.defaultHumanName);
       if (!humanName) {
         return; // clicked 'cancel'
       }
 
       if (project.name == name) {
         // Update name of current project.
-        project.data.humanName = humanName;
+        project.humanName = humanName;
       }
       let tx = db.transaction(['projects'], 'readwrite');
       tx.objectStore('projects').get(name).onsuccess = function(e) {
@@ -108,7 +108,17 @@ async function updateBoards() {
 
       let name = e.target.parentNode.parentNode.dataset.name;
       if (name == project.name) {
-        setProject(project.target);
+        // Removing the currently active project.
+        // Pick the base project using a bit of a hack (because we don't store
+        // the original project name in the data object).
+        let matches = project.parts.main.location.match(RegExp('^parts/([a-z0-9_-]+)\.json$'));
+        if (matches) {
+          // Found the project name, so use that.
+          setProject(matches[1]);
+        } else {
+          // Fallback towards using the default name.
+          setProject(defaultProjectName);
+        }
       }
       db.transaction(['projects'], 'readwrite').objectStore('projects').delete(name);
       updateBoards();
@@ -118,13 +128,17 @@ async function updateBoards() {
 
 // setProject updates the current project to the new project name.
 async function setProject(name) {
-  if (project && project.data.created) {
-    project.save(document.querySelector('#input').value);
+  if (project && project.created) {
+    saveProject(project, document.querySelector('#input').value);
   }
   project = await loadProject(name);
+  if (!project) {
+    // Project not in the database, fall back on something working.
+    project = await loadProject(defaultProjectName);
+  }
   updateBoards();
   let input = document.querySelector('#input');
-  input.value = project.data.code;
+  input.value = project.code;
 
   // Load simulator if not already done so (it must only happen once).
   if (!simulator) {
@@ -135,14 +149,14 @@ async function setProject(name) {
       firmwareButton: document.querySelector('#btn-flash'),
       apiURL: API_URL,
       saveState: () => {
-        project.save();
+        saveProject(project);
         localStorage.tinygo_playground_projectName = project.name;
       },
     });
   }
 
   // Change to the new project state.
-  await simulator.setState(project.data);
+  await simulator.setState(project);
 
   // Load the same project on a reload.
   localStorage.tinygo_playground_projectName = name;
@@ -169,71 +183,34 @@ async function getProjects() {
   });
 }
 
-// A project is an encapsulation for a combination of source code, a board
-// layout, and some state. After saving, it can be destroyed and re-loaded
-// without losing data.
-class Project {
-  constructor(mainPartConfig, data) {
-    this.mainPartConfig = mainPartConfig;
-    this.data = data;
-  }
-
-  get config() {
-    return this.mainPartConfig;
-  }
-
-  get target() {
-    return this.config.name;
-  }
-
-  get name() {
-    return this.data.name || this.config.name;
-  }
-
-  // Save the project, if it was marked dirty.
-  save(code) {
-    if (!this.data.name) {
-      // Project is saved for the first time.
-      this.data.created = new Date();
-      this.data.name = this.config.name + '-' + this.data.created.toISOString();
-    }
-    if (code) {
-      this.data.code = code;
-    }
-    let transaction = db.transaction(['projects'], 'readwrite');
-    transaction.objectStore('projects').put(this.data).onsuccess = function(e) {
-      updateBoards();
-    };
-    transaction.onerror = function(e) {
-      console.error('failed to save project:', e);
-      e.stopPropagation();
-    };
-  }
-}
 
 // Load a project based on a project name.
 async function loadProject(name) {
-  if (name in boardNames) {
-    let location = 'parts/'+name+'.json';
-    let partConfig = await loadJSON(location);
-    return new Project(partConfig, {
-      defaultHumanName: partConfig.humanName,
-      code: examples[partConfig.example],
+  // New, clean project.
+  if (name in boards) {
+    let board = boards[name];
+    return {
+      name: name,
+      defaultHumanName: board.humanName,
+      code: board.code,
       parts: {
         main: {
-          location: location,
+          location: 'parts/'+name+'.json',
           x: 0,
           y: 0,
         },
       },
       wires: [],
-    });
+    };
   }
+
+  // Load existing project.
   return await new Promise((resolve, reject) => {
     let transaction = db.transaction(['projects'], 'readonly');
     transaction.objectStore('projects').get(name).onsuccess = async function(e) {
       if (e.target.result === undefined) {
-        reject('loadProject: project does not exist in DB');
+        resolve(null); // project does not exist in DB
+        return;
       }
       let data = e.target.result;
       if (data.target) {
@@ -250,19 +227,29 @@ async function loadProject(name) {
       if (!data.wires) {
         data.wires = [];
       }
-      let mainPartConfig = await loadJSON(data.parts.main.location);
-      if (!data.defaultHumanName) {
-        // Upgrade old data format.
-        data.defaultHumanName = mainPartConfig.humanName;
-      }
-      resolve(new Project(mainPartConfig, data));
+      resolve(data);
     };
   });
 }
 
-async function loadJSON(location) {
-  let response = await fetch(location);
-  return await response.json();
+// Save the project to the database.
+function saveProject(project, code) {
+  if (!project.created) {
+    // Project is saved for the first time.
+    project.created = new Date();
+    project.name = project.name + '-' + project.created.toISOString();
+  }
+  if (code) {
+    project.code = code;
+  }
+  let transaction = db.transaction(['projects'], 'readwrite');
+  transaction.objectStore('projects').put(project).onsuccess = function(e) {
+    updateBoards();
+  };
+  transaction.onerror = function(e) {
+    console.error('failed to save project:', e);
+    e.stopPropagation();
+  };
 }
 
 // loadDB loads the playground database asynchronously. It returns a promise
