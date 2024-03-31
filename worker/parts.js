@@ -469,6 +469,7 @@ class ST7789 extends Part {
     this.ys = 0;
     this.ye = 0x13f; // note: depends on MV value
     this.inverse = false; // display inversion off
+    this.madctl = 0 // not sure what the default is
 
     // Give these a sensible default value. Will be updated with the RAMWR
     // command.
@@ -492,14 +493,14 @@ class ST7789 extends Part {
         this.xs = (this.dataBuf[0] << 8) + this.dataBuf[1];
         this.xe = (this.dataBuf[2] << 8) + this.dataBuf[3];
         if (this.xs > this.xe) {
-          console.error('st7789: xs must be smaller than or equal to xe');
+          console.warn('st7789: xs must be smaller than or equal to xe');
         }
       } else if (this.command == 0x2b && this.dataBuf.length == 4) {
         // RASET: row address set
         this.ys = (this.dataBuf[0] << 8) + this.dataBuf[1];
         this.ye = (this.dataBuf[2] << 8) + this.dataBuf[3];
         if (this.ys > this.ye) {
-          console.error('st7789: ys must be smaller than or equal to ye');
+          console.warn('st7789: ys must be smaller than or equal to ye');
         }
       } else if (this.command == 0x2c) {
         // RAMWR: memory write
@@ -511,16 +512,27 @@ class ST7789 extends Part {
           let word = (this.dataByte << 8) + w;
           this.dataByte = null;
 
-          // Draw the pixel.
+          // Determine RAM location of the pixel.
           let x = this.x;
           let y = this.y;
+          if (this.madctl & (1<<5)) { // MV
+            [x, y] = [y, x];
+          }
+          if (this.madctl & (1<<6)) { // MX
+            x = 239 - x;
+          }
+          if (this.madctl & (1<<7)) { // MY
+            y = 319 - y;
+          }
+
+          // Draw the pixel.
           if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
             // TODO: just write to a memory buffer and only create the image
             // data in this.getState.
             let red = Math.round((word >> 11) * 255 / 31);
             let green = Math.round(((word >> 5) & 63) * 255 / 63);
             let blue = Math.round((word & 31) * 255 / 31);
-            let index = 4 * (y*this.height + x);
+            let index = 4 * (y*this.width + x);
             this.imageData[index+0] = red;
             this.imageData[index+1] = green;
             this.imageData[index+2] = blue;
@@ -541,9 +553,7 @@ class ST7789 extends Part {
       } else if (this.command == 0x36 && this.dataBuf.length == 1) {
         // MADCTL: memory data access control
         // Controls how the display is updated, and allows rotating it.
-        if (this.dataBuf[0] != 0xc0) {
-          console.warn('st7789: unknown MADCTL value:', this.dataBuf[0]);
-        }
+        this.madctl = this.dataBuf[0];
       } else if (this.command == 0x3a && this.dataBuf.length == 1) {
         // COLMOD: color format
         if (this.dataBuf[0] != 0x55) {
