@@ -1049,7 +1049,7 @@ class Part {
       let wasPressed = false;
       let setPressed = (pressed) => {
         if (pressed !== wasPressed) {
-          if (schematic.simulator.root.classList.contains('adding-part')) {
+          if (this.schematic.simulator.root.classList.contains('adding-part')) {
             // Don't fire input events before the part has been fully added.
             return;
           }
