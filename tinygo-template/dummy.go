@@ -11,5 +11,6 @@ import (
 	_ "tinygo.org/x/tinydraw"
 	_ "tinygo.org/x/tinyfont"
 	_ "tinygo.org/x/tinyfs"
+	_ "tinygo.org/x/tinygl-font"
 	_ "tinygo.org/x/tinyterm"
 )

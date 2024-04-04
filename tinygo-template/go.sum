@@ -8,5 +8,7 @@ tinygo.org/x/tinyfont v0.4.0 h1:XexPKEKiHInf6p4CMCJwsIheVPY0T46HUs6ictYyZfE=
 tinygo.org/x/tinyfont v0.4.0/go.mod h1:7nVj3j3geqBoPDzpFukAhF1C8AP9YocMsZy0HSAcGCA=
 tinygo.org/x/tinyfs v0.4.0 h1:35/XmBXSZKz5eqAqkhe83i56qYLhyZ09JarforFoTNQ=
 tinygo.org/x/tinyfs v0.4.0/go.mod h1:QM+MK9aXJKKgXZmHJHquzULUVB7h60nIJQmOyKDyA1E=
+tinygo.org/x/tinygl-font v0.0.0-20240402104601-718d3fd5a86e h1:kAfVxVqJcIP0er4sD/RecL8YIIitmwBL/qBYPtX4rVI=
+tinygo.org/x/tinygl-font v0.0.0-20240402104601-718d3fd5a86e/go.mod h1:acCBYB84XfzsmufmEEylR6dJu18xvl2z7M+maQ+5264=
 tinygo.org/x/tinyterm v0.3.0 h1:4MMZoMyrbWbjru1KP/Z2TGhaguy/Uh5Mdhf/niemM8c=
 tinygo.org/x/tinyterm v0.3.0/go.mod h1:F1pQjxEwNZQIc5czeJSBtk57ucEvbR4u7vHaLhWhHtg=

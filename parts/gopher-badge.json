@@ -1,0 +1,109 @@
+{
+    "name": "gopher-badge",
+    "humanName": "Gopher Badge",
+    "example": "gopherbadge",
+    "firmwareFormat": "uf2",
+    "svg": "gopher-badge.svg",
+    "mainPart": "mcu",
+    "parts": [
+        {
+            "id": "mcu",
+            "type": "mcu",
+            "pins": {
+                "GPIO0": 0,
+                "GPIO1": 1,
+                "GPIO2": 2,
+                "GPIO3": 3,
+                "GPIO4": 4,
+                "GPIO5": 5,
+                "GPIO6": 6,
+                "GPIO7": 7,
+                "GPIO8": 8,
+                "GPIO9": 9,
+                "GPIO10": 10,
+                "GPIO11": 11,
+                "GPIO12": 12,
+                "GPIO13": 13,
+                "GPIO14": 14,
+                "GPIO15": 15,
+                "GPIO16": 16,
+                "GPIO17": 17,
+                "GPIO18": 18,
+                "GPIO19": 19,
+                "GPIO20": 20,
+                "GPIO21": 21,
+                "GPIO22": 22,
+                "GPIO23": 23,
+                "GPIO24": 24,
+                "GPIO25": 25,
+                "GPIO26": 26,
+                "GPIO27": 27,
+                "GPIO28": 28,
+                "GPIO29": 29
+            }
+        },
+        {
+            "id": "display",
+            "type": "st7789",
+            "humanName": "Display (ST7789)",
+            "width": 240,
+            "height": 320
+        },
+        {
+            "id": "neopixels",
+            "type": "ws2812",
+            "humanName": "Eye LEDs",
+            "length": 2
+        },
+        {
+            "id": "buttonLeft",
+            "type": "pushbutton",
+            "humanName": "Button Left"
+        },
+        {
+            "id": "buttonRight",
+            "type": "pushbutton",
+            "humanName": "Button Right"
+        },
+        {
+            "id": "buttonUp",
+            "type": "pushbutton",
+            "humanName": "Button Up"
+        },
+        {
+            "id": "buttonDown",
+            "type": "pushbutton",
+            "humanName": "Button Down"
+        },
+        {
+            "id": "buttonA",
+            "type": "pushbutton",
+            "humanName": "Button A"
+        },
+        {
+            "id": "buttonB",
+            "type": "pushbutton",
+            "humanName": "Button B"
+        }
+    ],
+    "wires": [
+        {"from": "mcu.GPIO18", "to": "display.sck"},
+        {"from": "mcu.GPIO19", "to": "display.sdi"},
+        {"from": "mcu.GPIO17", "to": "display.cs"},
+        {"from": "mcu.GPIO20", "to": "display.dc"},
+        {"from": "mcu.GPIO21", "to": "display.reset"},
+        {"from": "mcu.GPIO15", "to": "neopixels.din"},
+        {"from": "mcu.GPIO25", "to": "buttonLeft.A"},
+        {"from": "mcu.GPIO22", "to": "buttonRight.A"},
+        {"from": "mcu.GPIO24", "to": "buttonUp.A"},
+        {"from": "mcu.GPIO23", "to": "buttonDown.A"},
+        {"from": "mcu.GPIO10", "to": "buttonA.A"},
+        {"from": "mcu.GPIO11", "to": "buttonB.A"},
+        {"from": "gnd", "to": "buttonLeft.B"},
+        {"from": "gnd", "to": "buttonRight.B"},
+        {"from": "gnd", "to": "buttonUp.B"},
+        {"from": "gnd", "to": "buttonDown.B"},
+        {"from": "gnd", "to": "buttonA.B"},
+        {"from": "gnd", "to": "buttonB.B"}
+    ]
+}

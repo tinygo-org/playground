@@ -7,6 +7,7 @@ require (
 	tinygo.org/x/tinydraw v0.4.0
 	tinygo.org/x/tinyfont v0.4.0
 	tinygo.org/x/tinyfs v0.4.0
+	tinygo.org/x/tinygl-font v0.0.0-20240402104601-718d3fd5a86e
 	tinygo.org/x/tinyterm v0.3.0
 )
 
