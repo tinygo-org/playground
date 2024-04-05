@@ -207,7 +207,3 @@ class Runner {
     this.envMem().setUint32(addr, ref, true);
   }
 }
-
-if (typeof module !== 'undefined') {
-  module.exports.Runner = Runner;
-}
