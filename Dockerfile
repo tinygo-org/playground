@@ -35,6 +35,7 @@ RUN tinygo build -o /tmp/outfile -target=arduino
 RUN tinygo build -o /tmp/outfile -target=arduino-nano33
 RUN tinygo build -o /tmp/outfile -target=circuitplay-bluefruit
 RUN tinygo build -o /tmp/outfile -target=circuitplay-express
+RUN tinygo build -o /tmp/outfile -target=gopher-badge
 RUN tinygo build -o /tmp/outfile -target=hifive1b
 RUN tinygo build -o /tmp/outfile -target=microbit
 RUN tinygo build -o /tmp/outfile -target=pinetime
