@@ -37,7 +37,9 @@ class Simulator {
     this.#setupRoot();
 
     // Setup input element.
-    this.#setupInput();
+    if (this.input) {
+      this.#setupInput();
+    }
 
     // Make sure the 'download firmware' button works.
     if (this.firmwareButton) {
