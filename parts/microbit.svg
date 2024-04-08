@@ -10,7 +10,6 @@
     M 37.23 33.14 a 2 2 0 1 0 0.001 0 z
     M 47.39 33.14 a 2 2 0 1 0 0.001 0 z
     "/>
-  <xrect x="0" y="0" width="51.6" height="42" rx="3" fill="#111111"/>
 
   <!-- three colored triangles at the top -->
   <g fill="#de1642">
