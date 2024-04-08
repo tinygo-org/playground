@@ -46,7 +46,8 @@ class Pin {
     this.setState(state);
   }
 
-  // get() returns the state as read by a Pin.Get() call from Go.
+  // get() returns the state as read by a Pin.Get() call from Go. It will log a
+  // warning when reading from a floating pin.
   get() {
     let state = this.net.state;
     if (state === 'high') {
@@ -69,10 +70,35 @@ class Pin {
     }
   }
 
+  // getNumeric gets a pin state as a numeric value. It doesn't warn for a floating pin.
+  getNumeric() {
+    let state = this.net.state;
+    if (state === 'floating') {
+      return 0;
+    } else if (state === 'low') {
+      return 1;
+    } else if (state === 'high') {
+      return 2;
+    } else if (state === 'pulldown') {
+      return 3;
+    } else if (state === 'pullup') {
+      return 4;
+    } else {
+      console.warn('unknown state: ' + state);
+      return 0;
+    }
+  }
+
   // returns whether this is an output pin, that is, low or high.
   // A pull-up or pull-down doesn't count as an output.
   isOutput() {
     return this.state === 'low' || this.state === 'high';
+  }
+
+  // returns whether this is an input pin (which may be a pullup, pulldown, or
+  // floating).
+  isInput() {
+    return !this.isOutput();
   }
 
   // isConnected returns whether there are any other devices connected to this
@@ -187,25 +213,108 @@ class MCU extends Part {
     this.pins[255] = new Pin(config.id + '.NoPin', this);
     for (let [name, number] of Object.entries(config.pins)) {
       let pin = new Pin(config.id + '.' + name, this);
+      pin.number = number;
       this.pins[name] = pin;
       this.pins[number] = pin;
     }
-    this.logBuffer = [];
+    this.stdout = '';
   }
 
-  notifyPinUpdate() {
-    // Nothing to do. Pin changes do not affect the display of an MCU (unlike
-    // an LED for example).
+  notifyPinUpdate(pin) {
+    // Update SharedArrayBuffer that is shared with the runner.
+    // But only do this after initialization (all pins are also set to their
+    // default state on initialization).
+    if (this.workerBuffer !== undefined) {
+      let state = pin.getNumeric();
+      let number = pin.number;
+      Atomics.store(this.workerBuffer, number+1, state);
+    }
   }
 
   getState() {
     // Send the text that was written to stdout since the last call to getState().
-    let text = (new TextDecoder('utf-8')).decode(new Uint8Array(this.logBuffer));
-    this.logBuffer = [];
+    let stdout = this.stdout;
+    this.stdout = '';
     return {
       id: this.id,
-      logText: text,
+      logText: stdout,
     };
+  }
+
+  // Start running the code in a separate web worker.
+  async start(sourceData, runnerURL) {
+    postMessage({
+      type: 'loading',
+    });
+    let runner = new Worker(runnerURL);
+    runner.postMessage({
+      type: 'start',
+      sourceData: sourceData,
+    })
+    runner.onmessage = (e) => this.#handleRunnerMessage(e.data);
+  }
+
+  // Process message coming from the runner.
+  async #handleRunnerMessage(msg) {
+    if (msg.type === 'started') {
+      postMessage({type: 'started'});
+      // SharedArrayBuffer shared with the runner. The format is described in
+      // the runner.
+      this.workerBuffer = new Int32Array(msg.dataBuffer);
+      // Update pin states.
+      for (let i=0; i<255; i++) {
+        let pin = this.pins[i];
+        if (pin !== undefined) {
+          let state = pin.getNumeric();
+          Atomics.store(this.workerBuffer, i+1, state);
+        }
+      }
+    } else if (msg.type === 'stdout') {
+      // Note: apparently concatenating strings is heavily optimized in JS
+      // engines, so this should be fast even with many small strings
+      // concatenated together.
+      this.stdout += msg.data;
+      this.notifyUpdate();
+    } else if (msg.type === 'pin-configure') {
+      this.getPin(msg.pin).setState(msg.state);
+      this.#finishedTask();
+    } else if (msg.type === 'gpio-set') {
+      this.getPin(msg.pin).set(msg.high);
+      this.#finishedTask();
+    } else if (msg.type === 'spi-configure') {
+      let bus = this.getSPI(msg.bus);
+      bus.configureAsController(this.getPin(msg.sck), this.getPin(msg.sdo), this.getPin(msg.sdi));
+    } else if (msg.type === 'spi-transfer') {
+      let bus = this.getSPI(msg.bus);
+      for (let b of msg.data) {
+        bus.transfer(b);
+      }
+      this.#finishedTask();
+    } else if (msg.type === 'ws2812-write') {
+      // TODO: it should be possible to write the buffer in one go instead of
+      // doing it per byte (which can lead to O(n²) situations).
+      let pin = this.getPin(msg.pin);
+      for (let c of msg.data) {
+        pin.writeWS2812(c)
+      }
+    } else if (msg.type === 'error') {
+      postMessage(msg);
+    } else {
+      console.warn('unknown message from runner:', msg);
+    }
+  }
+
+  // Mark a task (incoming message) as processed.
+  #finishedTask() {
+    // Subtract one from the task counter.
+    let oldValue = Atomics.sub(this.workerBuffer, 0, 1);
+    let newValue = oldValue - 1;
+    if (newValue === 0) {
+      // Notify the runner that all messages are handled. The runner will wait
+      // for this when reading from a GPIO pin to make sure it doesn't read an
+      // old value.
+      Atomics.notify(this.workerBuffer, 0);
+    }
   }
 }
 

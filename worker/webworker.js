@@ -6,7 +6,6 @@ if (typeof Schematic === 'undefined') {
   // manually there.
   importScripts(
     'parts.js',
-    'runner.js',
     'wiring.js',
   );
 }
@@ -94,50 +93,7 @@ function handleIncomingMessage(message) {
 // Start download/initialize/run of the program to run and initialize the
 // schematic.
 async function start(msg) {
-  let source;
-  if (msg.binary instanceof Uint8Array) {
-    source = msg.binary;
-  } else {
-    // Fetch (compile) the wasm file.
-    try {
-      source = await fetch(msg.binary.url, msg.binary);
-    } catch (reason) {
-      if (reason instanceof TypeError) {
-        // Not sure why this is a TypeError, but it is.
-        // It is typically a CORS failure. More information:
-        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#checking_that_the_fetch_was_successful
-        sendError(`Could not request compiled WebAssembly module, probably due to a network error:\n${reason.message}`);
-        return;
-      }
-      // Some other error.
-      sendError(reason);
-      return;
-    }
-
-    // Check for a valid response.
-    if (!source.ok) {
-      sendError(`Could not request compiled WebAssembly module: HTTP error ${source.status} ${source.statusText}`);
-      return;
-    }
-
-    // Check for a compilation error, which will be returned as a non-wasm
-    // content type.
-    if (source.headers.get('Content-Type') !== 'application/wasm') {
-      // Probably a compile error.
-      source.text().then((text) => {
-        if (text === '') {
-          // Not sure when this could happen, but it's a good thing to check
-          // this to be sure.
-          text = `Could not request compiled WebAssembly module: no response received (status: ${source.status} ${source.statusText})`;
-        }
-        sendError(text);
-      });
-      return;
-    }
-  }
-
-  // The program is compiled, but not yet fully downloaded. Set up all the
-  // electronics for this program in preparation of running it.
+  // Set up all the electronics for this program in preparation of running it.
   schematic = new Schematic(sendConnections, () => {
     postMessage({
       type: 'notifyUpdate',
@@ -156,24 +112,9 @@ async function start(msg) {
   });
   schematic.notifyUpdate();
 
-  // Do a streaming load of the WebAssembly code.
-  // This will also result in the UI requesting the first update.
-  postMessage({
-    type: 'loading',
-  });
-  let runner = new Runner(schematic, schematic.getPart(msg.config.mainPart));
-  try {
-    await runner.start(source);
-  } catch (e) {
-    sendError(e);
-    return;
-  }
-
-  // Loaded the program, start it now.
-  postMessage({
-    type: 'started',
-  });
-  runner.run();
+  // Now run the binary inside the MCU part.
+  let mainPart = schematic.getPart(msg.config.mainPart);
+  await mainPart.start(msg.binary, msg.runnerURL);
 }
 
 // sendConnections sends the current netlist to the UI so that the UI can show

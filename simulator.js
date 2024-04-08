@@ -22,7 +22,8 @@ class Simulator {
     this.firmwareButton = config.firmwareButton;
     this.baseURL = config.baseURL || document.baseURI;
     this.apiURL = config.apiURL;
-    this.workerURL = config.workerURL || new URL('./worker/webworker.js', this.baseURL);
+    this.schematicURL = config.schematicURL || new URL('./worker/webworker.js', this.baseURL);
+    this.runnerURL = config.runnerURL || new URL('./worker/runner.js', this.baseURL);
     this.saveState = config.saveState || (() => {});
 
     // Initialize member variables.
@@ -353,7 +354,7 @@ class Simulator {
     }
 
     // Start new worker.
-    this.worker = new Worker(this.workerURL);
+    this.worker = new Worker(this.schematicURL);
     this.worker.onmessage = (e) => {
       this.#workerMessage(e.target, e.data);
     };
@@ -368,6 +369,7 @@ class Simulator {
       type: 'start',
       config: this.schematic.configForWorker(),
       binary: binary,
+      runnerURL: this.runnerURL.toString(),
     });
   }
 

@@ -2,6 +2,15 @@
 
 // This file loads and executes some WebAssembly compiled by TinyGo.
 
+onmessage = (e) => {
+  let msg = e.data;
+  if (msg.type === 'start') {
+    start(msg.sourceData);
+  } else {
+    console.warn('unknown runner message:', msg);
+  }
+};
+
 if (typeof module !== 'undefined') {
   // Running as a Node.js module.
   global.performance = {
@@ -12,17 +21,96 @@ if (typeof module !== 'undefined') {
   }
 }
 
+async function start(sourceData) {
+  // Now start downloading the binary.
+  let source;
+  if (sourceData instanceof Uint8Array) {
+    source = sourceData;
+  } else {
+    // Fetch (compile) the wasm file.
+    try {
+      source = await fetch(sourceData.url, sourceData);
+    } catch (reason) {
+      if (reason instanceof TypeError) {
+        // Not sure why this is a TypeError, but it is.
+        // It is typically a CORS failure. More information:
+        // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#checking_that_the_fetch_was_successful
+        sendError(`Could not request compiled WebAssembly module, probably due to a network error:\n${reason.message}`);
+        return;
+      }
+      // Some other error.
+      sendError(reason);
+      return;
+    }
+
+    // Check for a valid response.
+    if (!source.ok) {
+      sendError(`Could not request compiled WebAssembly module: HTTP error ${source.status} ${source.statusText}`);
+      return;
+    }
+
+    // Check for a compilation error, which will be returned as a non-wasm
+    // content type.
+    if (source.headers.get('Content-Type') !== 'application/wasm') {
+      // Probably a compile error.
+      source.text().then((text) => {
+        if (text === '') {
+          // Not sure when this could happen, but it's a good thing to check
+          // this to be sure.
+          text = `Could not request compiled WebAssembly module: no response received (status: ${source.status} ${source.statusText})`;
+        }
+        sendError(text);
+      });
+      return;
+    }
+  }
+
+  let runner = new Runner();
+  try {
+    await runner.start(source);
+  } catch (e) {
+    sendError(e);
+    return;
+  }
+
+  // Loaded the program, start it now.
+  postMessage({
+    type: 'started',
+    dataBuffer: runner.dataBuffer,
+  });
+  runner.run();
+}
+
+// sendError sends an error back to the UI thread, which will display it and
+// likely kill this web worker.
+function sendError(message) {
+  console.error(message);
+  postMessage({
+    type: 'error',
+    message: message,
+  });
+}
+
+
 class Runner {
-  constructor(schematic, part) {
-    this.schematic = schematic;
-    this.part = part;
+  constructor() {
+    // A buffer of 256 int32 values.
+    // - index 0: a mutex of sorts (actually more like a counting semaphore):
+    //   every message to the schematic worker increments it, the schematic
+    //   worker decrements it when completing something, and before reading any
+    //   shared state the runner waits for it to reach zero.
+    // - index 1..255: pin state for pins 0..254.
+    this.dataBuffer = new SharedArrayBuffer(1024);
+    this.int32Buffer = new Int32Array(this.dataBuffer);
+
     this.reinterpretBuf = new DataView(new ArrayBuffer(8));
+    this.ws2812Buffers = {};
   }
 
   // Load response and prepare runner, but don't run any code yet.
   async start(source) {
     let importObject = {
-      // Bare minimum syscall/js environment, to get time.Sleep to work.
+      // Subset of the WASI environment.
       wasi_snapshot_preview1: {
         fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) =>
           this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr),
@@ -32,11 +120,14 @@ class Runner {
           return 0;
         },
       },
+      // Bare minimum GOOS=js environment, to get time.Sleep to work.
       gojs: {
         'runtime.ticks': () =>
-          this.schematic.clock.now() - this._timeOrigin,
-        'runtime.sleepTicks': (timeout) =>
-          this.schematic.clock.setTimeout(this._inst.exports.go_scheduler, timeout),
+          this.clock.now() - this._timeOrigin,
+        'runtime.sleepTicks': (timeout) => {
+          this.flushAsyncOperations();
+          this.clock.setTimeout(this._inst.exports.go_scheduler, timeout)
+        },
         'syscall/js.finalizeRef': () =>
           console.error('js.finalizeRef is not supported'),
         'syscall/js.stringVal': () =>
@@ -57,25 +148,85 @@ class Runner {
           console.error('js.valueSet is not supported'),
       },
       env: {
-        __tinygo_gpio_set: (pin, high) =>
-          this.part.getPin(pin).set(high ? true : false),
-        __tinygo_gpio_get: (pin) =>
-          this.part.getPin(pin).get(),
-        __tinygo_gpio_configure: (pin, mode) =>
-          this.part.getPin(pin).setState({
-            0: 'floating',
-            1: 'low',
-            2: 'pullup',
-            3: 'pulldown',
-          }[mode]),
+        __tinygo_gpio_set: (pin, high) => {
+          this.addTask();
+          postMessage({
+            type: 'gpio-set',
+            pin: pin,
+            high: high ? true : false,
+          })
+        },
+        __tinygo_gpio_get: (pin) => {
+          this.waitTasks();
+          let state = Atomics.load(this.int32Buffer, pin+1);
+          if (state === 1 || state === 3) { // low, pulldown
+            return 0;
+          } else if (state === 2 || state === 4) { // high, pullup
+            return 1;
+          } else if (state === 0) {
+            console.warn('reading from floating pin ' + pin);
+            // Return a random value, to simulate a floating input.
+            // (This is not exactly accurate, but perhaps more accurate than
+            // returning a fixed 'high' or 'low').
+            return Math.random() < 0.5;
+          } else {
+            console.warn('unknown pin state:', state);
+            return 0; // unknown pin state
+          }
+        },
+        __tinygo_gpio_configure: (pin, mode) => {
+          this.addTask();
+          postMessage({
+            type: 'pin-configure',
+            pin: pin,
+            state: {
+              0: 'floating',
+              1: 'low',
+              2: 'pullup',
+              3: 'pulldown',
+            }[mode],
+          })
+        },
         __tinygo_spi_configure: (bus, sck, sdo, sdi) => {
-          this.part.getSPI(bus).configureAsController(this.part.getPin(sck), this.part.getPin(sdo), this.part.getPin(sdi));
+          postMessage({
+            type: 'spi-configure',
+            bus: bus,
+            sck: sck,
+            sdo: sdo,
+            sdi: sdi,
+          });
         },
         __tinygo_spi_transfer: (bus, w) => {
-          return this.part.getSPI(bus).transfer(w);
+          this.addTask();
+          postMessage({
+            type: 'spi-transfer',
+            bus: bus,
+            data: Uint8Array([w]),
+          });
+          this.waitTasks();
+          return Math.floor(Math.random() * 255);
         },
-        __tinygo_ws2812_write_byte: (pinNumber, c) =>
-          this.part.getPin(pinNumber).writeWS2812(c),
+        __tinygo_spi_tx: (bus, wptr, wlen, rptr, rlen) => {
+          this.addTask();
+          let wbuf = new Uint8Array(this._inst.exports.memory.buffer, wptr, wlen);
+          postMessage({
+            type: 'spi-transfer',
+            bus: bus,
+            data: wbuf,
+          });
+          // Fill the receive buffer with random data (to simulate a floating input).
+          // TODO: actually simulate the SDI pin correctly (for two-way
+          // communication).
+          let rbuf = new Uint8Array(this._inst.exports.memory.buffer, rptr, rlen);
+          crypto.getRandomValues(rbuf);
+        },
+        __tinygo_ws2812_write_byte: (pinNumber, c) => {
+          // TODO: buffer bytes and send it in the next sleep call.
+          if (!(pinNumber in this.ws2812Buffers)) {
+            this.ws2812Buffers[pinNumber] = [];
+          }
+          this.ws2812Buffers[pinNumber].push(c);
+        },
       },
     };
     let result;
@@ -90,7 +241,9 @@ class Runner {
       let bytes = await source.arrayBuffer();
       result = await WebAssembly.instantiate(bytes, importObject);
     }
-    this._timeOrigin = this.schematic.clock.now();
+    this.clock = new Clock();
+    this.clock.start();
+    this._timeOrigin = this.clock.now();
     this._inst = result.instance;
     this._ids = new Map();
     this._values = [
@@ -118,25 +271,55 @@ class Runner {
     return new DataView(this._inst.exports.memory.buffer)
   }
 
+  // Called before sending a task to the schematic worker.
+  addTask() {
+    Atomics.add(this.int32Buffer, 0, 1);
+  }
+
+  // Wait until the schematic worker has processed all tasks.
+  waitTasks() {
+    while (1) {
+      let value = Atomics.load(this.int32Buffer, 0);
+      if (value === 0)
+        break;
+      Atomics.wait(this.int32Buffer, 0, value);
+    }
+  }
+
+  // Add some text to the terminal output.
   logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr) {
     // https://github.com/bytecodealliance/wasmtime/blob/master/docs/WASI-api.md#__wasi_fd_write
     let nwritten = 0;
+    let stdout = '';
     if (fd === 1) {
       for (let iovs_i=0; iovs_i<iovs_len; iovs_i++) {
         let iov_ptr = iovs_ptr + iovs_i*8; // assuming wasm32
         let ptr = this.envMem().getUint32(iov_ptr + 0, true);
         let len = this.envMem().getUint32(iov_ptr + 4, true);
         nwritten += len;
-        for (let i=0; i<len; i++) {
-          this.part.logBuffer.push(this.envMem().getUint8(ptr+i));
-        }
+        stdout += (new TextDecoder('utf-8')).decode(new DataView(this._inst.exports.memory.buffer, ptr, len));
       }
-      this.part.notifyUpdate(); // signal that there is new text to be shown in the console
     } else {
       console.error('invalid file descriptor:', fd);
     }
+    if (stdout !== '') {
+      postMessage({type: 'stdout', data: stdout});
+    }
     this.envMem().setUint32(nwritten_ptr, nwritten, true);
     return 0;
+  }
+
+  // Process async operations that should happen before sleeping.
+  flushAsyncOperations() {
+    // Send all WS2812 writes to the schematic worker.
+    for (let pinNumber in this.ws2812Buffers) {
+      postMessage({
+        type: 'ws2812-write',
+        pin: pinNumber,
+        data: this.ws2812Buffers[pinNumber],
+      });
+      delete this.ws2812Buffers[pinNumber];
+    }
   }
 
   // func valueGet(v ref, p string) ref
@@ -205,5 +388,70 @@ class Runner {
     }
     this.envMem().setUint32(addr + 4, nanHead | typeFlag, true);
     this.envMem().setUint32(addr, ref, true);
+  }
+}
+
+
+// Clock is a clock that starts at time 0 and can be paused and resumed.
+// In the future, this clock might also support adjusting the speed at which it
+// runs, so that time can be slowed down or sped up.
+class Clock {
+  constructor() {
+    this.timeOrigin = 0;
+    this.elapsed = 0;
+    this.running = false;
+    this.timeout = null;
+    this.timeoutCallback = null;
+    this.timeoutEnd = 0;
+  }
+
+  // Start or resume the clock.
+  start() {
+    this.timeOrigin = performance.now() - this.elapsed;
+    this.running = true;
+    if (this.timeoutCallback) {
+      this.#startTimeout(this.timeoutCallback - this.timeOrigin);
+    }
+  }
+
+  // Pause the clock at the current time.
+  pause() {
+    this.elapsed = this.now();
+    this.running = false;
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+  }
+
+  // Return the time (in milliseconds) from when the clock started running.
+  now() {
+    if (this.running) {
+      return performance.now() - this.timeOrigin;
+    } else {
+      return this.elapsed;
+    }
+  }
+
+  // Set a timeout, to be executed at the time as given in the timeout in
+  // milliseconds.
+  setTimeout(callback, milliseconds) {
+    if (this.timeoutCallback) {
+      console.error('setting timeout while a timeout is already running!');
+    }
+    this.timeoutCallback = callback;
+    this.timeoutEnd = this.now() + milliseconds;
+    if (this.running) {
+      this.#startTimeout(milliseconds);
+    }
+  }
+
+  #startTimeout(milliseconds) {
+    this.timeout = setTimeout(() => {
+      let callback = this.timeoutCallback;
+      this.timeout = null;
+      this.timeoutCallback = null;
+      this.timeoutEnd = 0;
+      callback();
+    }, milliseconds);
   }
 }

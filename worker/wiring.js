@@ -116,8 +116,6 @@ class Schematic {
     this.hasUpdate = true;
     this.sendConnections = sendConnections;
     this.sendNotifyUpdate = sendNotifyUpdate;
-    this.clock = new Clock();
-    this.clock.start();
   }
 
   // addPart adds a single part to the schematic.
@@ -351,69 +349,5 @@ class SPIBus {
       }
     }
     return r;
-  }
-}
-
-// Clock is a clock that starts at time 0 and can be paused and resumed.
-// In the future, this clock might also support adjusting the speed at which it
-// runs, so that time can be slowed down or sped up.
-class Clock {
-  constructor() {
-    this.timeOrigin = 0;
-    this.elapsed = 0;
-    this.running = false;
-    this.timeout = null;
-    this.timeoutCallback = null;
-    this.timeoutEnd = 0;
-  }
-
-  // Start or resume the clock.
-  start() {
-    this.timeOrigin = performance.now() - this.elapsed;
-    this.running = true;
-    if (this.timeoutCallback) {
-      this.#startTimeout(this.timeoutCallback - this.timeOrigin);
-    }
-  }
-
-  // Pause the clock at the current time.
-  pause() {
-    this.elapsed = this.now();
-    this.running = false;
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-    }
-  }
-
-  // Return the time (in milliseconds) from when the clock started running.
-  now() {
-    if (this.running) {
-      return performance.now() - this.timeOrigin;
-    } else {
-      return this.elapsed;
-    }
-  }
-
-  // Set a timeout, to be executed at the time as given in the timeout in
-  // milliseconds.
-  setTimeout(callback, milliseconds) {
-    if (this.timeoutCallback) {
-      console.error('setting timeout while a timeout is already running!');
-    }
-    this.timeoutCallback = callback;
-    this.timeoutEnd = this.now() + milliseconds;
-    if (this.running) {
-      this.#startTimeout(milliseconds);
-    }
-  }
-
-  #startTimeout(milliseconds) {
-    this.timeout = setTimeout(() => {
-      let callback = this.timeoutCallback;
-      this.timeout = null;
-      this.timeoutCallback = null;
-      this.timeoutEnd = 0;
-      callback();
-    }, milliseconds);
   }
 }
