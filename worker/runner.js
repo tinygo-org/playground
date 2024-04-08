@@ -78,7 +78,18 @@ async function start(sourceData) {
     type: 'started',
     dataBuffer: runner.dataBuffer,
   });
-  runner.run();
+  try {
+    runner.run();
+  } catch (e) {
+    if (e === runner.simulatorExit) {
+      postMessage({
+        type: 'exited',
+        exitCode: runner.exitCode,
+      })
+    } else {
+      sendError(e);
+    }
+  }
 }
 
 // sendError sends an error back to the UI thread, which will display it and
@@ -105,19 +116,71 @@ class Runner {
 
     this.reinterpretBuf = new DataView(new ArrayBuffer(8));
     this.ws2812Buffers = {};
+    this.simulatorExit = {}; // sentinel error value to raise when exiting
   }
 
   // Load response and prepare runner, but don't run any code yet.
   async start(source) {
+    const SUCCESS = 0;
+    let timeSAB = new Int32Array(new SharedArrayBuffer(4));
     let importObject = {
       // Subset of the WASI environment.
       wasi_snapshot_preview1: {
-        fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) =>
-          this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr),
+        args_get: () => {
+          return SUCCESS; // there are no command line arguments
+        },
+        args_sizes_get: (ptr_num_args, ptr_arg_sizes) => {
+          // Tell the API user there are no command line arguments.
+          this.envMem().setUint32(ptr_num_args, 0);
+          this.envMem().setUint32(ptr_arg_sizes, 0);
+          return SUCCESS;
+        },
+        environ_get: () => {
+          return SUCCESS; // there are no environment variables
+        },
+        environ_sizes_get: (ptr_num_envs, ptr_env_size) => {
+          // Tell the API user there are no environment variables.
+          this.envMem().setUint32(ptr_num_envs, 0);
+          this.envMem().setUint32(ptr_env_size, 0);
+          return SUCCESS;
+        },
+        clock_time_get: (id, precision, retptr) => {
+          this.envMem().setBigUint64(retptr, BigInt(Math.round((this.clock.now() - this._timeOrigin) * 1000_000)), true);
+          return SUCCESS;
+        },
+        fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => {
+          return this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr);
+        },
+        poll_oneoff: (subscr_in, event_out, nsubscriptions, retptr) => {
+          if (nsubscriptions != 1) {
+            throw 'todo: poll_oneoff: multiple subscriptions';
+          }
+          let tag = this.envMem().getUint8(subscr_in+8);
+          if (tag != 0) { // __wasi_eventtype_clock_t
+            throw 'todo: poll_oneoff: not a clock event';
+          }
+          let clock_id = this.envMem().getUint32(subscr_in+16, true);
+          let clock_timeout = this.envMem().getBigUint64(subscr_in+24, true);
+          let clock_flags = this.envMem().getUint16(subscr_in+40, true);
+          if (clock_id != 0 || clock_flags != 0) {
+            throw 'todo: poll_oneoff: unknown clock flags';
+          }
+          this.flushAsyncOperations();
+          // Convert from nanoseconds to milliseconds.
+          let sleepTime = Number(clock_timeout) / 1000_000;
+          // Trick to sleep efficiently in a web worker.
+          // See: https://jasonformat.com/javascript-sleep/
+          Atomics.wait(timeSAB, 0, 0, sleepTime);
+          return SUCCESS;
+        },
+        proc_exit: (exitcode) => {
+          this.exitCode = exitcode;
+          throw this.simulatorExit;
+        },
         random_get: (bufPtr, bufLen) => {
           let buf = new Uint8Array(this.envMem().buffer, bufPtr, bufLen);
           crypto.getRandomValues(buf);
-          return 0;
+          return SUCCESS;
         },
       },
       // Bare minimum GOOS=js environment, to get time.Sleep to work.
@@ -221,7 +284,6 @@ class Runner {
           crypto.getRandomValues(rbuf);
         },
         __tinygo_ws2812_write_byte: (pinNumber, c) => {
-          // TODO: buffer bytes and send it in the next sleep call.
           if (!(pinNumber in this.ws2812Buffers)) {
             this.ws2812Buffers[pinNumber] = [];
           }

@@ -297,7 +297,7 @@ class MCU extends Part {
       for (let c of msg.data) {
         pin.writeWS2812(c)
       }
-    } else if (msg.type === 'error') {
+    } else if (msg.type === 'error' || msg.type === 'exited') {
       postMessage(msg);
     } else {
       console.warn('unknown message from runner:', msg);

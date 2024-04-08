@@ -66,11 +66,7 @@ class Simulator {
     // Start first compile.
     if (this.apiURL) {
       // Run the code in a web worker.
-      this.run({
-        url: `${this.apiURL}/compile?target=${this.schematic.parts.main.config.name}`,
-        method: 'POST',
-        body: this.input.value,
-      })
+      this.#runWithAPI();
     }
   }
 
@@ -138,11 +134,7 @@ class Simulator {
         this.schematic.state.code = this.input.value;
         this.saveState();
         await this.refresh();
-        this.run({
-          url: `${this.apiURL}/compile?target=${this.schematic.parts.main.config.name}`,
-          method: 'POST',
-          body: this.input.value,
-        })
+        this.#runWithAPI();
       }, inputCompileDelay);
     });
   }
@@ -360,6 +352,14 @@ class Simulator {
     };
   }
 
+  #runWithAPI() {
+    this.run({
+      url: `${this.apiURL}/compile?format=wasi&target=${this.schematic.parts.main.config.name}`,
+      method: 'POST',
+      body: this.input.value,
+    });
+  }
+
   // Run a new binary. The `refresh` method must have been called before to stop
   // the previous run.
   // The binary can either be a Uint8Array or an object with parameters 'url',
@@ -401,6 +401,13 @@ class Simulator {
       // WebAssembly code was loaded and will start now.
       this.schematic.root.classList.remove('compiling');
       this.terminal.clear('Running...');
+    } else if (msg.type === 'exited') {
+      // TODO: show this in the terminal even when there is some output.
+      let text = 'Exited.';
+      if (msg.exitCode !== 0) {
+        text = `Exited (exitcode: ${msg.exitCode}).`;
+      }
+      this.terminal.setPlaceholder(text);
     } else if (msg.type == 'notifyUpdate') {
       // The web worker is signalling that there are updates.
       // It won't repeat this message until the updates have been read using
@@ -773,10 +780,15 @@ class Terminal {
   // clear any existing content from the terminal (including a possible error
   // message) and set the given placeholder.
   clear(placeholder) {
-    this.textarea.placeholder = placeholder;
+    this.setPlaceholder(placeholder);
     this.text = '';
     this.textarea.value = '';
     this.textarea.classList.remove('error');
+  }
+
+  // Update the placeholder but don't change the contents of the terminal.
+  setPlaceholder(placeholder) {
+    this.textarea.placeholder = placeholder;
   }
 
   // log writes the given message to the terminal. Note that it doesn't append a

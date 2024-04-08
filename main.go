@@ -117,10 +117,13 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 	sourceHash := hex.EncodeToString(sourceHashRaw[:])
 
 	format := r.FormValue("format")
-	switch format {
-	case "", "wasm":
-		// Run code in the browser.
+	if format == "" {
+		// backwards compatibility (the format should be specified)
 		format = "wasm"
+	}
+	switch format {
+	case "wasm", "wasi":
+		// Run code in the browser.
 	case "elf", "hex", "uf2":
 		// Build a firmware that can be flashed directly to a development board.
 	default:
@@ -174,7 +177,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 // sendCompiledResult streams a wasm file while gzipping it during transfer.
 func sendCompiledResult(w http.ResponseWriter, fp *os.File, format string) {
 	switch format {
-	case "wasm":
+	case "wasm", "wasi":
 		w.Header().Set("Content-Type", "application/wasm")
 	default:
 		w.Header().Set("Content-Type", "application/octet-stream")
