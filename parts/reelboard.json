@@ -1,7 +1,6 @@
 {
     "name": "reelboard",
     "humanName": "Phytec reel board",
-    "example": "rgbled",
     "firmwareFormat": "hex",
     "svg": "reelboard.svg",
     "mainPart": "mcu",

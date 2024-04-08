@@ -1,7 +1,6 @@
 {
     "name": "gopher-badge",
     "humanName": "Gopher Badge",
-    "example": "gopherbadge",
     "firmwareFormat": "uf2",
     "svg": "gopher-badge.svg",
     "mainPart": "mcu",

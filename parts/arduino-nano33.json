@@ -1,7 +1,6 @@
 {
     "name": "arduino-nano33",
     "humanName": "Arduino Nano 33 IoT",
-    "example": "blinky1",
     "firmwareFormat": "hex",
     "svg": "arduino-nano33.svg",
     "mainPart": "mcu",

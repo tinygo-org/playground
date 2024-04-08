@@ -1,7 +1,6 @@
 {
     "name": "microbit",
     "humanName": "BBC micro:bit v1",
-    "example": "microbitblink",
     "firmwareFormat": "hex",
     "svg": "microbit.svg",
     "mainPart": "mcu",

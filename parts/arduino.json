@@ -1,7 +1,6 @@
 {
     "name": "arduino",
     "humanName": "Arduino Uno",
-    "example": "blinky1",
     "svg": "arduino.svg",
     "mainPart": "mcu",
     "parts": [

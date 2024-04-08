@@ -1,7 +1,6 @@
 {
     "name": "pinetime",
     "humanName": "PineTime",
-    "example": "blinky1",
     "firmwareFormat": "hex",
     "svg": "pinetime.svg",
     "mainPart": "mcu",

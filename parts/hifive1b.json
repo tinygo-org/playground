@@ -1,7 +1,6 @@
 {
     "name": "hifive1b",
     "humanName": "HiFive1 rev B",
-    "example": "rgbled",
     "firmwareFormat": "hex",
     "svg": "hifive1b.svg",
     "mainPart": "mcu",

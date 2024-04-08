@@ -1,7 +1,6 @@
 {
     "name": "console",
     "humanName": "Console",
-    "example": "hello",
     "mainPart": "console",
     "parts": [
         {

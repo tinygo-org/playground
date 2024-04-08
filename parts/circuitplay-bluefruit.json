@@ -1,7 +1,6 @@
 {
     "name": "circuitplay-bluefruit",
     "humanName": "Circuit Playground Bluefruit",
-    "example": "blinky1",
     "firmwareFormat": "uf2",
     "svg": "circuit-playground.svg",
     "mainPart": "mcu",
