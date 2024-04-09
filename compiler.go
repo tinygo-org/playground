@@ -23,6 +23,8 @@ const (
 type compilerJob struct {
 	Source       []byte      // source code of program to compile
 	SourceHash   string      // sha256 of source (in hex form)
+	Filename     string      // cache file path
+	Compiler     string      // compiler to use for this job
 	Target       string      // target board name, or "wasm"
 	Format       string      // output format: "wasm", "hex", etc.
 	ResultFile   chan string // filename on completion
@@ -50,14 +52,13 @@ func backgroundCompiler(ch chan compilerJob) {
 // Run a single compiler job. It tries to load from the cache and kills the job
 // (or even refuses to start) if this job was cancelled through the context.
 func (job compilerJob) Run() error {
-	outfileName := "build-" + job.Target + "-" + job.SourceHash + "." + job.Format
-	outfile := filepath.Join(cacheDir, outfileName)
+	outfileName := filepath.Base(job.Filename)
 
 	// Attempt to load the file from the cache.
-	_, err := os.Stat(outfile)
+	_, err := os.Stat(job.Filename)
 	if err == nil {
 		// Cache hit!
-		job.ResultFile <- outfile
+		job.ResultFile <- job.Filename
 		return nil
 	}
 
@@ -71,7 +72,7 @@ func (job compilerJob) Run() error {
 		// Not cancelled.
 	}
 
-	tmpfile := filepath.Join(cacheDir, "build-"+job.Target+"-"+randomString(16)+".tmp."+job.Format)
+	tmpfile := filepath.Join(cacheDir, "build-"+job.Compiler+"-"+job.Target+"-"+randomString(16)+".tmp."+job.Format)
 	defer os.Remove(tmpfile)
 
 	if bucket != nil {
@@ -91,12 +92,12 @@ func (job compilerJob) Run() error {
 				return err
 			}
 
-			if err := os.Rename(tmpfile, outfile); err != nil {
+			if err := os.Rename(tmpfile, job.Filename); err != nil {
 				return err
 			}
 
 			// Done. Return the file that is now cached locally.
-			job.ResultFile <- outfile
+			job.ResultFile <- job.Filename
 			return nil
 		}
 	}
@@ -131,20 +132,27 @@ func (job compilerJob) Run() error {
 	}
 
 	var cmd *exec.Cmd
-	switch job.Format {
-	case "wasm", "wasi":
-		// simulate
-		tag := strings.Replace(job.Target, "-", "_", -1) // '-' not allowed in tags, use '_' instead
-		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Format, "-tags", tag, "-no-debug", infile.Name())
-	default:
-		// build firmware
-		cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, infile.Name())
+	env := []string{"GOPROXY=off"} // don't download dependencies
+	switch job.Compiler {
+	case "go":
+		cmd = exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", tmpfile, infile.Name())
+		env = append(env, "GOOS=wasip1", "GOARCH=wasm")
+	case "tinygo":
+		switch job.Format {
+		case "wasm", "wasi":
+			// simulate
+			tag := strings.Replace(job.Target, "-", "_", -1) // '-' not allowed in tags, use '_' instead
+			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Format, "-tags", tag, "-no-debug", infile.Name())
+		default:
+			// build firmware
+			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, infile.Name())
+		}
 	}
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
-	cmd.Dir = filepath.Dir(infile.Name())         // avoid long relative paths in error messages
-	cmd.Env = append(os.Environ(), "GOPROXY=off") // don't download dependencies
+	cmd.Dir = filepath.Dir(infile.Name()) // avoid long relative paths in error messages
+	cmd.Env = append(os.Environ(), env...)
 	finishedChan := make(chan struct{})
 	func() {
 		defer close(finishedChan)
@@ -156,7 +164,7 @@ func (job compilerJob) Run() error {
 			job.ResultErrors <- stripFilename(buf.Bytes(), infile.Name())
 			return
 		}
-		if err := os.Rename(tmpfile, outfile); err != nil {
+		if err := os.Rename(tmpfile, job.Filename); err != nil {
 			// unlikely
 			buf.WriteString(err.Error())
 			job.ResultErrors <- buf.Bytes()
@@ -168,7 +176,7 @@ func (job compilerJob) Run() error {
 		if cacheType == cacheTypeGCS {
 			obj := bucket.Object(outfileName)
 			w := obj.NewWriter(job.Context)
-			r, err := os.Open(outfile)
+			r, err := os.Open(job.Filename)
 			if err != nil {
 				log.Println(err.Error())
 				return
@@ -185,7 +193,7 @@ func (job compilerJob) Run() error {
 		}
 
 		// Done. Return the local file immediately.
-		job.ResultFile <- outfile
+		job.ResultFile <- job.Filename
 	}()
 	select {
 	case <-finishedChan:

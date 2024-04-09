@@ -1,6 +1,16 @@
 export { boards };
 
-const exampleHello = `package main
+const exampleHelloGo = `package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println("Hello, Go")
+}`;
+
+const exampleHelloTinyGo = `package main
 
 import (
 	"fmt"
@@ -167,44 +177,70 @@ func main() {
 
 // List of boards to show in the menu. See parts/*.json.
 const boards = {
+	'console-go': {
+		humanName: 'Console (Go)',
+		location: 'parts/console.json',
+		compiler: 'go',
+		code: exampleHelloGo,
+	},
 	'console': {
-		humanName: 'Console',
-		code: exampleHello,
+		humanName: 'Console (TinyGo)',
+		location: 'parts/console.json',
+		compiler: 'tinygo',
+		code: exampleHelloTinyGo,
 	},
 	'arduino': {
 		humanName: 'Arduino Uno',
+		location: 'parts/arduino.json',
+		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
 	'arduino-nano33': {
 		humanName: 'Arduino Nano 33 IoT',
+		location: 'parts/arduino-nano33.json',
+		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
 	'circuitplay-bluefruit': {
 		humanName: 'Circuit Playground Bluefruit',
+		location: 'parts/circuitplay-bluefruit.json',
+		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
 	'circuitplay-express': {
 		humanName: 'Circuit Playground Express',
+		location: 'parts/circuitplay-express.json',
+		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
 	'gopher-badge': {
 		humanName: 'Gopher Badge',
+		location: 'parts/gopher-badge.json',
+		compiler: 'tinygo',
 		code: exampleGopherBadge,
 	},
 	'hifive1b': {
 		humanName: 'HiFive1 rev B',
+		location: 'parts/hifive1b.json',
+		compiler: 'tinygo',
 		code: exampleRGBLED,
 	},
 	'microbit': {
 		humanName: 'BBC micro:bit v1',
+		location: 'parts/microbit.json',
+		compiler: 'tinygo',
 		code: exampleMicrobitBlink,
 	},
 	'reelboard': {
 		humanName: 'Phytec reel board',
+		location: 'parts/reelboard.json',
+		compiler: 'tinygo',
 		code: exampleRGBLED,
 	},
 	'pinetime': {
 		humanName: 'PineTime',
+		location: 'parts/pinetime.json',
+		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
 };

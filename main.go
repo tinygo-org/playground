@@ -116,6 +116,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 	sourceHashRaw := sha256.Sum256([]byte(source))
 	sourceHash := hex.EncodeToString(sourceHashRaw[:])
 
+	// Check 'format' parameter.
 	format := r.FormValue("format")
 	if format == "" {
 		// backwards compatibility (the format should be specified)
@@ -129,12 +130,24 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 	default:
 		// Unrecognized format. Disallow to be sure (might introduce security
 		// issues otherwise).
+		w.Write([]byte("unrecognized format"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Check 'compiler' parameter.
+	compiler := r.FormValue("compiler")
+	switch compiler {
+	case "go", "tinygo":
+	default:
+		// Unrecognized compiler.
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("unrecognized compiler"))
+		return
+	}
+
 	// Attempt to serve directly from the directory with cached files.
-	filename := filepath.Join(cacheDir, "build-"+r.FormValue("target")+"-"+sourceHash+"."+format)
+	filename := filepath.Join(cacheDir, "build-"+compiler+"-"+r.FormValue("target")+"-"+sourceHash+"."+format)
 	fp, err := os.Open(filename)
 	if err == nil {
 		// File was already cached! Serve it directly.
@@ -148,6 +161,8 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 	job := compilerJob{
 		Source:       source,
 		SourceHash:   sourceHash,
+		Filename:     filename,
+		Compiler:     compiler,
 		Target:       r.FormValue("target"),
 		Format:       format,
 		Context:      r.Context(),

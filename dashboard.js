@@ -193,9 +193,10 @@ async function loadProject(name) {
       name: name,
       defaultHumanName: board.humanName,
       code: board.code,
+      compiler: board.compiler,
       parts: {
         main: {
-          location: 'parts/'+name+'.json',
+          location: board.location,
           x: 0,
           y: 0,
         },

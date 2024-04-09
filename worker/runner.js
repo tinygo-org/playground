@@ -45,7 +45,12 @@ async function start(sourceData) {
 
     // Check for a valid response.
     if (!source.ok) {
-      sendError(`Could not request compiled WebAssembly module: HTTP error ${source.status} ${source.statusText}`);
+      let text = `Could not request compiled WebAssembly module: HTTP error ${source.status} ${source.statusText}`;
+      if (source.status === 400 && source.headers.get('Content-Type').startsWith('text/plain')) {
+        let body = await source.text();
+        text += ` (${body})`;
+      }
+      sendError(text);
       return;
     }
 
@@ -122,9 +127,15 @@ class Runner {
   // Load response and prepare runner, but don't run any code yet.
   async start(source) {
     const SUCCESS = 0;
+    const ERRNO_BADF = 8;
+    const ERRNO_NOSYS = 52;
+    const CLOCKID_REALTIME = 0;
+    const CLOCKID_MONOTONIC = 1;
     let timeSAB = new Int32Array(new SharedArrayBuffer(4));
     let importObject = {
       // Subset of the WASI environment.
+      // Please keep these sorted in the same order as the specification:
+      // https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md
       wasi_snapshot_preview1: {
         args_get: () => {
           return SUCCESS; // there are no command line arguments
@@ -148,6 +159,25 @@ class Runner {
           this.envMem().setBigUint64(retptr, BigInt(Math.round((this.clock.now() - this._timeOrigin) * 1000_000)), true);
           return SUCCESS;
         },
+        fd_close: () => {
+          return ERRNO_NOSYS; // not implemented
+        },
+        fd_fdstat_get: () => {
+          return ERRNO_NOSYS; // not implemented
+        },
+        fd_fdstat_set_flags: () => {
+          return ERRNO_NOSYS; // not implemented
+        },
+        fd_prestat_get: (fd, ptr_prestat) => {
+          if (fd > 2) {
+            // Only stdin/stdout/stderr are opened.
+            return ERRNO_BADF;
+          }
+          return ERRNO_NOSYS; // not implemented
+        },
+        fd_prestat_dir_name: () => {
+          return ERRNO_NOSYS; // not implemented
+        },
         fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => {
           return this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr);
         },
@@ -162,7 +192,11 @@ class Runner {
           let clock_id = this.envMem().getUint32(subscr_in+16, true);
           let clock_timeout = this.envMem().getBigUint64(subscr_in+24, true);
           let clock_flags = this.envMem().getUint16(subscr_in+40, true);
-          if (clock_id != 0 || clock_flags != 0) {
+          if (clock_id != CLOCKID_REALTIME && clock_id != CLOCKID_MONOTONIC) {
+            // Use the same clock for both monotonic and realtime for now.
+            throw 'todo: poll_oneoff: unknown clock ID';
+          }
+          if (clock_flags != 0) {
             throw 'todo: poll_oneoff: unknown clock flags';
           }
           this.flushAsyncOperations();
@@ -176,6 +210,9 @@ class Runner {
         proc_exit: (exitcode) => {
           this.exitCode = exitcode;
           throw this.simulatorExit;
+        },
+        sched_yield: () => {
+          return SUCCESS; // impossible to implement in JavaScript
         },
         random_get: (bufPtr, bufLen) => {
           let buf = new Uint8Array(this.envMem().buffer, bufPtr, bufLen);
@@ -353,7 +390,7 @@ class Runner {
     // https://github.com/bytecodealliance/wasmtime/blob/master/docs/WASI-api.md#__wasi_fd_write
     let nwritten = 0;
     let stdout = '';
-    if (fd === 1) {
+    if (fd === 1 || fd === 2) {
       for (let iovs_i=0; iovs_i<iovs_len; iovs_i++) {
         let iov_ptr = iovs_ptr + iovs_i*8; // assuming wasm32
         let ptr = this.envMem().getUint32(iov_ptr + 0, true);
