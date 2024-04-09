@@ -83,7 +83,7 @@ async function updateBoards() {
       e.stopPropagation();
 
       let name = e.target.parentNode.parentNode.dataset.name;
-      let humanName = prompt('Project name', project.humanName || project.defaultHumanName);
+      let humanName = prompt('Project name', projectObj.humanName || projectObj.defaultHumanName);
       if (!humanName) {
         return; // clicked 'cancel'
       }
