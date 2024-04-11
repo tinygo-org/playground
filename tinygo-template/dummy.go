@@ -15,7 +15,6 @@ import (
 	_ "tinygo.org/x/tinygl-font"
 	_ "tinygo.org/x/tinyterm"
 
-	_ "machine"
 	_ "time"
 )
 

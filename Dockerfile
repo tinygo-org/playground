@@ -30,7 +30,9 @@ RUN go mod download
 # Warm the cache.
 USER appuser
 ENV PATH="${PATH}:/app/tinygo/bin"
-RUN tinygo build -o /tmp/outfile -target=wasm && \
+RUN GOOS=wasip1 GOARCH=wasm go build -o /tmp/outfile && \
+    tinygo build -o /tmp/outfile -target=wasi && \
+    tinygo build -o /tmp/outfile -target=wasm && \
     tinygo build -o /tmp/outfile -target=arduino && \
     tinygo build -o /tmp/outfile -target=arduino-nano33 && \
     tinygo build -o /tmp/outfile -target=circuitplay-bluefruit && \
