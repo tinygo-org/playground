@@ -30,16 +30,17 @@ RUN go mod download
 # Warm the cache.
 USER appuser
 ENV PATH="${PATH}:/app/tinygo/bin"
-RUN tinygo build -o /tmp/outfile -target=wasm
-RUN tinygo build -o /tmp/outfile -target=arduino
-RUN tinygo build -o /tmp/outfile -target=arduino-nano33
-RUN tinygo build -o /tmp/outfile -target=circuitplay-bluefruit
-RUN tinygo build -o /tmp/outfile -target=circuitplay-express
-RUN tinygo build -o /tmp/outfile -target=gopher-badge
-RUN tinygo build -o /tmp/outfile -target=hifive1b
-RUN tinygo build -o /tmp/outfile -target=microbit
-RUN tinygo build -o /tmp/outfile -target=pinetime
-RUN tinygo build -o /tmp/outfile -target=reelboard
+RUN tinygo build -o /tmp/outfile -target=wasm && \
+    tinygo build -o /tmp/outfile -target=arduino && \
+    tinygo build -o /tmp/outfile -target=arduino-nano33 && \
+    tinygo build -o /tmp/outfile -target=circuitplay-bluefruit && \
+    tinygo build -o /tmp/outfile -target=circuitplay-express && \
+    tinygo build -o /tmp/outfile -target=gopher-badge && \
+    tinygo build -o /tmp/outfile -target=hifive1b && \
+    tinygo build -o /tmp/outfile -target=microbit && \
+    tinygo build -o /tmp/outfile -target=pinetime && \
+    tinygo build -o /tmp/outfile -target=reelboard && \
+    rm /tmp/outfile
 
 # Finish container.
 WORKDIR /app
