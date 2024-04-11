@@ -137,6 +137,9 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 
 	// Check 'compiler' parameter.
 	compiler := r.FormValue("compiler")
+	if compiler == "" {
+		compiler = "tinygo" // legacy fallback
+	}
 	switch compiler {
 	case "go", "tinygo":
 	default:
