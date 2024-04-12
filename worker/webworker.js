@@ -12,6 +12,7 @@ if (typeof Schematic === 'undefined') {
 onmessage = (e) => handleIncomingMessage(e.data);
 
 let schematic = null;
+let mainPart = null;
 
 function handleIncomingMessage(message) {
   if (message.type === 'start') {
@@ -74,14 +75,10 @@ function handleIncomingMessage(message) {
     }
     schematic.updateNets();
   } else if (message.type === 'playpause') {
-    if (schematic.clock.running) {
-      schematic.clock.pause();
-    } else {
-      schematic.clock.start(); // restart from where it was paused
-    }
+    let running = mainPart.playpause();
     postMessage({
       type: 'speed',
-      speed: schematic.clock.running ? 1 : 0,
+      speed: running ? 1 : 0,
     });
   } else if (message.type === 'input') {
     schematic.getPart(message.id).handleInput(message);
@@ -113,7 +110,7 @@ async function start(msg) {
   schematic.notifyUpdate();
 
   // Now run the binary inside the MCU part.
-  let mainPart = schematic.getPart(msg.config.mainPart);
+  mainPart = schematic.getPart(msg.config.mainPart);
   await mainPart.start(msg.binary, msg.runnerURL);
 }
 

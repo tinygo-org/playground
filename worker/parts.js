@@ -208,6 +208,10 @@ class Board extends Part {
 // MCU implements a MCU like part, that runs a program, logs to stdout, and
 // usually has lots of GPIO pins.
 class MCU extends Part {
+  bufferMutexIndex = 0;
+  bufferSpeedIndex = 1;
+  bufferPinIndex = 2;
+
   constructor(schematic, config) {
     super(schematic, config);
     this.pins[255] = new Pin(config.id + '.NoPin', this);
@@ -227,7 +231,7 @@ class MCU extends Part {
     if (this.workerBuffer !== undefined) {
       let state = pin.getNumeric();
       let number = pin.number;
-      Atomics.store(this.workerBuffer, number+1, state);
+      Atomics.store(this.workerBuffer, this.bufferPinIndex+number, state);
     }
   }
 
@@ -263,7 +267,7 @@ class MCU extends Part {
         let pin = this.pins[i];
         if (pin !== undefined) {
           let state = pin.getNumeric();
-          Atomics.store(this.workerBuffer, i+1, state);
+          Atomics.store(this.workerBuffer, this.bufferPinIndex+i, state);
         }
       }
     } else if (msg.type === 'stdout') {
@@ -305,14 +309,25 @@ class MCU extends Part {
   // Mark a task (incoming message) as processed.
   #finishedTask() {
     // Subtract one from the task counter.
-    let oldValue = Atomics.sub(this.workerBuffer, 0, 1);
+    let oldValue = Atomics.sub(this.workerBuffer, this.bufferMutexIndex, 1);
     let newValue = oldValue - 1;
     if (newValue === 0) {
       // Notify the runner that all messages are handled. The runner will wait
       // for this when reading from a GPIO pin to make sure it doesn't read an
       // old value.
-      Atomics.notify(this.workerBuffer, 0);
+      Atomics.notify(this.workerBuffer, this.bufferMutexIndex);
     }
+  }
+
+  // Pause or resume the execution of the MCU.
+  // It works somewhat like a debugger that pauses execution.
+  playpause() {
+    let running = Atomics.load(this.workerBuffer, this.bufferSpeedIndex) !== 0;
+    running = !running;
+    let speed = running ? 1 : 0;
+    Atomics.store(this.workerBuffer, this.bufferSpeedIndex, speed);
+    Atomics.notify(this.workerBuffer, this.bufferSpeedIndex);
+    return speed;
   }
 }
 

@@ -117,15 +117,21 @@ function sendError(message) {
 
 
 class Runner {
+  bufferMutexIndex = 0;
+  bufferSpeedIndex = 1;
+  bufferPinIndex = 2;
+
   constructor() {
     // A buffer of 256 int32 values.
     // - index 0: a mutex of sorts (actually more like a counting semaphore):
     //   every message to the schematic worker increments it, the schematic
     //   worker decrements it when completing something, and before reading any
     //   shared state the runner waits for it to reach zero.
-    // - index 1..255: pin state for pins 0..254.
-    this.dataBuffer = new SharedArrayBuffer(1024);
+    // - index 1: 'speed' state (0 when sleeping, 1 when running).
+    // - index 2..256: pin state for pins 0..254.
+    this.dataBuffer = new SharedArrayBuffer((1 + 1 + 255) * 4);
     this.int32Buffer = new Int32Array(this.dataBuffer);
+    this.int32Buffer[this.bufferSpeedIndex] = 1;
 
     this.reinterpretBuf = new DataView(new ArrayBuffer(8));
     this.ws2812Buffers = {};
@@ -210,9 +216,25 @@ class Runner {
           this.flushAsyncOperations();
           // Convert from nanoseconds to milliseconds.
           let sleepTime = Number(clock_timeout) / 1000_000;
+          while (sleepTime > 0) {
+            // Wait as long as the execution is paused.
+            if (Atomics.load(this.int32Buffer, this.bufferSpeedIndex) === 0) {
+              this.clock.pause();
+              Atomics.wait(this.int32Buffer, this.bufferSpeedIndex, 0);
+              this.clock.start();
+            }
+
+            // Sleep normally.
+            // This actually uses the timeout as a way to sleep. It may exit
+            // early if the UI pauses execution (in which case we need to pause
+            // the clock until execution resumes again).
+            // See: https://jasonformat.com/javascript-sleep/
+            let start = performance.now();
+            Atomics.wait(this.int32Buffer, this.bufferSpeedIndex, 1, sleepTime);
+            let duration = performance.now() - start;
+            sleepTime -= duration;
+          }
           // Trick to sleep efficiently in a web worker.
-          // See: https://jasonformat.com/javascript-sleep/
-          Atomics.wait(timeSAB, 0, 0, sleepTime);
           return SUCCESS;
         },
         proc_exit: (exitcode) => {
@@ -266,7 +288,7 @@ class Runner {
         },
         __tinygo_gpio_get: (pin) => {
           this.waitTasks();
-          let state = Atomics.load(this.int32Buffer, pin+1);
+          let state = Atomics.load(this.int32Buffer, this.bufferPinIndex+pin);
           if (state === 1 || state === 3) { // low, pulldown
             return 0;
           } else if (state === 2 || state === 4) { // high, pullup
@@ -380,16 +402,16 @@ class Runner {
 
   // Called before sending a task to the schematic worker.
   addTask() {
-    Atomics.add(this.int32Buffer, 0, 1);
+    Atomics.add(this.int32Buffer, this.bufferMutexIndex, 1);
   }
 
   // Wait until the schematic worker has processed all tasks.
   waitTasks() {
     while (1) {
-      let value = Atomics.load(this.int32Buffer, 0);
+      let value = Atomics.load(this.int32Buffer, this.bufferMutexIndex);
       if (value === 0)
         break;
-      Atomics.wait(this.int32Buffer, 0, value);
+      Atomics.wait(this.int32Buffer, this.bufferMutexIndex, value);
     }
   }
 
