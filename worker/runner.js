@@ -331,9 +331,8 @@ class Runner {
           postMessage({
             type: 'spi-transfer',
             bus: bus,
-            data: Uint8Array([w]),
+            data: new Uint8Array([w]),
           });
-          this.waitTasks();
           return Math.floor(Math.random() * 255);
         },
         __tinygo_spi_tx: (bus, wptr, wlen, rptr, rlen) => {
