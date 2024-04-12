@@ -337,7 +337,7 @@ class Simulator {
 
     // Redraw screen.
     this.schematic.root.classList.add('compiling');
-    this.terminal.clear('Compiling...');
+    this.terminal.clear('Restarting simulation...');
     await this.schematic.refresh();
 
     // Only set the firmware button as enabled when supported by the main part.
@@ -391,6 +391,9 @@ class Simulator {
     } else if (msg.type === 'properties') {
       // Set properties in the properties panel at the bottom.
       this.schematic.setProperties(msg.properties);
+    } else if (msg.type === 'compiling') {
+      // POST request has been sent, waiting for compilation to finish.
+      this.terminal.clear('Compiling...');
     } else if (msg.type == 'loading') {
       // Code has started loading in the worker.
       this.terminal.clear('Loading...');

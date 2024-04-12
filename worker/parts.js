@@ -243,9 +243,6 @@ class MCU extends Part {
 
   // Start running the code in a separate web worker.
   async start(sourceData, runnerURL) {
-    postMessage({
-      type: 'loading',
-    });
     let runner = new Worker(runnerURL);
     runner.postMessage({
       type: 'start',
@@ -297,7 +294,8 @@ class MCU extends Part {
       for (let c of msg.data) {
         pin.writeWS2812(c)
       }
-    } else if (msg.type === 'error' || msg.type === 'exited') {
+    } else if (msg.type === 'compiling' || msg.type === 'loading' || msg.type === 'exited' || msg.type === 'error') {
+      // Just forward the message to the UI.
       postMessage(msg);
     } else {
       console.warn('unknown message from runner:', msg);

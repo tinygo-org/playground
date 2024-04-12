@@ -22,6 +22,9 @@ if (typeof module !== 'undefined') {
 }
 
 async function start(sourceData) {
+  postMessage({
+    type: 'compiling',
+  });
   // Now start downloading the binary.
   let source;
   if (sourceData instanceof Uint8Array) {
@@ -69,6 +72,11 @@ async function start(sourceData) {
       return;
     }
   }
+
+  // Request was sent, waiting for the compile job to finish.
+  postMessage({
+    type: 'loading',
+  });
 
   let runner = new Runner();
   try {
