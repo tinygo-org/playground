@@ -20,6 +20,7 @@ body:not(.vscode) .simulator .schematic{
 }
 .simulator.compiling .schematic {
     opacity: 0.7;
+    pointer-events: none;
 }
 .simulator.no-schematic .schematic {
     display: none;
