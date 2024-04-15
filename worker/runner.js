@@ -192,6 +192,9 @@ class Runner {
         fd_prestat_dir_name: () => {
           return ERRNO_NOSYS; // not implemented
         },
+        fd_seek: () => {
+          return ERRNO_NOSYS; // not implemented
+        },
         fd_write: (fd, iovs_ptr, iovs_len, nwritten_ptr) => {
           return this.logWrite(fd, iovs_ptr, iovs_len, nwritten_ptr);
         },
