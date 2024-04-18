@@ -110,48 +110,81 @@ func (job compilerJob) Run() error {
 		return err
 	}
 	defer os.RemoveAll(tmpdir)
-	for _, fn := range []string{"go.mod", "go.sum"} {
-		data, err := os.ReadFile("tinygo-template/" + fn)
+	var outpath string
+	switch job.Compiler {
+	case "go", "tinygo":
+		outpath = tmpfile
+		for _, fn := range []string{"go.mod", "go.sum"} {
+			data, err := os.ReadFile("tinygo-template/" + fn)
+			if err != nil {
+				return err
+			}
+			err = os.WriteFile(tmpdir+"/"+fn, data, 0o666)
+			if err != nil {
+				return err
+			}
+		}
+		infile, err := os.Create(tmpdir + "/main.go")
 		if err != nil {
 			return err
 		}
-		err = os.WriteFile(tmpdir+"/"+fn, data, 0o666)
+		if _, err := infile.Write([]byte("//line main.go:1\n")); err != nil {
+			return err
+		}
+		if _, err := infile.Write(job.Source); err != nil {
+			return err
+		}
+	case "arduino":
+		outpath = tmpdir + "/.pio/build/simulate/program"
+		data, err := os.ReadFile("platformio-template/platformio.ini")
 		if err != nil {
 			return err
 		}
-	}
-	infile, err := os.Create(tmpdir + "/main.go")
-	if err != nil {
-		return err
-	}
-	if _, err := infile.Write([]byte("//line main.go:1\n")); err != nil {
-		return err
-	}
-	if _, err := infile.Write(job.Source); err != nil {
-		return err
+		data = bytes.ReplaceAll(data, []byte("PLATFORMIO_BOARD"), []byte(job.Target))
+		err = os.WriteFile(tmpdir+"/platformio.ini", data, 0o666)
+		if err != nil {
+			return err
+		}
+		os.Mkdir(tmpdir+"/src", 0o777)
+		infile, err := os.Create(tmpdir + "/src/main.cpp")
+		if err != nil {
+			return err
+		}
+		if _, err := infile.Write(job.Source); err != nil {
+			return err
+		}
 	}
 
 	var cmd *exec.Cmd
 	env := []string{"GOPROXY=off"} // don't download dependencies
 	switch job.Compiler {
 	case "go":
-		cmd = exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", tmpfile, infile.Name())
+		cmd = exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", tmpfile, tmpdir)
 		env = append(env, "GOOS=wasip1", "GOARCH=wasm")
 	case "tinygo":
 		switch job.Format {
 		case "wasm", "wasi":
 			// simulate
 			tag := strings.Replace(job.Target, "-", "_", -1) // '-' not allowed in tags, use '_' instead
-			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Format, "-tags", tag, "-no-debug", infile.Name())
+			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Format, "-tags", tag, "-no-debug", tmpdir)
 		default:
 			// build firmware
-			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, infile.Name())
+			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, tmpdir)
 		}
+	case "arduino":
+		switch job.Format {
+		case "wasi":
+			cmd = exec.Command("pio", "run", "--environment=simulate", "-v")
+		default:
+			cmd = exec.Command("pio", "run", "--environment=build", "-v")
+		}
+	default:
+		panic("unknown compiler") // should not happen
 	}
 	buf := &bytes.Buffer{}
 	cmd.Stdout = buf
 	cmd.Stderr = buf
-	cmd.Dir = filepath.Dir(infile.Name()) // avoid long relative paths in error messages
+	cmd.Dir = tmpdir // avoid long relative paths in error messages
 	cmd.Env = append(os.Environ(), env...)
 	finishedChan := make(chan struct{})
 	func() {
@@ -161,10 +194,15 @@ func (job compilerJob) Run() error {
 			if buf.Len() == 0 {
 				buf.WriteString(err.Error())
 			}
-			job.ResultErrors <- stripFilename(buf.Bytes(), infile.Name())
+			errorMsg := buf.Bytes()
+			switch job.Compiler {
+			case "go", "tinygo":
+				errorMsg = stripFilename(errorMsg, tmpdir+"/main.go")
+			}
+			job.ResultErrors <- errorMsg
 			return
 		}
-		if err := os.Rename(tmpfile, job.Filename); err != nil {
+		if renameOrCopy(outpath, job.Filename); err != nil {
 			// unlikely
 			buf.WriteString(err.Error())
 			job.ResultErrors <- buf.Bytes()
@@ -256,4 +294,20 @@ func stripFilename(buf []byte, filename string) []byte {
 		buf = buf[len(prefix):]
 	}
 	return buf
+}
+
+// Try to move a file, and if it fails copy it.
+func renameOrCopy(from, to string) error {
+	err := os.Rename(from, to)
+	if err != nil {
+		data, err := os.ReadFile(from)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(to, data, 0o666)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

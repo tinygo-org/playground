@@ -354,8 +354,9 @@ class Simulator {
 
   #runWithAPI() {
     let compiler = this.schematic.state.compiler || 'tinygo'; // fallback to tinygo
+    let target = this.schematic.parts.main.config.compilers[compiler];
     this.run({
-      url: `${this.apiURL}/compile?compiler=${compiler}&format=wasi&target=${this.schematic.parts.main.config.name}`,
+      url: `${this.apiURL}/compile?compiler=${compiler}&format=wasi&target=${target}`,
       method: 'POST',
       body: this.input.value,
     });

@@ -3,6 +3,10 @@
     "humanName": "Arduino Uno",
     "svg": "arduino.svg",
     "mainPart": "mcu",
+    "compilers": {
+        "tinygo": "arduino",
+        "arduino": "uno"
+    },
     "parts": [
         {
             "id": "mcu",

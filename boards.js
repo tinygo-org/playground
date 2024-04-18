@@ -41,6 +41,20 @@ func main() {
 	}
 }`;
 
+const exampleBlinky1Arduino = `#include <Arduino.h>
+
+void setup() {
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(13, HIGH);
+  delay(500);
+
+  digitalWrite(13, LOW);
+  delay(500);
+}`;
+
 const exampleMicrobitBlink = `package main
 
 import (
@@ -195,11 +209,23 @@ const boards = {
 		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
+	'arduino-arduino': {
+		humanName: 'Arduino Uno (Arduino)',
+		location: 'parts/arduino.json',
+		compiler: 'arduino',
+		code: exampleBlinky1Arduino,
+	},
 	'arduino-nano33': {
 		humanName: 'Arduino Nano 33 IoT',
 		location: 'parts/arduino-nano33.json',
 		compiler: 'tinygo',
 		code: exampleBlinky1,
+	},
+	'arduino-arduino-nano33': {
+		humanName: 'Arduino Nano 33 IoT (Arduino)',
+		location: 'parts/arduino-nano33.json',
+		compiler: 'arduino',
+		code: exampleBlinky1Arduino,
 	},
 	'circuitplay-bluefruit': {
 		humanName: 'Circuit Playground Bluefruit',
@@ -207,11 +233,23 @@ const boards = {
 		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
+	'arduino-circuitplay-bluefruit': {
+		humanName: 'Circuit Playground Bluefruit (Arduino)',
+		location: 'parts/circuitplay-bluefruit.json',
+		compiler: 'arduino',
+		code: exampleBlinky1Arduino,
+	},
 	'circuitplay-express': {
 		humanName: 'Circuit Playground Express',
 		location: 'parts/circuitplay-express.json',
 		compiler: 'tinygo',
 		code: exampleBlinky1,
+	},
+	'arduino-circuitplay-express': {
+		humanName: 'Circuit Playground Express (Arduino)',
+		location: 'parts/circuitplay-express.json',
+		compiler: 'arduino',
+		code: exampleBlinky1Arduino,
 	},
 	'gopher-badge': {
 		humanName: 'Gopher Badge',

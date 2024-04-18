@@ -4,6 +4,10 @@
     "firmwareFormat": "hex",
     "svg": "arduino-nano33.svg",
     "mainPart": "mcu",
+    "compilers": {
+        "tinygo": "arduino-nano33",
+        "arduino": "nano_33_iot"
+    },
     "parts": [
         {
             "id": "mcu",

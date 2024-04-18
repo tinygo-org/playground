@@ -141,7 +141,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 		compiler = "tinygo" // legacy fallback
 	}
 	switch compiler {
-	case "go", "tinygo":
+	case "go", "tinygo", "arduino":
 	default:
 		// Unrecognized compiler.
 		w.WriteHeader(http.StatusBadRequest)

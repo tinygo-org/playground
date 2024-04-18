@@ -4,6 +4,10 @@
     "firmwareFormat": "uf2",
     "svg": "circuit-playground.svg",
     "mainPart": "mcu",
+    "compilers": {
+        "tinygo": "circuitplay-express",
+        "arduino": "adafruit_circuitplayground_m0"
+    },
     "parts": [
         {
             "id": "mcu",
