@@ -145,7 +145,6 @@ class Runner {
     const ERRNO_NOSYS = 52;
     const CLOCKID_REALTIME = 0;
     const CLOCKID_MONOTONIC = 1;
-    let timeSAB = new Int32Array(new SharedArrayBuffer(4));
     let importObject = {
       // Subset of the WASI environment.
       // Please keep these sorted in the same order as the specification:
