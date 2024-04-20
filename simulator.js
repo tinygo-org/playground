@@ -171,6 +171,43 @@ class Simulator {
       });
     });
 
+    // Zoom using the scroll wheel.
+    // Set passive to true to tell the browser we won't call preventDefault().
+    // Not sure how useful that is, because scrolling inside the SVG element
+    // doesn't have an effect anyway (and it is the default in some browsers
+    // already).
+    // TODO: pinch to zoom? (e.g. with a trackpad)
+    this.schematicElement.addEventListener('wheel', e => {
+      let [positionX, positionY] = this.schematic.cursorPosition(e);
+      let factor = 1 + (e.deltaY * -0.0005);
+      this.schematic.zoom(factor, positionX, positionY);
+    }, {passive: true});
+
+    // Pan using the secondary (usually right) mouse button.
+    this.schematicElement.addEventListener('contextmenu', e => {
+      // The default action is a context menu, which we don't want.
+      // Firefox allows overriding this using shift (which is good, we don't
+      // want to prevent the context menu entirely) while Chromium doesn't.
+      e.preventDefault();
+    })
+    this.schematicElement.addEventListener('mousedown', e => {
+      if (e.buttons === 2) {
+        // Secondary button pressed (only). Start panning (dragging).
+        let [cursorX, cursorY] = this.schematic.cursorPosition(e);
+        schematicPan = {
+          schematic: this.schematic,
+          initialCursorX: cursorX,
+          initialCursorY: cursorY,
+          initialTranslateX: this.schematic.translateX,
+          initialTranslateY: this.schematic.translateY,
+        };
+      }
+    })
+    this.schematicElement.addEventListener('mouseup', e => {
+      // Stop panning the schematic (no matter which way it ended).
+      schematicPan = null;
+    })
+
     this.terminal = new Terminal(this.root.querySelector('.terminal'));
 
     // Switch active panel tab on click of a tab title.
@@ -451,6 +488,9 @@ class Schematic {
     this.schematic = root.querySelector('.schematic');
     this.propertiesContainer = root.querySelector('.panel-properties .content');
     this.setSpeed(1);
+    this.scale = 1; // initial scale (1mm in SVG is ~1mm on screen)
+    this.translateX = 0; // initial translation (before scaling)
+    this.translateY = 0;
   }
 
   // getPin returns a pin object based on a given ID (such as main.D13).
@@ -523,6 +563,54 @@ class Schematic {
     if (part.rootElement) {
       let partsGroup = this.schematic.querySelector('.schematic-parts');
       partsGroup.appendChild(part.createElement(this.schematic));
+    }
+  }
+
+  // Convert a mouse event into a logical cursor position (in millimeters from
+  // the center of the schematic view).
+  cursorPosition(e) {
+    let schematicRect = this.simulator.schematicRect;
+    let cursorX = ((e.pageX - schematicRect.left) - schematicRect.width/2) / this.scale / pixelsPerMillimeter;
+    let cursorY = ((e.pageY - schematicRect.top) - schematicRect.height/2) / this.scale / pixelsPerMillimeter;
+    return [cursorX, cursorY];
+  }
+
+  // Increase or decrease the scale factor with the given amount.
+  zoom(factor, cursorX, cursorY) {
+    let newScale = this.scale * factor; // apply scale
+    newScale = Math.min(Math.max(this.scale * factor, 0.1), 50); // limit zoom amount
+    if (newScale !== this.scale) {
+      // Calculate distance between schematic center point and cursor, in
+      // pre-scaled millimeters.
+      let cursorDiffX = cursorX * this.scale - this.translateX;
+      let cursorDiffY = cursorY * this.scale - this.translateY;
+      // Calculate the change in distance between the schematic center point and
+      // the cursor, before and after zooming.
+      let diffX = ((cursorDiffX * this.scale) - (cursorDiffX * newScale)) / this.scale;
+      let diffY = ((cursorDiffY * this.scale) - (cursorDiffY * newScale)) / this.scale;
+      // Apply the new scale (pan+zoom).
+      this.translateX += diffX;
+      this.translateY += diffY;
+      this.scale = newScale;
+      this.#repositionParts();
+    }
+  }
+
+  // Move (pan) the schematic to the new location.
+  moveTo(translateX, translateY) {
+    this.translateX = translateX;
+    this.translateY = translateY;
+    this.#repositionParts();
+  }
+
+  // Move parts to a new location if needed.
+  #repositionParts() {
+    for (let part of Object.values(this.parts)) {
+      if (part.parent) {
+        // only update the root parts (boards, independent LEDs, etc)
+        continue;
+      }
+      part.updatePosition();
     }
   }
 
@@ -859,7 +947,7 @@ async function loadSVG(location) {
 // LED, or it might be a board that itself also contains parts. Parts on a board
 // are represented differently, though.
 class Part {
-  constructor(id, config, data, schematic) {
+  constructor(id, config, data, parent, schematic) {
     this.id = id;
     this.config = config;
     this.data = data;
@@ -867,6 +955,7 @@ class Part {
     this.subparts = {};
     this.pins = {};
     this.removeTooltip = null;
+    this.parent = parent;
   }
 
   // Load the given part and return it (because constructor() can't be async).
@@ -881,7 +970,7 @@ class Part {
       // For example, this may be a simple part created in the Add tab.
       config = data.config;
     }
-    let part = new Part(id, config, data, schematic);
+    let part = new Part(id, config, data, null, schematic);
     if (part.config.svg) {
       await part.loadSVG();
     }
@@ -903,7 +992,7 @@ class Part {
     this.subparts = {};
     for (let subconfig of this.config.parts || []) {
       let id = this.id + '.' + subconfig.id;
-      let subpart = new Part(id, subconfig, {}, this.schematic);
+      let subpart = new Part(id, subconfig, {}, this, this.schematic);
       this.subparts[id] = subpart;
     }
   }
@@ -942,23 +1031,14 @@ class Part {
         return;
       }
       this.select();
-      // Calculate as many things as possible in advance, so that the mousemove
-      // event doesn't have to do much.
-      // This code handles the following cases:
-      //   * Don't let parts be moved outside the available space.
-      //   * ...except if the available space is smaller than the part, in which
-      //     case it makes more sense to limit movement to stay entirely within
-      //     the available space.
-      let schematicRect = schematic.getBoundingClientRect();
-      let svgRect = this.rootElement.getBoundingClientRect();
-      let overflowX = Math.abs(schematicRect.width/2 - svgRect.width/2 - 10);
-      let overflowY = Math.abs(schematicRect.height/2 - svgRect.height/2 - 10);
+      // Logical cursor position.
+      let [cursorX, cursorY] = this.schematic.cursorPosition(e);
       partMovement = {
         part: this,
-        shiftX: schematicRect.left + schematicRect.width/2 - svgRect.width/2 + (e.pageX - svgRect.left),
-        shiftY: schematicRect.top + schematicRect.height/2 - svgRect.height/2 + (e.pageY - svgRect.top),
-        overflowX: overflowX,
-        overflowY: overflowY,
+        initialCursorX: cursorX,
+        initialCursorY: cursorY,
+        initialPositionX: this.data.x,
+        initialPositionY: this.data.y,
       };
     }.bind(this);
 
@@ -1131,12 +1211,24 @@ class Part {
     return Object.assign({}, this.config, {id: this.id});
   }
 
-  // Set a new (x, y) position in pixels, relative to the center.
-  // The position is stored as millimeters, not as pixels.
+  // Set a new (x, y) position in millimeters, relative to the center.
   setPosition(x, y) {
-    this.data.x = x / pixelsPerMillimeter;
-    this.data.y = y / pixelsPerMillimeter;
+    this.data.x = x;
+    this.data.y = y;
     this.updatePosition();
+  }
+
+  // Update position according to this.data.x and this.data.y.
+  updatePosition() {
+    // Set part position relative to the center of the schematic.
+    // Do this using calc() so that it stays at the correct position when
+    // resizing the window.
+    let scale = this.schematic.scale;
+    let translateX = this.schematic.translateX;
+    let translateY = this.schematic.translateY;
+    let x = `calc(${this.data.x}mm - ${this.width} / 2)`;
+    let y = `calc(${this.data.y}mm - ${this.height} / 2)`;
+    this.wrapper.style.transform = `translate(${translateX}mm, ${translateY}mm) scale(${scale}) translate(${x}, ${y})`;
 
     // Update wires
     for (let pin of Object.values(this.pins)) {
@@ -1149,16 +1241,6 @@ class Part {
         }
       }
     }
-  }
-
-  // Update position according to this.data.x and this.data.y.
-  updatePosition() {
-    // Set part position relative to the center of the schematic.
-    // Do this using calc() so that it stays at the correct position when
-    // resizing the window.
-    let x = 'calc(' + this.data.x + 'mm - ' + this.width + ' / 2)';
-    let y = 'calc(' + this.data.y + 'mm - ' + this.height + ' / 2)';
-    this.wrapper.style.transform = 'translate(' + x + ', ' + y + ')';
   }
 
   select() {
@@ -1385,30 +1467,30 @@ let partMovement = null;
 let newWire = null;
 let newPart = null;
 let selected = null;
+let schematicPan = null;
 
 document.addEventListener('mousemove', e => {
   if (partMovement) {
     let part = partMovement.part;
-    let x = e.pageX - partMovement.shiftX;
-    let y = e.pageY - partMovement.shiftY;
-    // Make sure the x and y coordinates stay within the allowed space, but
-    // don't 'jump' when the part is already outside the allowed space.
-    let minX = Math.min(-partMovement.overflowX, part.data.x);
-    let minY = Math.min(-partMovement.overflowY, part.data.y);
-    let maxX = Math.max(partMovement.overflowX, part.data.x);
-    let maxY = Math.max(partMovement.overflowY, part.data.y);
-    x = Math.min(maxX, Math.max(minX, x));
-    y = Math.min(maxY, Math.max(minY, y));
-    part.setPosition(x, y);
+    let [cursorX, cursorY] = part.schematic.cursorPosition(e);
+    let changeX = cursorX - partMovement.initialCursorX;
+    let changeY = cursorY - partMovement.initialCursorY;
+    part.setPosition(partMovement.initialPositionX+changeX, partMovement.initialPositionY+changeY);
   }
   if (newPart) {
     let schematicRect = newPart.schematic.simulator.schematicRect;
     let x = e.pageX - schematicRect.width/2 - schematicRect.x;
     let y = e.pageY - schematicRect.height/2 - schematicRect.y;
-    newPart.setPosition(x, y);
+    newPart.setPosition(x / pixelsPerMillimeter, y / pixelsPerMillimeter);
   }
   if (newWire) {
     newWire.updateToMovement(e.pageX, e.pageY);
+  }
+  if (schematicPan) {
+    let [cursorX, cursorY] = schematicPan.schematic.cursorPosition(e);
+    let translateX = schematicPan.initialTranslateX + (cursorX - schematicPan.initialCursorX) * schematicPan.schematic.scale;
+    let translateY = schematicPan.initialTranslateY + (cursorY - schematicPan.initialCursorY) * schematicPan.schematic.scale;
+    schematicPan.schematic.moveTo(translateX, translateY);
   }
 });
 
