@@ -605,12 +605,26 @@ class Schematic {
 
   // Move parts to a new location if needed.
   #repositionParts() {
+    // Update all parts (except for subparts).
+    // This is done all at once (without updating wires for each part) so that
+    // we don't force a reflow.
     for (let part of Object.values(this.parts)) {
-      if (part.parent) {
-        // only update the root parts (boards, independent LEDs, etc)
-        continue;
+      if (!part.parent) {
+        part.updatePosition();
       }
-      part.updatePosition();
+    }
+    // Calculate new wire locations. This forces a single reflow.
+    for (let part of Object.values(this.parts)) {
+      if (!part.parent) {
+        part.calculateWires();
+      }
+    }
+    // Apply new wire locations. This only sets properties, so doesn't cause a
+    // reflow.
+    for (let part of Object.values(this.parts)) {
+      if (!part.parent) {
+        part.applyWires();
+      }
     }
   }
 
@@ -1216,6 +1230,8 @@ class Part {
     this.data.x = x;
     this.data.y = y;
     this.updatePosition();
+    this.calculateWires();
+    this.applyWires();
   }
 
   // Update position according to this.data.x and this.data.y.
@@ -1230,14 +1246,33 @@ class Part {
     let y = `calc(${this.data.y}mm - ${this.height} / 2)`;
     this.wrapper.style.transform = `translate(${translateX}mm, ${translateY}mm) scale(${scale}) translate(${x}, ${y})`;
 
-    // Update wires
+  }
+
+  // Call calculateFrom and calculateTo as needed on the attached wires.
+  // This will cause a reflow if needed, but doesn't change the DOM.
+  calculateWires() {
     for (let pin of Object.values(this.pins)) {
       for (let wire of pin.wires) {
         if (wire.from === pin) {
-          wire.updateFrom();
+          wire.calculateFrom();
         }
         if (wire.to === pin) {
-          wire.updateTo();
+          wire.calculateTo();
+        }
+      }
+    }
+  }
+
+  // Call applyFrom and applyTo as needed on the attached wires.
+  // This changes some properties, but does not itself force a reflow.
+  applyWires() {
+    for (let pin of Object.values(this.pins)) {
+      for (let wire of pin.wires) {
+        if (wire.from === pin) {
+          wire.applyFrom();
+        }
+        if (wire.to === pin) {
+          wire.applyTo();
         }
       }
     }
@@ -1355,18 +1390,38 @@ class Wire {
     });
   }
 
-  // Update based on the coordinates of the 'from' pin.
-  updateFrom() {
+  // Calculate coordinates of the 'from' side of the wire.
+  calculateFrom() {
     [this.x1, this.y1] = this.from.getCoords();
+  }
+
+  // Apply coordinates previously calculated in calculateFrom().
+  applyFrom() {
     this.line.setAttribute('x1', this.x1);
     this.line.setAttribute('y1', this.y1);
   }
 
-  // Update based on the coordinates of the 'to' pin.
-  updateTo() {
+  // Update based on the coordinates of the 'from' pin.
+  updateFrom() {
+    this.calculateFrom();
+    this.applyFrom();
+  }
+
+  // Calculate coordinates of the 'to' side of the wire.
+  calculateTo() {
     [this.x2, this.y2] = this.to.getCoords();
+  }
+
+  // Apply coordinates previously calculated in calculateTo().
+  applyTo() {
     this.line.setAttribute('x2', this.x2);
     this.line.setAttribute('y2', this.y2);
+  }
+
+  // Update based on the coordinates of the 'to' pin.
+  updateTo() {
+    this.calculateTo();
+    this.applyTo();
   }
 
   // Set 'to' pin. May be called when a wire is just created in the UI.
