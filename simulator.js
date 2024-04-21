@@ -265,8 +265,10 @@ class Simulator {
         // If needed, shrink the image to fit the available space.
         let width = svg.getAttribute('width').replace('mm', '');
         let height = svg.getAttribute('height').replace('mm', '');
-        svg.style.transform = `scale(min(1, min(calc(10 / ${width}), calc(10 / ${height}))))`;
-        image.appendChild(svg);
+        let wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        wrapper.style.transform = `scale(min(1, min(calc(10 / ${width}), calc(10 / ${height}))))`;
+        wrapper.appendChild(svg);
+        image.appendChild(wrapper);
         applyOptions();
       });
 
