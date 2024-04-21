@@ -61,14 +61,14 @@ body:not(.vscode) .simulator .schematic{
     display: none; /* hide the other button image */
 }
 
-.simulator .board-wrapper {
+.simulator .board-container {
     position: absolute;
     filter: drop-shadow(0 0 6px #777c);
 }
-.simulator .board-wrapper > .background {
+.simulator .board-container > .background {
     fill: transparent;
 }
-.simulator .board-wrapper.selected > .background {
+.simulator .board-container.selected > .background {
     outline: 1.7px dashed gray;
 }
 

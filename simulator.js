@@ -1063,20 +1063,20 @@ class Part {
     }
   }
 
-  // Create the wrapper for the part SVG and initialize it.
+  // Create the container for the part SVG and initialize it.
   createElement(schematic) {
-    this.wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    this.wrapper.setAttribute('class', 'board-wrapper');
+    this.container = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    this.container.setAttribute('class', 'board-container');
 
     // Add background rectangle.
-    let background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    background.classList.add('background');
-    background.setAttribute('width', this.width);
-    background.setAttribute('height', this.height);
-    this.wrapper.appendChild(background);
+    this.background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    this.background.classList.add('background');
+    this.container.appendChild(this.background);
 
     // Add SVG to the schematic at the correct location.
-    this.wrapper.appendChild(this.rootElement);
+    this.svgWrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    this.svgWrapper.appendChild(this.rootElement);
+    this.container.appendChild(this.svgWrapper);
     this.updatePosition();
 
     // Add some default styles.
@@ -1086,8 +1086,8 @@ class Part {
     }
 
     // Make the part draggable with a mouse.
-    this.wrapper.ondragstart = e => false;
-    this.wrapper.onmousedown = function(e) {
+    this.container.ondragstart = e => false;
+    this.container.onmousedown = function(e) {
       if (newWire || newPart) {
         // Don't drag while in the process of adding a new wire.
         return;
@@ -1109,7 +1109,7 @@ class Part {
     }.bind(this);
 
     // Make the part selectable.
-    this.wrapper.addEventListener('click', e => {
+    this.container.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
       this.select();
@@ -1244,7 +1244,7 @@ class Part {
       });
     }
 
-    return this.wrapper;
+    return this.container;
   }
 
   setRootElement(el) {
@@ -1294,10 +1294,12 @@ class Part {
     let scale = this.schematic.scale;
     let translateX = this.schematic.translateX;
     let translateY = this.schematic.translateY;
-    let x = `calc(${this.data.x}mm - ${this.width} / 2)`;
-    let y = `calc(${this.data.y}mm - ${this.height} / 2)`;
-    this.wrapper.style.transform = `translate(${translateX}mm, ${translateY}mm) scale(${scale}) translate(${x}, ${y})`;
-
+    let x = `calc(${this.data.x*scale}mm - ${this.width} * ${scale/2})`;
+    let y = `calc(${this.data.y*scale}mm - ${this.height} * ${scale/2})`;
+    this.container.style.transform = `translate(${translateX}mm, ${translateY}mm) translate(${x}, ${y})`;
+    this.svgWrapper.style.transform = `scale(${scale})`;
+    this.background.style.width = `calc(${this.width} * ${scale})`;
+    this.background.style.height = `calc(${this.height} * ${scale})`;
   }
 
   // Call calculateFrom and calculateTo as needed on the attached wires.
@@ -1334,12 +1336,12 @@ class Part {
     if (selected) {
       selected.deselect();
     }
-    this.wrapper.classList.add('selected');
+    this.container.classList.add('selected');
     selected = this;
   }
 
   deselect() {
-    this.wrapper.classList.remove('selected');
+    this.container.classList.remove('selected');
     selected = null;
   }
 
@@ -1376,7 +1378,7 @@ class Part {
     this.schematic.parts.delete(this.id);
     delete this.schematic.state.parts[this.id];
     message.parts.push(this.id);
-    this.wrapper.remove();
+    this.container.remove();
 
     // Remove a pin tooltip, if it is present.
     if (this.removeTooltip !== null) {
