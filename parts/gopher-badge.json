@@ -57,31 +57,37 @@
         {
             "id": "buttonLeft",
             "type": "pushbutton",
+            "key": "ArrowLeft",
             "humanName": "Button Left"
         },
         {
             "id": "buttonRight",
             "type": "pushbutton",
+            "key": "ArrowRight",
             "humanName": "Button Right"
         },
         {
             "id": "buttonUp",
             "type": "pushbutton",
+            "key": "ArrowUp",
             "humanName": "Button Up"
         },
         {
             "id": "buttonDown",
             "type": "pushbutton",
+            "key": "ArrowDown",
             "humanName": "Button Down"
         },
         {
             "id": "buttonA",
             "type": "pushbutton",
+            "key": "A",
             "humanName": "Button A"
         },
         {
             "id": "buttonB",
             "type": "pushbutton",
+            "key": "B",
             "humanName": "Button B"
         }
     ],

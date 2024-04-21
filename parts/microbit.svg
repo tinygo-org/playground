@@ -239,6 +239,7 @@
     <circle cx="5" cy="5" r="0.6" fill="#855528"/>
     <circle cx="3" cy="3" r="1.75" fill="black"/>
     <circle cx="3" cy="3" r="1.80" fill="#666" style="opacity: var(--pressed, 0)"/>
+    <title>A</title>
   </g>
   <g data-part="buttonRight" data-clickarea="" transform="translate(42.74, 18.04)">
     <rect width="6" height="6" rx="0.5" stroke="#777" stroke-width="0.7" style="opacity: var(--hover, 0)"/>
@@ -249,5 +250,6 @@
     <circle cx="5" cy="5" r="0.6" fill="#855528"/>
     <circle cx="3" cy="3" r="1.75" fill="black"/>
     <circle cx="3" cy="3" r="1.80" fill="#666" style="opacity: var(--pressed, 0)"/>
+    <title>B</title>
   </g>
 </svg>

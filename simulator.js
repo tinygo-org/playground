@@ -149,7 +149,7 @@ class Simulator {
     //     Content-Disposition: attachment; filename=firmware.hex
     let form = document.createElement('form');
     form.setAttribute('method', 'POST');
-    form.setAttribute('action', `${this.apiURL}/compile?target=${this.schematic.parts.main.config.name}&format=${this.schematic.parts.main.config.firmwareFormat}`);
+    form.setAttribute('action', `${this.apiURL}/compile?target=${this.schematic.parts.get('main').config.name}&format=${this.schematic.parts.get('main').config.firmwareFormat}`);
     form.classList.add('d-none');
     let input = document.createElement('input');
     input.setAttribute('type', 'hidden');
@@ -206,6 +206,18 @@ class Simulator {
     this.schematicElement.addEventListener('mouseup', e => {
       // Stop panning the schematic (no matter which way it ended).
       schematicPan = null;
+    })
+
+    // Listen for keyboard events, to simulate button presses.
+    this.schematicElement.addEventListener('keydown', e => {
+      this.schematic.handleKey(e, true);
+    });
+    this.schematicElement.addEventListener('keyup', e => {
+      this.schematic.handleKey(e, false);
+    });
+    this.schematicElement.addEventListener('blur', e => {
+      // Lost focus, so un-press all pressed keys.
+      this.schematic.handleBlur();
     })
 
     this.terminal = new Terminal(this.root.querySelector('.terminal'));
@@ -329,7 +341,7 @@ class Simulator {
           newPart.rootElement.removeEventListener('click', onclick);
           newPart = null;
           this.root.classList.remove('adding-part');
-          this.schematic.state.parts[data.config.id] = data;
+          this.schematic.state.parts.set(data.config.id, data);
           this.saveState();
         };
         newPart.rootElement.addEventListener('click', onclick);
@@ -379,7 +391,7 @@ class Simulator {
 
     // Only set the firmware button as enabled when supported by the main part.
     if (this.firmwareButton) {
-      this.firmwareButton.disabled = this.schematic.parts.main.config.firmwareFormat === undefined;
+      this.firmwareButton.disabled = this.schematic.parts.get('main').config.firmwareFormat === undefined;
     }
 
     // Start new worker.
@@ -392,7 +404,7 @@ class Simulator {
   #runWithAPI() {
     let compiler = this.schematic.state.compiler || 'tinygo'; // fallback to tinygo
     this.run({
-      url: `${this.apiURL}/compile?compiler=${compiler}&format=wasi&target=${this.schematic.parts.main.config.name}`,
+      url: `${this.apiURL}/compile?compiler=${compiler}&format=wasi&target=${this.schematic.parts.get('main').config.name}`,
       method: 'POST',
       body: this.input.value,
     });
@@ -491,6 +503,7 @@ class Schematic {
     this.scale = 1; // initial scale (1mm in SVG is ~1mm on screen)
     this.translateX = 0; // initial translation (before scaling)
     this.translateY = 0;
+    this.pressedKeys = {};
   }
 
   // getPin returns a pin object based on a given ID (such as main.D13).
@@ -499,7 +512,7 @@ class Schematic {
     if (pos < 0) {
       throw new Error('invalid pin ID');
     }
-    return this.parts[id.slice(0, pos)].pins[id.slice(pos+1)];
+    return this.parts.get(id.slice(0, pos)).pins[id.slice(pos+1)];
   }
 
   // Remove and redraw all the SVG parts from scratch.
@@ -518,7 +531,7 @@ class Schematic {
     wireGroup.innerHTML = '';
 
     // Put SVGs in the schematic.
-    this.parts = {};
+    this.parts = new Map();
     let partHeights = [];
     for (let part of parts) {
       this.addPart(part);
@@ -555,14 +568,53 @@ class Schematic {
   }
 
   addPart(part) {
-    this.parts[part.id] = part;
+    this.parts.set(part.id, part);
     part.createSubParts();
     for (let [id, subpart] of Object.entries(part.subparts)) {
-      this.parts[id] = subpart;
+      this.parts.set(id, subpart);
     }
     if (part.rootElement) {
       let partsGroup = this.schematic.querySelector('.schematic-parts');
       partsGroup.appendChild(part.createElement(this.schematic));
+    }
+  }
+
+  // Handle keyboard input and emulate these keys as physical keys.
+  handleKey(e, pressed) {
+    let key = e.key;
+    if (key.length === 1) {
+      key = key.toUpperCase(); // probably a key like 'A'
+    }
+    for (let part of this.parts.values()) {
+      if (part.config.type === 'pushbutton' && part.config.key === key) {
+        if (pressed && this.pressedKeys[key] === part.id) {
+          // Repeat key (held down), ignore this event.
+          return;
+        }
+        this.simulator.worker.postMessage({
+          type: 'input',
+          id: part.id,
+          event: pressed ? 'press' : 'release',
+        });
+        if (pressed) {
+          this.pressedKeys[key] = part.id;
+        } else {
+          delete this.pressedKeys[key];
+        }
+        return;
+      }
+    }
+  }
+
+  // Release all pressed keys when the schematic loses focus.
+  handleBlur() {
+    for (let [key, partId] of Object.entries(this.pressedKeys)) {
+      this.simulator.worker.postMessage({
+        type: 'input',
+        id: partId,
+        event: 'released',
+      });
+      delete this.pressedKeys[key];
     }
   }
 
@@ -608,20 +660,20 @@ class Schematic {
     // Update all parts (except for subparts).
     // This is done all at once (without updating wires for each part) so that
     // we don't force a reflow.
-    for (let part of Object.values(this.parts)) {
+    for (let part of this.parts.values()) {
       if (!part.parent) {
         part.updatePosition();
       }
     }
     // Calculate new wire locations. This forces a single reflow.
-    for (let part of Object.values(this.parts)) {
+    for (let part of this.parts.values()) {
       if (!part.parent) {
         part.calculateWires();
       }
     }
     // Apply new wire locations. This only sets properties, so doesn't cause a
     // reflow.
-    for (let part of Object.values(this.parts)) {
+    for (let part of this.parts.values()) {
       if (!part.parent) {
         part.applyWires();
       }
@@ -635,7 +687,7 @@ class Schematic {
       parts: [],
       wires: [],
     };
-    for (let [id, part] of Object.entries(this.parts)) {
+    for (let [id, part] of this.parts.entries()) {
       // The main part is the part running the code.
       if (id === 'main') {
         config.mainPart = 'main.' + part.config.mainPart;
@@ -721,7 +773,7 @@ class Schematic {
   // worker that's running the simulated program.
   update(updates) {
     for (let update of updates) {
-      let part = this.parts[update.id];
+      let part = this.parts.get(update.id);
 
       // LED strips, like typical WS2812 strips.
       if (update.ledstrip) {
@@ -1321,7 +1373,7 @@ class Part {
     }
 
     // Remove the main part.
-    delete this.schematic.parts[this.id];
+    this.schematic.parts.delete(this.id);
     delete this.schematic.state.parts[this.id];
     message.parts.push(this.id);
     this.wrapper.remove();

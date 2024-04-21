@@ -64,24 +64,28 @@
     <rect fill="#ca7" width="4.4" height="3.3"/>
     <rect fill="#fff" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25"/>
     <rect fill="#777" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25" style="opacity: var(--pressed, 0)"/>
+    <title>Left</title>
   </g>
   <g data-part="buttonRight" data-clickarea="" transform="translate(32.5, 102.3)">
     <rect x="0" y="0" rx="0.2" width="4.4" height="3.3" stroke="#777" stroke-width="1.5" fill="transparent" style="opacity: var(--hover, 0)"/>
     <rect fill="#ca7" width="4.4" height="3.3"/>
     <rect fill="#fff" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25"/>
     <rect fill="#777" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25" style="opacity: var(--pressed, 0)"/>
+    <title>Right</title>
   </g>
   <g data-part="buttonUp" data-clickarea="" transform="translate(27.0, 98.9)">
     <rect x="0" y="0" rx="0.2" width="4.4" height="3.3" stroke="#777" stroke-width="1.5" fill="transparent" style="opacity: var(--hover, 0)"/>
     <rect fill="#ca7" width="4.4" height="3.3"/>
     <rect fill="#fff" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25"/>
     <rect fill="#777" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25" style="opacity: var(--pressed, 0)"/>
+    <title>Up</title>
   </g>
   <g data-part="buttonDown" data-clickarea="" transform="translate(27.0, 105.7)">
     <rect x="0" y="0" rx="0.2" width="4.4" height="3.3" stroke="#777" stroke-width="1.5" fill="transparent" style="opacity: var(--hover, 0)"/>
     <rect fill="#ca7" width="4.4" height="3.3"/>
     <rect fill="#fff" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25"/>
     <rect fill="#777" width="3.4" height="2.5" x="0.5" y="0.4" ry="1.25" style="opacity: var(--pressed, 0)"/>
+    <title>Down</title>
   </g>
   <g data-part="buttonA" data-clickarea="" transform="translate(58.0, 98.9)">
     <rect x="0" y="0" rx="0.2" width="4.4" height="3.3" stroke="#777" stroke-width="1.5" fill="transparent" style="opacity: var(--hover, 0)"/>

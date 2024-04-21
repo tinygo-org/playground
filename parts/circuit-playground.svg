@@ -116,11 +116,13 @@
     <rect x="-3" y="-3" rx="0.2" width="6" height="6" fill="#999"/>
     <circle r="1.5" fill="black"/>
     <circle r="1.55" fill="#666" style="opacity: var(--pressed, 0)"/>
+    <title>A</title>
   </g>
   <g data-part="buttonRight" data-clickarea="" transform="translate(35.56, 24.4)">
     <rect x="-3" y="-3" width="6" height="6" stroke="#777" stroke-width="0.7" rx="0.2" style="opacity: var(--hover, 0)"/>
     <rect x="-3" y="-3" width="6" height="6" fill="#999" rx="0.2"/>
     <circle r="1.5" fill="black"/>
     <circle r="1.55" fill="#666" style="opacity: var(--pressed, 0)"/>
+    <title>B</title>
   </g>
 </svg>

@@ -74,11 +74,13 @@
         {
             "id": "buttonLeft",
             "type": "pushbutton",
+            "key": "A",
             "humanName": "Button A"
         },
         {
             "id": "buttonRight",
             "type": "pushbutton",
+            "key": "B",
             "humanName": "Button B"
         }
     ],
