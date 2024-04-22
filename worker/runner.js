@@ -11,16 +11,6 @@ onmessage = (e) => {
   }
 };
 
-if (typeof module !== 'undefined') {
-  // Running as a Node.js module.
-  global.performance = {
-    now() {
-      const [sec, nsec] = process.hrtime();
-      return sec * 1000 + nsec / 1000000;
-    }
-  }
-}
-
 async function start(sourceData) {
   postMessage({
     type: 'compiling',
