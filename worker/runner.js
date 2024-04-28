@@ -2,16 +2,30 @@
 
 // This file loads and executes some WebAssembly compiled by TinyGo.
 
+// Warning: this event handler is kept when running in a web worker, but is
+// (intentionally) overwritten when running inside VSCode.
+// This is probably not the best design, but it should eventually go away anyway
+// once cross origin isolation is enabled in VSCode and the runner can run in a
+// separate web worker like it does on the web:
+// https://github.com/microsoft/vscode-discussions/discussions/156
 onmessage = (e) => {
   let msg = e.data;
   if (msg.type === 'start') {
-    start(msg.sourceData);
+    startRunner(msg.sourceData, postMessage);
   } else {
     console.warn('unknown runner message:', msg);
   }
 };
 
-async function start(sourceData) {
+async function startRunner(sourceData, postMessage) {
+  function sendError(message) {
+    console.error(message);
+    postMessage({
+      type: 'error',
+      message: message,
+    });
+  }
+
   postMessage({
     type: 'compiling',
   });
@@ -68,7 +82,7 @@ async function start(sourceData) {
     type: 'loading',
   });
 
-  let runner = new Runner();
+  let runner = new Runner(postMessage);
   try {
     await runner.start(source);
   } catch (e) {
@@ -95,23 +109,15 @@ async function start(sourceData) {
   }
 }
 
-// sendError sends an error back to the UI thread, which will display it and
-// likely kill this web worker.
-function sendError(message) {
-  console.error(message);
-  postMessage({
-    type: 'error',
-    message: message,
-  });
-}
-
 
 class Runner {
   bufferMutexIndex = 0;
   bufferSpeedIndex = 1;
   bufferPinIndex = 2;
 
-  constructor() {
+  constructor(postMessage) {
+    this.postMessage = (msg) => postMessage(msg);
+
     // A buffer of 256 int32 values.
     // - index 0: a mutex of sorts (actually more like a counting semaphore):
     //   every message to the schematic worker increments it, the schematic
@@ -119,7 +125,12 @@ class Runner {
     //   shared state the runner waits for it to reach zero.
     // - index 1: 'speed' state (0 when sleeping, 1 when running).
     // - index 2..256: pin state for pins 0..254.
-    this.dataBuffer = new SharedArrayBuffer((1 + 1 + 255) * 4);
+    const dataBufferLength = (1 + 1 + 255) * 4;
+    if (crossOriginIsolated) {
+      this.dataBuffer = new SharedArrayBuffer(dataBufferLength);
+    } else {
+      this.dataBuffer = new ArrayBuffer(dataBufferLength);
+    }
     this.int32Buffer = new Int32Array(this.dataBuffer);
     this.int32Buffer[this.bufferSpeedIndex] = 1;
 
@@ -221,6 +232,9 @@ class Runner {
             // early if the UI pauses execution (in which case we need to pause
             // the clock until execution resumes again).
             // See: https://jasonformat.com/javascript-sleep/
+            if (!crossOriginIsolated) {
+              throw 'WASI sleep cannot work: runner is not cross-origin isolated.';
+            }
             let start = performance.now();
             Atomics.wait(this.int32Buffer, this.bufferSpeedIndex, 1, sleepTime);
             let duration = performance.now() - start;
@@ -272,7 +286,7 @@ class Runner {
       env: {
         __tinygo_gpio_set: (pin, high) => {
           this.addTask();
-          postMessage({
+          this.postMessage({
             type: 'gpio-set',
             pin: pin,
             high: high ? true : false,
@@ -298,7 +312,7 @@ class Runner {
         },
         __tinygo_gpio_configure: (pin, mode) => {
           this.addTask();
-          postMessage({
+          this.postMessage({
             type: 'pin-configure',
             pin: pin,
             state: {
@@ -310,7 +324,7 @@ class Runner {
           })
         },
         __tinygo_spi_configure: (bus, sck, sdo, sdi) => {
-          postMessage({
+          this.postMessage({
             type: 'spi-configure',
             bus: bus,
             sck: sck,
@@ -320,7 +334,7 @@ class Runner {
         },
         __tinygo_spi_transfer: (bus, w) => {
           this.addTask();
-          postMessage({
+          this.postMessage({
             type: 'spi-transfer',
             bus: bus,
             data: new Uint8Array([w]),
@@ -330,7 +344,7 @@ class Runner {
         __tinygo_spi_tx: (bus, wptr, wlen, rptr, rlen) => {
           this.addTask();
           let wbuf = new Uint8Array(this._inst.exports.memory.buffer, wptr, wlen);
-          postMessage({
+          this.postMessage({
             type: 'spi-transfer',
             bus: bus,
             data: wbuf,
@@ -423,7 +437,7 @@ class Runner {
       console.error('invalid file descriptor:', fd);
     }
     if (stdout !== '') {
-      postMessage({type: 'stdout', data: stdout});
+      this.postMessage({type: 'stdout', data: stdout});
     }
     this.envMem().setUint32(nwritten_ptr, nwritten, true);
     return 0;
@@ -433,7 +447,7 @@ class Runner {
   flushAsyncOperations() {
     // Send all WS2812 writes to the schematic worker.
     for (let pinNumber in this.ws2812Buffers) {
-      postMessage({
+      this.postMessage({
         type: 'ws2812-write',
         pin: pinNumber,
         data: this.ws2812Buffers[pinNumber],

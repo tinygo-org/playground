@@ -247,12 +247,19 @@ class MCU extends Part {
 
   // Start running the code in a separate web worker.
   async start(sourceData, runnerURL) {
-    let runner = new Worker(runnerURL);
-    runner.postMessage({
-      type: 'start',
-      sourceData: sourceData,
-    })
-    runner.onmessage = (e) => this.#handleRunnerMessage(e.data);
+    if (!crossOriginIsolated) {
+      // Probably running inside VSCode.
+      // Don't start a separate runner (because we have no SharedArrayBuffer),
+      // run the runner directly here.
+      startRunner(sourceData, msg => this.#handleRunnerMessage(msg));
+    } else {
+      let runner = new Worker(runnerURL);
+      runner.postMessage({
+        type: 'start',
+        sourceData: sourceData,
+      })
+      runner.onmessage = (e) => this.#handleRunnerMessage(e.data);
+    }
   }
 
   // Process message coming from the runner.
