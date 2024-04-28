@@ -42,6 +42,12 @@
             }
         },
         {
+            "id": "led",
+            "type": "led",
+            "humanName": "LED (back)",
+            "color": [0, 0, 255]
+        },
+        {
             "id": "display",
             "type": "st7789",
             "humanName": "Display (ST7789)",
@@ -92,6 +98,7 @@
         }
     ],
     "wires": [
+        {"from": "mcu.GPIO2", "to": "led.cathode"},
         {"from": "mcu.GPIO18", "to": "display.sck"},
         {"from": "mcu.GPIO19", "to": "display.sdi"},
         {"from": "mcu.GPIO17", "to": "display.cs"},
