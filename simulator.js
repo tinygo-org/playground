@@ -1077,6 +1077,7 @@ class Part {
     // Add SVG to the schematic at the correct location.
     this.svgWrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     this.svgWrapper.appendChild(this.rootElement);
+    this.svgWrapper.setAttribute('class', 'board-wrapper');
     this.container.appendChild(this.svgWrapper);
     this.updatePosition();
 
