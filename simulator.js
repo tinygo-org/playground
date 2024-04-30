@@ -172,16 +172,15 @@ class Simulator {
     });
 
     // Zoom using the scroll wheel.
-    // Set passive to true to tell the browser we won't call preventDefault().
-    // Not sure how useful that is, because scrolling inside the SVG element
-    // doesn't have an effect anyway (and it is the default in some browsers
-    // already).
+    // Disable the default wheel event: this would result in a bounce effect on
+    // Safari and make the scrolling a lot less smooth.
     // TODO: pinch to zoom? (e.g. with a trackpad)
     this.schematicElement.addEventListener('wheel', e => {
+      e.preventDefault();
       let [positionX, positionY] = this.schematic.cursorPosition(e);
       let factor = 1 + (e.deltaY * -0.0005);
       this.schematic.zoom(factor, positionX, positionY);
-    }, {passive: true});
+    }, {passive: false});
 
     // Pan using the secondary (usually right) mouse button.
     this.schematicElement.addEventListener('contextmenu', e => {
