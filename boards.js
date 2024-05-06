@@ -243,4 +243,10 @@ const boards = {
 		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
+	'pico': {
+		humanName: 'Raspberry Pi Pico',
+		location: 'parts/pico.json',
+		compiler: 'tinygo',
+		code: exampleBlinky1,
+	}
 };
