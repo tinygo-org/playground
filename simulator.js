@@ -342,7 +342,7 @@ class Simulator {
           newPart.rootElement.removeEventListener('click', onclick);
           newPart = null;
           this.root.classList.remove('adding-part');
-          this.schematic.state.parts.set(data.config.id, data);
+          this.schematic.state.parts[data.config.id] = data;
           this.saveState();
         };
         newPart.rootElement.addEventListener('click', onclick);
