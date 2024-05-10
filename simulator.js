@@ -61,7 +61,15 @@ class Simulator {
     }
 
     // Redraw the schematic SVG.
-    await this.refresh(state);
+    try {
+      await this.refresh(state);
+    } catch (e) {
+      // Something went wrong. Instead of an endless "Restarting simulation..."
+      // message, show it as an error.
+      // This can happen for example when one of the SVGs cannot be loaded.
+      this.terminal.showError(`failed to refresh schematic: ${e}`);
+      return;
+    }
 
     // Start first compile.
     if (this.apiURL) {
@@ -997,13 +1005,27 @@ async function loadSVG(location) {
       // Load the SVG file.
       // Doing this with XHR because XHR allows setting responseType while the
       // newer fetch API doesn't.
+      // Reject the request on error so that we can at least show something went
+      // wrong in the UI (instead of hanging on "Restarting simulation...").
       let xhr = new XMLHttpRequest();
       xhr.open('GET', location);
       xhr.responseType = 'document';
       xhr.send();
-      xhr.onload = (() => {
+      xhr.onload = () => {
+        if (xhr.status !== 200) {
+          reject(`unexpected HTTP error ${xhr.status} ${xhr.statusText} for URL ${location}`)
+          return;
+        }
+        if (!xhr.response) {
+          // This can happen for example when the response isn't an XML file.
+          reject('no response received when fetching SVG');
+          return;
+        }
         resolve(xhr.response.rootElement);
-      }).bind(this);
+      };
+      xhr.onerror = () => {
+        reject(`unknown error (status ${xhr.status}) while fetching ${location}`);
+      };
     });
   }
   let svg = await requestCache[location];
