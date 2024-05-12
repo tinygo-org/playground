@@ -628,11 +628,11 @@ class Schematic {
   }
 
   // Convert a mouse event into a logical cursor position (in millimeters from
-  // the center of the schematic view).
+  // the center of the schematic view, before translating/scaling).
   cursorPosition(e) {
     let schematicRect = this.simulator.schematicRect;
-    let cursorX = ((e.pageX - schematicRect.left) - schematicRect.width/2) / this.scale / pixelsPerMillimeter;
-    let cursorY = ((e.pageY - schematicRect.top) - schematicRect.height/2) / this.scale / pixelsPerMillimeter;
+    let cursorX = ((e.pageX - schematicRect.left) - schematicRect.width/2) / pixelsPerMillimeter;
+    let cursorY = ((e.pageY - schematicRect.top) - schematicRect.height/2) / pixelsPerMillimeter;
     return [cursorX, cursorY];
   }
 
@@ -643,8 +643,8 @@ class Schematic {
     if (newScale !== this.scale) {
       // Calculate distance between schematic center point and cursor, in
       // pre-scaled millimeters.
-      let cursorDiffX = cursorX * this.scale - this.translateX;
-      let cursorDiffY = cursorY * this.scale - this.translateY;
+      let cursorDiffX = cursorX - this.translateX;
+      let cursorDiffY = cursorY - this.translateY;
       // Calculate the change in distance between the schematic center point and
       // the cursor, before and after zooming.
       let diffX = ((cursorDiffX * this.scale) - (cursorDiffX * newScale)) / this.scale;
@@ -1606,23 +1606,25 @@ document.addEventListener('mousemove', e => {
   if (partMovement) {
     let part = partMovement.part;
     let [cursorX, cursorY] = part.schematic.cursorPosition(e);
-    let changeX = cursorX - partMovement.initialCursorX;
-    let changeY = cursorY - partMovement.initialCursorY;
+    let changeX = (cursorX - partMovement.initialCursorX) / part.schematic.scale;
+    let changeY = (cursorY - partMovement.initialCursorY) / part.schematic.scale;
     part.setPosition(partMovement.initialPositionX+changeX, partMovement.initialPositionY+changeY);
   }
   if (newPart) {
-    let schematicRect = newPart.schematic.simulator.schematicRect;
-    let x = e.pageX - schematicRect.width/2 - schematicRect.x;
-    let y = e.pageY - schematicRect.height/2 - schematicRect.y;
-    newPart.setPosition(x / pixelsPerMillimeter, y / pixelsPerMillimeter);
+    // Follow the mouse position.
+    let schematic = newPart.schematic;
+    let [cursorX, cursorY] = newPart.schematic.cursorPosition(e);
+    let posX = (cursorX - schematic.translateX) / schematic.scale;
+    let posY = (cursorY - schematic.translateY) / schematic.scale;
+    newPart.setPosition(posX, posY);
   }
   if (newWire) {
     newWire.updateToMovement(e.pageX, e.pageY);
   }
   if (schematicPan) {
     let [cursorX, cursorY] = schematicPan.schematic.cursorPosition(e);
-    let translateX = schematicPan.initialTranslateX + (cursorX - schematicPan.initialCursorX) * schematicPan.schematic.scale;
-    let translateY = schematicPan.initialTranslateY + (cursorY - schematicPan.initialCursorY) * schematicPan.schematic.scale;
+    let translateX = schematicPan.initialTranslateX + (cursorX - schematicPan.initialCursorX);
+    let translateY = schematicPan.initialTranslateY + (cursorY - schematicPan.initialCursorY);
     schematicPan.schematic.moveTo(translateX, translateY);
   }
 });
