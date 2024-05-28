@@ -568,6 +568,14 @@ class Schematic {
     for (let config of this.state.wires) {
       let from = this.getPin(config.from);
       let to = this.getPin(config.to);
+      if (!from) {
+        console.error('could not find "from" pin for wire:', config.from);
+        continue;
+      }
+      if (!to) {
+        console.error('could not find "to" pin for wire:', config.to);
+        continue;
+      }
       let wire = new Wire(this, from, to);
       this.wires.push(wire);
       wireGroup.appendChild(wire.line);
