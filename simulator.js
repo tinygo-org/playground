@@ -12,6 +12,9 @@ const pixelsPerMillimeter = 96 / 25.4;
 
 const inputCompileDelay = 1000;
 
+// All the features supported in the 'features' config key.
+const allFeatures = ['zoom', 'pan'];
+
 // Encapsulate a single simulator HTML node. Handles starting/stopping the
 // worker, refresh the schematic as needed, etc.
 class Simulator {
@@ -22,6 +25,7 @@ class Simulator {
     this.firmwareButton = config.firmwareButton;
     this.baseURL = config.baseURL || document.baseURI;
     this.apiURL = config.apiURL;
+    this.features = new Set(config.features || allFeatures);
     this.schematicURL = config.schematicURL || new URL('./worker/webworker.js', this.baseURL);
     this.runnerURL = config.runnerURL || new URL('./worker/runner.js', this.baseURL);
     this.saveState = config.saveState || (() => {});
@@ -179,41 +183,45 @@ class Simulator {
       });
     });
 
-    // Zoom using the scroll wheel.
-    // Disable the default wheel event: this would result in a bounce effect on
-    // Safari and make the scrolling a lot less smooth.
-    // TODO: pinch to zoom? (e.g. with a trackpad)
-    this.schematicElement.addEventListener('wheel', e => {
-      e.preventDefault();
-      let [positionX, positionY] = this.schematic.cursorPosition(e);
-      let factor = 1 + (e.deltaY * -0.0005);
-      this.schematic.zoom(factor, positionX, positionY);
-    }, {passive: false});
+    if (this.features.has('zoom')) {
+      // Zoom using the scroll wheel.
+      // Disable the default wheel event: this would result in a bounce effect
+      // on Safari and make the scrolling a lot less smooth.
+      // TODO: pinch to zoom? (e.g. with a trackpad)
+      this.schematicElement.addEventListener('wheel', e => {
+        e.preventDefault();
+        let [positionX, positionY] = this.schematic.cursorPosition(e);
+        let factor = 1 + (e.deltaY * -0.0005);
+        this.schematic.zoom(factor, positionX, positionY);
+      }, {passive: false});
+    }
 
-    // Pan using the secondary (usually right) mouse button.
-    this.schematicElement.addEventListener('contextmenu', e => {
-      // The default action is a context menu, which we don't want.
-      // Firefox allows overriding this using shift (which is good, we don't
-      // want to prevent the context menu entirely) while Chromium doesn't.
-      e.preventDefault();
-    })
-    this.schematicElement.addEventListener('mousedown', e => {
-      if (e.buttons === 2) {
-        // Secondary button pressed (only). Start panning (dragging).
-        let [cursorX, cursorY] = this.schematic.cursorPosition(e);
-        schematicPan = {
-          schematic: this.schematic,
-          initialCursorX: cursorX,
-          initialCursorY: cursorY,
-          initialTranslateX: this.schematic.translateX,
-          initialTranslateY: this.schematic.translateY,
-        };
-      }
-    })
-    this.schematicElement.addEventListener('mouseup', e => {
-      // Stop panning the schematic (no matter which way it ended).
-      schematicPan = null;
-    })
+    if (this.features.has('pan')) {
+      // Pan using the secondary (usually right) mouse button.
+      this.schematicElement.addEventListener('contextmenu', e => {
+        // The default action is a context menu, which we don't want.
+        // Firefox allows overriding this using shift (which is good, we don't
+        // want to prevent the context menu entirely) while Chromium doesn't.
+        e.preventDefault();
+      })
+      this.schematicElement.addEventListener('mousedown', e => {
+        if (e.buttons === 2) {
+          // Secondary button pressed (only). Start panning (dragging).
+          let [cursorX, cursorY] = this.schematic.cursorPosition(e);
+          schematicPan = {
+            schematic: this.schematic,
+            initialCursorX: cursorX,
+            initialCursorY: cursorY,
+            initialTranslateX: this.schematic.translateX,
+            initialTranslateY: this.schematic.translateY,
+          };
+        }
+      })
+      this.schematicElement.addEventListener('mouseup', e => {
+        // Stop panning the schematic (no matter which way it ended).
+        schematicPan = null;
+      })
+    }
 
     // Listen for keyboard events, to simulate button presses.
     this.schematicElement.addEventListener('keydown', e => {
