@@ -1133,6 +1133,7 @@ class Part {
     this.subparts = {};
     this.pins = {};
     this.parent = parent;
+    this.tooltipPin = null;
   }
 
   // Load the given part and return it (because constructor() can't be async).
@@ -1298,9 +1299,11 @@ class Part {
       // Show a tooltip when hovering over the pin.
       let pinTitle = el.dataset.title || pin.name;
       let removeTooltip = () => {
+        this.tooltipPin = null;
         unhighlightConnection(pin.connected);
       }
       el.addEventListener('mouseenter', e => {
+        this.tooltipPin = pin;
         highlightConnection(pin.connected);
         this.schematic.simulator.tooltip.create(pin, pinTitle, removeTooltip, () => {
           let dotRect = pin.dot.getBoundingClientRect();
@@ -1485,8 +1488,8 @@ class Part {
     this.container.remove();
 
     // Remove a pin tooltip, if it is present.
-    if (this.removeTooltip !== null) {
-      this.removeTooltip();
+    if (this.tooltipPin) {
+      this.schematic.simulator.tooltip.remove(this.tooltipPin);
     }
 
     return message;
