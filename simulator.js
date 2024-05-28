@@ -541,21 +541,29 @@ class Schematic {
 
     // Put SVGs in the schematic.
     this.parts = new Map();
-    let partHeights = [];
+    let hasParts = false;
+    let top = 0;
+    let bottom = 0;
     for (let part of parts) {
       this.addPart(part);
 
-      // Store the height, to calculate the minimum height of the schematic.
-      // Add a spacing of 20px so that the board has a bit of spacing around it.
+      // Calculate the minimum area needed for all the parts in the schematic to
+      // be visible.
+      // Add a spacing of 2.5mm (~10px) so that the board has a bit of spacing
+      // around it.
       if (part.rootElement) {
-        partHeights.push('calc(' + part.height + ' + 20px)');
+        hasParts = true;
+        let height = parseUnitMM(part.height);
+        top    = Math.min(top,    part.data.y-height/2 - 2.5);
+        bottom = Math.max(bottom, part.data.y+height/2 + 2.5);
       }
     }
 
     // Set the height of the schematic.
-    this.root.classList.toggle('no-schematic', partHeights.length === 0);
-    if (partHeights.length) {
-      this.schematic.style.height = 'max(' + partHeights.join(', ') + ')';
+    this.root.classList.toggle('no-schematic', !hasParts);
+    if (hasParts) {
+      let distance = Math.max(bottom*2, -top*2);
+      this.schematic.style.height = distance + 'mm';
     } else {
       this.simulator.root.querySelector('.panel-tab-terminal').click();
     }
@@ -1741,3 +1749,11 @@ document.addEventListener('keydown', e => {
     simulator.worker.postMessage(message);
   }
 });
+
+// Parse CSS unit, and return the value in millimeters.
+function parseUnitMM(value) {
+  if (value.endsWith('mm')) {
+    return parseFloat(value.slice(0, -2));
+  }
+  throw `unknown value: ${value}`;
+}
