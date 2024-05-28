@@ -34,7 +34,7 @@ class Simulator {
     // Initialize root element.
     this.schematicElement = this.root.querySelector('.schematic');
     this.schematicWrapperElement = this.root.querySelector('.schematic-wrapper');
-    this.tooltip = this.root.querySelector('.schematic-tooltip');
+    this.tooltip = new Tooltip(this.root.querySelector('.schematic-tooltip'), this);
     this.#setupRoot();
 
     // Setup input element.
@@ -680,6 +680,8 @@ class Schematic {
         part.calculateWires();
       }
     }
+    // Calculate tooltip location (if visible).
+    this.simulator.tooltip.calculatePosition();
     // Apply new wire locations. This only sets properties, so doesn't cause a
     // reflow.
     for (let part of this.parts.values()) {
@@ -687,6 +689,8 @@ class Schematic {
         part.applyWires();
       }
     }
+    // Update tooltip location (if visible).
+    this.simulator.tooltip.updatePosition();
   }
 
   // Create a 'config' struct with a flattened view of the schematic, to be sent
@@ -978,6 +982,75 @@ class Terminal {
   }
 }
 
+// Tooltip that's shown when hovering over some things (like a pin).
+class Tooltip {
+  constructor(element, simulator) {
+    this.object = null;     // the object for which this tooltip is shown
+    this.element = element; // the tooltip element
+    this.simulator = simulator;
+    this.onremove = null;        // callback to call when the tooltip is hidden (for whatever reason)
+    this.calculateCoords = null; // callback to receive the current tooltip coordinates
+  }
+
+  // Create a new tooltip, or replace an existing one.
+  //
+  //   object: a reference object, used to identify a tooltip for one unique object.
+  //   text: the text contents of the tooltip
+  //   onremove: callback to call when the tooltip is removed.
+  //   calculateCoords: callback to obtain the current tooltip coordinates (returns [x, y]).
+  create(object, text, onremove, calculateCoords) {
+    // Replace previous tooltip, if it exists.
+    if (this.object) {
+      this.remove(this.object);
+    }
+
+    // Set up a new tooltip.
+    this.object = object;
+    this.element.textContent = text;
+    this.calculateCoords = calculateCoords;
+    this.calculatePosition();
+    this.updatePosition();
+    this.element.classList.add('visible');
+    this.onremove = onremove;
+  }
+
+  // Remove a tooltip. The 'object' paramter must be the same that was passed to
+  // 'create'.
+  remove(object) {
+    if (object !== this.object) {
+      // Not the current object (e.g. a new tooltip may be shown before the old
+      // one was removed).
+      return;
+    }
+
+    // Remove the tooltip.
+    this.element.classList.remove('visible');
+    if (this.onremove) {
+      this.onremove();
+      this.onremove = null;
+    }
+    this.calculateCoords = null;
+  }
+
+  // Determine the new location of the tooltip, if there is a visible tooltip.
+  // This may force a layout, but won't affect the DOM.
+  calculatePosition() {
+    if (this.calculateCoords !== null) {
+      [this.top, this.left] = this.calculateCoords();
+    }
+  }
+
+  // Apply previously calculated position (see calculatePosition) to the DOM.
+  // This won't force a layout, it only writes to the DOM.
+  updatePosition() {
+    if (this.calculateCoords !== null) {
+      let schematicRect = this.simulator.schematicRect;
+      this.element.style.top = (this.top - schematicRect.y - 30) + 'px';
+      this.element.style.left = (this.left - schematicRect.x - 11.5) + 'px';
+    }
+  }
+}
+
 // Cached JSON and SVG requests.
 var requestCache = {};
 
@@ -1043,7 +1116,6 @@ class Part {
     this.schematic = schematic;
     this.subparts = {};
     this.pins = {};
-    this.removeTooltip = null;
     this.parent = parent;
   }
 
@@ -1154,7 +1226,6 @@ class Part {
     // Detect pins inside the SVG file. They have an attribute like
     // data-pin="D5".
     let wireGroup = schematic.querySelector('.schematic-wires');
-    let tooltip = this.schematic.simulator.tooltip;
     for (let el of this.rootElement.querySelectorAll('[data-pin]')) {
       if (el.dataset.pin.includes('.')) {
         console.warn('pin name contains dot:', el.dataset.pin);
@@ -1212,24 +1283,17 @@ class Part {
       let pinTitle = el.dataset.title || pin.name;
       let removeTooltip = () => {
         unhighlightConnection(pin.connected);
-        if (tooltip.textContent !== pinTitle) {
-          // Already entered a different pin, ignore.
-          return;
-        }
-        tooltip.classList.remove('visible');
-        this.removeTooltip = null;
       }
       el.addEventListener('mouseenter', e => {
         highlightConnection(pin.connected);
-        tooltip.textContent = pinTitle;
-        let dotRect = pin.dot.getBoundingClientRect();
-        let schematicRect = this.schematic.simulator.schematicRect;
-        tooltip.style.top = (dotRect.y - schematicRect.y - 30) + 'px';
-        tooltip.style.left = (dotRect.x + dotRect.width/2 - schematicRect.x - 11.5) + 'px';
-        tooltip.classList.add('visible');
-        this.removeTooltip = removeTooltip;
+        this.schematic.simulator.tooltip.create(pin, pinTitle, removeTooltip, () => {
+          let dotRect = pin.dot.getBoundingClientRect();
+          return [dotRect.y, dotRect.x + dotRect.width/2];
+        });
       });
-      el.addEventListener('mouseleave', removeTooltip);
+      el.addEventListener('mouseleave', () => {
+        this.schematic.simulator.tooltip.remove(pin);
+      });
     }
 
     // Detect click areas within the SVG file.
