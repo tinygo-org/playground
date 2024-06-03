@@ -1142,6 +1142,9 @@ class Part {
     this.pins = {};
     this.parent = parent;
     this.tooltipPin = null;
+
+    // Update data if needed.
+    data.rotation = data.rotation || 0;
   }
 
   // Load the given part and return it (because constructor() can't be async).
@@ -1401,6 +1404,14 @@ class Part {
     this.applyWires();
   }
 
+  // Rotate the part by the given number of degrees, relative to the center.
+  rotate(angle) {
+    this.data.rotation = (this.data.rotation + angle) % 360;
+    this.updatePosition();
+    this.calculateWires();
+    this.applyWires();
+  }
+
   // Update position according to this.data.x and this.data.y.
   updatePosition() {
     // Set part position relative to the center of the schematic.
@@ -1409,9 +1420,10 @@ class Part {
     let scale = this.schematic.scale;
     let translateX = this.schematic.translateX;
     let translateY = this.schematic.translateY;
-    let x = `calc(${this.data.x*scale}mm - ${this.width} * ${scale/2})`;
-    let y = `calc(${this.data.y*scale}mm - ${this.height} * ${scale/2})`;
-    this.container.style.transform = `translate(${translateX}mm, ${translateY}mm) translate(${x}, ${y})`;
+    let r = this.data.rotation / 180 * Math.PI;
+    let x = `calc(${this.data.x*scale}mm + ${this.width} * ${-Math.cos(r)/2*scale} + ${this.height} * ${Math.sin(r)/2*scale})`;
+    let y = `calc(${this.data.y*scale}mm + ${this.width} * ${-Math.sin(r)/2*scale} + ${this.height} * ${(-Math.cos(r))/2*scale})`;
+    this.container.style.transform = `translate(${translateX}mm, ${translateY}mm) translate(${x}, ${y}) rotate(${this.data.rotation}deg)`;
     this.svgWrapper.style.transform = `scale(${scale})`;
     this.background.style.width = `calc(${this.width} * ${scale})`;
     this.background.style.height = `calc(${this.height} * ${scale})`;
@@ -1758,6 +1770,9 @@ document.addEventListener('keydown', e => {
     selected = null;
     simulator.saveState();
     simulator.worker.postMessage(message);
+  } else if (e.key.toLowerCase() === 'r' && selected) {
+    selected.rotate(e.key === 'r' ? 45 : -45);
+    selected.schematic.simulator.saveState();
   }
 });
 
