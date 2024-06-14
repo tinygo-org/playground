@@ -11,13 +11,8 @@ class Pin {
     this.mode = 'gpio';
   }
 
-  // notifyPart sends a pin update notification to the attached part if the pin
-  // is configured as an input.
+  // notifyPart sends a pin update notification to the attached part.
   notifyPart() {
-    if (this.state === 'low' || this.state === 'high') {
-      // Nothing to notify: can't read the state.
-      return;
-    }
     this.part.notifyPinUpdate(this);
   }
 
@@ -156,10 +151,8 @@ class Part {
   }
 
   // Notify that one of the pins of this part has changed in state.
-  // This can be overridden in subclasses, but the default action is to mark
-  // the part as needing updates.
+  // This can be overridden in subclasses, the default action is to do nothing.
   notifyPinUpdate() {
-    this.notifyUpdate();
   }
 
   // notifyUpdate marks this part as having an update to be sent to the UI.
@@ -198,10 +191,6 @@ class Board extends Part {
     // 3.3V/GND pins for example).
     this.pins['vcc'] = new Pin(config.id + '.vcc', this, 'high');
     this.pins['gnd'] = new Pin(config.id + '.gnd', this, 'low');
-  }
-
-  notifyPinUpdate() {
-    // Nothing to do. Pin changes do not affect the board.
   }
 }
 
@@ -396,6 +385,11 @@ class LED extends Part {
       id: this.id,
       type: 'text',
     };
+    this.notifyUpdate();
+  }
+
+  notifyPinUpdate() {
+    // The LED input pins were changed, so the state _probably_ changed.
     this.notifyUpdate();
   }
 
