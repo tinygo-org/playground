@@ -5,6 +5,8 @@
 
 .simulator {
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 body:not(.vscode) .simulator {
     background: #111;
@@ -14,6 +16,7 @@ body:not(.vscode) .simulator {
     position: relative;
     overflow: hidden;
     width: 100%;
+    flex-grow: 1;
 }
 body:not(.vscode) .simulator .schematic{
     background: #222;
