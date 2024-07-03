@@ -1,2 +1,4 @@
 release.tar.gz
 worker/webworker.bundle.js
+/node_modules
+/resources/editor.bundle.js

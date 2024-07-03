@@ -21,7 +21,7 @@ class Simulator {
   constructor(config) {
     // Store configuration.
     this.root = config.root;
-    this.input = config.input;
+    this.editor = config.editor;
     this.firmwareButton = config.firmwareButton;
     this.baseURL = config.baseURL || document.baseURI;
     this.apiURL = config.apiURL;
@@ -41,9 +41,9 @@ class Simulator {
     this.tooltip = new Tooltip(this.root.querySelector('.schematic-tooltip'), this);
     this.#setupRoot();
 
-    // Setup input element.
-    if (this.input) {
-      this.#setupInput();
+    // Listen to changes from editor.
+    if (this.editor) {
+      this.#setupEditor();
     }
 
     // Make sure the 'download firmware' button works.
@@ -82,68 +82,18 @@ class Simulator {
     }
   }
 
-  // Configure the input, which is a textarea.
-  // It has some small extra features like inserting tabs when pressing enter to
-  // keep on the same column.
-  #setupInput() {
+  // Configure the editor to listen to modifications.
+  #setupEditor() {
+    // Compile the code after a certain delay of inactivity.
     let inputCompileTimeout = null;
-
-    // Get the 'tab' key to work.
-    // This is a possible accessibility issue, but the tab key is kinda
-    // important for a code editor and I'm not sure how to do this otherwise.
-    this.input.addEventListener('keydown', (e) => {
-      if (e.key == 'Tab') {
-        e.preventDefault();
-        insertAtCursor(e.target, '\t');
-      }
-    });
-
-    this.input.addEventListener('input', (e) => {
-      // Insert whitespace at the start of the next line.
-      if (e.inputType == 'insertLineBreak') {
-        // Get the current line.
-        let line = e.target.value.substr(0, e.target.selectionStart).trimRight();
-        if (line.lastIndexOf('\n') >= 0) {
-          line = line.substr(line.lastIndexOf('\n')+1);
-        }
-
-        // Strip comments at the end of the line.
-        // There may be false positives here, for example if a comment contains
-        // the string "//". But it's probably better than not doing this.
-        let commentStart = line.indexOf('//');
-        if (commentStart >= 0) {
-          line = line.substring(0, commentStart).trimRight();
-        }
-
-        // Get the number of tabs at the start of the previous line.
-        let numTabs = 0;
-        for (let i=0; i<line.length; i++) {
-          if (line.substr(i, 1) != '\t') {
-            break;
-          }
-          numTabs++;
-        }
-
-        // Increase the number of tabs if this is the start of a block.
-        if (line.substr(-1, 1) == '{' || line.substr(-1, 1) == '(') {
-          numTabs += 1;
-        }
-
-        // Insert the number of tabs at the current cursor location, which must be
-        // the start of the next line.
-        let insertBefore = '';
-        for (let i=0; i<numTabs; i++) {
-          insertBefore += '\t';
-        }
-        insertAtCursor(this.input, insertBefore);
-      }
-
-      // Compile the code after a certain delay of inactivity.
+    this.editor.setModifyCallback(() => {
+      // This callback is called with every input.
       if (inputCompileTimeout !== null) {
         clearTimeout(inputCompileTimeout);
       }
       inputCompileTimeout = setTimeout(async () => {
-        this.schematic.state.code = this.input.value;
+        inputCompileTimeout = null;
+        this.schematic.state.code = this.editor.text();
         this.saveState();
         await this.refresh();
         this.#runWithAPI();
@@ -166,7 +116,7 @@ class Simulator {
     let input = document.createElement('input');
     input.setAttribute('type', 'hidden');
     input.setAttribute('name', 'code');
-    input.value = this.input.value;
+    input.value = this.editor.text();
     form.appendChild(input);
     document.body.appendChild(form);
     form.submit();
@@ -423,7 +373,7 @@ class Simulator {
     this.run({
       url: `${this.apiURL}/compile?compiler=${compiler}&format=wasi&target=${this.schematic.parts.get('main').config.name}`,
       method: 'POST',
-      body: this.input.value,
+      body: this.editor.text(),
     });
   }
 
@@ -1682,18 +1632,6 @@ class Wire {
       wires: [{from: this.from.id, to: this.to.id}],
     };
   }
-}
-
-// Insert text at the cursor location.
-function insertAtCursor (input, textToInsert) {
-  const start = input.selectionStart;
-  input.setRangeText(textToInsert);
-
-  // Update the cursor to be at the end of the insertion (not at the beginning).
-  input.selectionStart = input.selectionEnd = start + textToInsert.length;
-
-  // Notify that the contents of the textarea have changed.
-  input.dispatchEvent(new Event('input'));
 }
 
 // Code to handle dragging of parts and creating of wires.

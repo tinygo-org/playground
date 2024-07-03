@@ -12,6 +12,7 @@
     <link rel="icon" type="image/png" href="resources/favicon-32x32.png" sizes="32x32"/>
     <script type="module" src="dashboard.js"></script>
     <script src="resources/bootstrap-5.3.3.bundle.min.js" defer></script>
+    <link rel="modulepreload" href="resources/editor.bundle.min.js"/>
   </head>
   <body>
     <header>
@@ -29,7 +30,7 @@
       <button type="button" id="btn-about" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#aboutModal">About</button>
     </header>
     <div id="middle">
-      <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" disabled>Loading...</textarea>
+      <div id="editor"></div>
       <div id="output" class="simulator">
         <div class="schematic-buttons">
           <button class="schematic-button-pause schematic-button" title="Pause/resume the simulation">

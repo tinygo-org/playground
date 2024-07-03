@@ -1,5 +1,6 @@
 import { Simulator } from './simulator.js';
 import { boards } from './boards.js';
+import { Editor } from './resources/editor.bundle.min.js';
 
 // This file controls the entire playground window, except for the output part
 // on the right that is shared with the VS Code extension.
@@ -11,6 +12,7 @@ var db = null;
 const defaultProjectName = 'console';
 
 let simulator = null;
+let editor = null;
 
 // updateBoards updates the dropdown menu. This must be done after loading the
 // boards or updating the target selection.
@@ -129,7 +131,7 @@ async function updateBoards() {
 // setProject updates the current project to the new project name.
 async function setProject(name) {
   if (project && project.created) {
-    saveProject(project, document.querySelector('#input').value);
+    saveProject(project, editor.text());
   }
   project = await loadProject(name);
   if (!project) {
@@ -137,15 +139,14 @@ async function setProject(name) {
     project = await loadProject(defaultProjectName);
   }
   updateBoards();
-  let input = document.querySelector('#input');
-  input.value = project.code;
+  editor.setText(project.code);
 
   // Load simulator if not already done so (it must only happen once).
   if (!simulator) {
     let root = document.querySelector('#output');
     simulator = new Simulator({
       root: root,
-      input: document.querySelector('#input'),
+      editor: editor,
       firmwareButton: document.querySelector('#btn-flash'),
       apiURL: API_URL,
       saveState: () => {
@@ -160,9 +161,6 @@ async function setProject(name) {
 
   // Load the same project on a reload.
   localStorage.tinygo_playground_projectName = name;
-
-  // Enable the editor (it is diabled on first load).
-  input.disabled = false;
 }
 
 // getProjects returns the complete list of project objects from the projects
@@ -280,6 +278,9 @@ function loadDB() {
 
 // Initialize the playground.
 document.addEventListener('DOMContentLoaded', async function(e) {
+  // Create the editor.
+  editor = new Editor(document.getElementById("editor"));
+
   // Start loading everything.
   let dbPromise = loadDB();
 
