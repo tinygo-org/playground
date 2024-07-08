@@ -71,7 +71,11 @@ async function startRunner(sourceData, postMessage) {
           // this to be sure.
           text = `Could not request compiled WebAssembly module: no response received (status: ${source.status} ${source.statusText})`;
         }
-        sendError(text);
+        postMessage({
+          type: 'error',
+          source: 'compiler',
+          message: text,
+        })
       });
       return;
     }

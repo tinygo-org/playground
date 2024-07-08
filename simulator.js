@@ -417,6 +417,10 @@ class Simulator {
       worker.postMessage({
           type: 'getUpdate',
       });
+      // Clear diagnostics left over from a previous compile.
+      if (this.editor) {
+        this.editor.setDiagnostics([]);
+      }
     } else if (msg.type === 'started') {
       // WebAssembly code was loaded and will start now.
       this.schematic.root.classList.remove('compiling');
@@ -453,6 +457,11 @@ class Simulator {
       // There was an error. Terminate the worker, it has no more work to do.
       this.#stopWorker();
       this.terminal.showError(msg.message);
+      if (msg.source === 'compiler') {
+        if (this.editor) {
+          this.editor.setDiagnostics(parseCompilerErrors(msg.message));
+        }
+      }
     } else {
       console.warn('unknown worker message:', msg.type, msg);
     }
@@ -1720,4 +1729,25 @@ function parseUnitMM(value) {
     return parseFloat(value.slice(0, -2));
   }
   throw `unknown value: ${value}`;
+}
+
+// Parse compiler errors from the Go (or TinyGo) compiler and convert them to an
+// array of diagnostics ready to give to the editor.
+function parseCompilerErrors(message) {
+  let diagnostics = [];
+  let re = new RegExp("^main\.go:([0-9]+)(:([0-9]+))?: (.*)$")
+  let lines = message.split('\n');
+  for (let line of lines) {
+    let result = re.exec(line);
+    if (result === null) {
+      continue;
+    }
+    diagnostics.push({
+      line: parseInt(result[1]),
+      col: result[3] ? parseInt(result[3]) : 0,
+      severity: 'error',
+      message: result[4],
+    })
+  }
+  return diagnostics;
 }

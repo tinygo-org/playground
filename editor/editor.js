@@ -1,8 +1,9 @@
 import { EditorState, Compartment } from '@codemirror/state';
 import { history, defaultKeymap, historyKeymap } from '@codemirror/commands';
-import { indentUnit, bracketMatching, syntaxHighlighting, defaultHighlightStyle, HighlightStyle } from '@codemirror/language';
+import { indentUnit, bracketMatching, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { closeBrackets } from '@codemirror/autocomplete';
 import { lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, highlightActiveLine, keymap, EditorView } from '@codemirror/view';
+import { lintGutter, setDiagnostics } from '@codemirror/lint';
 
 import { oneDark } from "@codemirror/theme-one-dark";
 import { tango } from "./tango.js";
@@ -60,6 +61,9 @@ export class Editor {
     } else {
       this.view.setState(editorState);
     }
+
+    // Clear the existing diagnostics.
+    this.setDiagnostics([]);
   }
 
   #createEditorState(initialContents) {
@@ -87,6 +91,7 @@ export class Editor {
         ...historyKeymap,
       ]),
       go(),
+      lintGutter(),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       this.themeConfig.of(this.#getDarkStyle(this.darkMode)),
     ];
@@ -131,5 +136,61 @@ export class Editor {
         effects: this.themeConfig.reconfigure(this.#getDarkStyle(dark)),
       })
     }
+  }
+
+  // Set the current diagnostics in the editor.
+  // The format is:
+  //
+  //   {
+  //     line: ...,
+  //     col: ...,
+  //     message: "...",
+  //     severity: "...",
+  //   }
+  setDiagnostics(diagnostics) {
+    this.view.dispatch(setDiagnostics(this.view.state, this.#convertDiagnostics(diagnostics)));
+  }
+
+  // Convert diagnostics from line+column to index-based.
+  #convertDiagnostics(diagnostics) {
+    if (diagnostics.length === 0) {
+      return [];
+    }
+    let result = [];
+    // Iterate over all lines in the editor.
+    // TODO: there's a race condition here. If the editor contents changed
+    // between starting the compile and getting the results, some errors may be
+    // at the wrong location.
+    // In practice this might not happen because the compile is cancelled and
+    // restarted when the editor changes.
+    let lines = this.text().split('\n');
+    let index = 0;
+    let firstDiagnostic = 0;
+    for (let linenum = 0; linenum < lines.length; linenum++) {
+      let line = lines[linenum];
+      for (let i=firstDiagnostic; i<diagnostics.length; i++) {
+        let diag = diagnostics[i];
+        if (diag.line > linenum+1) {
+          break;
+        }
+        firstDiagnostic = i+1;
+
+        // Convert line+col based diagnostic into index-based diagnostic.
+        let from = index + diag.col - 1;
+        let to   = index + diag.col - 1;
+        if (diag.col <= 0) {
+          from = index;
+          to   = index + line.length;
+        }
+        result.push({
+          from: from,
+          to: to,
+          severity: diag.severity,
+          message: diag.message,
+        })
+      }
+      index += line.length + 1;
+    }
+    return result;
   }
 }

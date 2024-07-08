@@ -124,7 +124,7 @@ func (job compilerJob) Run() error {
 	if err != nil {
 		return err
 	}
-	if _, err := infile.Write([]byte("//line main.go:1\n")); err != nil {
+	if _, err := infile.Write([]byte("//line main.go:1:1\n")); err != nil {
 		return err
 	}
 	if _, err := infile.Write(job.Source); err != nil {
