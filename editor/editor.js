@@ -76,6 +76,7 @@ export class Editor {
           this.modifyCallback();
         }
       }),
+      lintGutter(),
       lineNumbers(),
       highlightActiveLineGutter(),
       highlightSpecialChars(),
@@ -91,7 +92,6 @@ export class Editor {
         ...historyKeymap,
       ]),
       go(),
-      lintGutter(),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       this.themeConfig.of(this.#getDarkStyle(this.darkMode)),
     ];
