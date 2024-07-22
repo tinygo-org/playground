@@ -8,18 +8,12 @@
     display: flex;
     flex-direction: column;
 }
-body:not(.vscode) .simulator {
-    background: #111;
-}
 
 .simulator .schematic {
     position: relative;
     overflow: hidden;
     width: 100%;
     flex-grow: 1;
-}
-body:not(.vscode) .simulator .schematic{
-    background: #222;
 }
 .simulator.compiling .schematic {
     opacity: 0.7;
@@ -135,67 +129,7 @@ body:not(.vscode) .simulator .schematic{
     background: var(--vscode-editorHoverWidget-background, #252526);
 }
 
-/* Panels */
-
-.simulator .panels {
-    border-top: 1px solid var(--vscode-terminal-border);
-    display: flex;
-    flex-direction: column;
-}
-.simulator.no-schematic .panels {
-    flex-grow: 1;
-}
-
-/* Tab bar */
-
-.simulator .tabbar {
-    padding: 0 10px;
-    display: flex;
-    flex: 0 0;
-}
-
-.simulator .tabbar > .tab {
-    padding: 4px 12px 3px;
-    cursor: pointer;
-}
-.simulator .tabbar > .tab a {
-    text-transform: uppercase;
-    font-size: 11px;
-    color: var(--vscode-panelTitle-inactiveForeground, rgba(231, 231, 231, 0.6));
-    line-height: 27px;
-    outline: 0;
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-}
-.simulator .tabbar > .tab.active a {
-    border-bottom-color: var(--vscode-panelTitle-activeBorder, #e7e7e7);
-    color: var(--vscode-panelTitle-activeForeground, #e7e7e7);
-    display: inline-block;
-}
-.simulator .tabbar > .tab:hover a {
-    color: var(--vscode-panelTitle-activeForeground, #e7e7e7) !important;
-}
-
-.simulator .tabcontent {
-    color: var(--vscode-terminal-foreground, white);
-    flex: 1 0;
-    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
-    height:     calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
-}
-
-.simulator .tabcontent:not(.active) {
-    display: none !important;
-}
-
-.simulator.no-schematic .tab:not(.panel-tab-terminal) {
-    display: none;
-}
-
 /* Terminal at the bottom of the screen */
-
-.simulator .terminal-box {
-    display: flex;
-}
 
 .simulator .terminal {
     width: 100%;
@@ -204,9 +138,7 @@ body:not(.vscode) .simulator .schematic{
     resize: none;
     padding: 0 20px;
     border: 0;
-    outline: 0;
     background: transparent;
-    color: var(--vscode-terminal-foreground, white);
     font-family: var(--vscode-editor-font-family, monospace);
 }
 .simulator .terminal::selection {
@@ -261,24 +193,4 @@ body:not(.vscode) .simulator .schematic{
     border: 0;
     width: 10mm;
     height: 10mm;
-}
-
-.simulator .panel-add select {
-    /* Not exactly the same as in VSCode but close enough */
-    background-color: var(--vscode-settings-dropdownBackground, #3c3c3c);
-    border: 1px solid var(--vscode-settings-dropdownBorder, #3c3c3c);
-    color: var(--vscode-settings-dropdownForeground, inherit);
-    padding: 2px 8px;
-}
-
-.simulator .panel-add button {
-    display: inline-block;
-    border: 0px;
-    padding: 2px 14px;
-    color: var(--vscode-button-foreground, inherit);
-    background: var(--vscode-button-background, #0e639c);
-    font-size: 13px;
-}
-.simulator .panel-add button:hover {
-    background: var(--vscode-button-hoverBackground, #1177bb);
 }

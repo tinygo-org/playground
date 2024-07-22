@@ -189,6 +189,7 @@ class Simulator {
     this.terminal = new Terminal(this.root.querySelector('.terminal'));
 
     // Switch active panel tab on click of a tab title.
+    // This is only for the vscode theme.
     let tabs = this.root.querySelectorAll('.panels > .tabbar > .tab');
     for (let i=0; i<tabs.length; i++) {
       let tab = tabs[i];
@@ -256,7 +257,7 @@ class Simulator {
       // Options, such as color.
       let optionsDiv = document.createElement('div');
       for (let [optionKey, optionValues] of Object.entries(part.options || {})) {
-        let select = document.createElement('select');
+        let select = this.root.querySelector('.templates > .panel-add-select').cloneNode(true);
         for (let [name, value] of Object.entries(optionValues)) {
           if (!(optionKey in config)) {
             // First option, add it to the config object as default.
@@ -278,8 +279,7 @@ class Simulator {
 
       // Button to add the part to the schematic.
       let buttonDiv = document.createElement('div');
-      let button = document.createElement('button');
-      button.textContent = 'Add';
+      let button = this.root.querySelector('.templates > .panel-add-button').cloneNode(true);
       buttonDiv.appendChild(button);
       panel.appendChild(buttonDiv);
 
