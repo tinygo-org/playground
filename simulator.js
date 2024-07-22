@@ -71,6 +71,7 @@ class Simulator {
       // Something went wrong. Instead of an endless "Restarting simulation..."
       // message, show it as an error.
       // This can happen for example when one of the SVGs cannot be loaded.
+      console.error(e);
       this.terminal.showError(`failed to refresh schematic: ${e}`);
       return;
     }
