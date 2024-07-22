@@ -33,7 +33,7 @@ class Simulator {
     // Initialize member variables.
     this.worker = null;
     this.workerUpdate = null;
-    this.schematicRect = null;
+    this._schematicRect = null;
 
     // Initialize root element.
     this.schematicElement = this.root.querySelector('.schematic');
@@ -81,6 +81,15 @@ class Simulator {
       // Run the code in a web worker.
       this.#runWithAPI();
     }
+  }
+
+  // Return getBoundingClientRect for schematicElement. The value is cached and
+  // cleared when scrolling (to make sure it is always up-to-date).
+  get schematicRect() {
+    if (this._schematicRect === null) {
+      this._schematicRect = this.schematicElement.getBoundingClientRect();
+    }
+    return this._schematicRect;
   }
 
   // Configure the editor to listen to modifications.
@@ -209,6 +218,11 @@ class Simulator {
 
     window.addEventListener('load', () => this.fixPartsLocation());
     window.addEventListener('resize', () => this.fixPartsLocation());
+    window.addEventListener('scroll', () => {
+      // Note: this is a passive event so that it won't reduce scrolling
+      // performance.
+      this._schematicRect = null;
+    }, {passive: true});
   }
 
   // Initialize the parts panel at the bottom, from where new parts can be
@@ -322,7 +336,7 @@ class Simulator {
   // It might be possible to remove this code once this bug is fixed.
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1747238
   fixPartsLocation() {
-    this.schematicRect = this.schematicElement.getBoundingClientRect();
+    this._schematicRect = this.schematicElement.getBoundingClientRect();
     this.schematicWrapperElement.style.transform = `translate(${this.schematicRect.width/2}px, ${this.schematicRect.height/2}px)`;
   }
 
@@ -615,8 +629,8 @@ class Schematic {
   // the center of the schematic view, before translating/scaling).
   cursorPosition(e) {
     let schematicRect = this.simulator.schematicRect;
-    let cursorX = ((e.pageX - schematicRect.left) - schematicRect.width/2) / pixelsPerMillimeter;
-    let cursorY = ((e.pageY - schematicRect.top) - schematicRect.height/2) / pixelsPerMillimeter;
+    let cursorX = ((e.clientX - schematicRect.left) - schematicRect.width/2) / pixelsPerMillimeter;
+    let cursorY = ((e.clientY - schematicRect.top) - schematicRect.height/2) / pixelsPerMillimeter;
     return [cursorX, cursorY];
   }
 
