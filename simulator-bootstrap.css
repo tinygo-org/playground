@@ -22,8 +22,8 @@
 
 .simulator .tab-pane {
     box-sizing: content-box;
-    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
-    height:     calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
+    min-height: calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
+    height:     calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
     padding-top: 8px;
     margin-bottom: 0;
     border: 0;

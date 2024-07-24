@@ -82,7 +82,8 @@ body {
 header {
 	display: flex;
 	align-items: center;
-	border-bottom: 1px solid #aaa;
+	border-bottom: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-panel-background);
 }
 
 
@@ -105,7 +106,11 @@ body {
 	font-size: 14px;
 }
 #editor > .cm-editor {
+	background-color: var(--vscode-editor-background);
 	flex: 1 0 0;
+}
+#editor .cm-gutters {
+	background-color: inherit;
 }
 
 .schematic {

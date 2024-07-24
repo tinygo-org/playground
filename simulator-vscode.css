@@ -1,14 +1,16 @@
 body:not(.vscode) .simulator {
-    background: #111;
+    background: light-dark(#f8f8f8, #181818);
+    border-left: 1px solid var(--vscode-panel-border);
 }
 
 body:not(.vscode) .simulator .schematic {
-    background: #222;
+    background: var(--vscode-editor-background);
 }
 
 /* Panels */
 
 .simulator .panels {
+    border-top: 1px solid var(--vscode-panel-border);
     display: flex;
     flex-direction: column;
 }
@@ -17,10 +19,6 @@ body:not(.vscode) .simulator .schematic {
 }
 
 /* Tab bar */
-
-.simulator .panel-tabs {
-    border-top: 1px solid var(--vscode-terminal-border);
-}
 
 .simulator .tabbar {
     padding: 0 10px;
@@ -35,26 +33,26 @@ body:not(.vscode) .simulator .schematic {
 .simulator .tabbar > .tab a {
     text-transform: uppercase;
     font-size: 11px;
-    color: var(--vscode-panelTitle-inactiveForeground, rgba(231, 231, 231, 0.6));
+    color: var(--vscode-panelTitle-inactiveForeground);
     line-height: 27px;
     outline: 0;
     text-decoration: none;
     border-bottom: 1px solid transparent;
 }
 .simulator .tabbar > .tab.active a {
-    border-bottom-color: var(--vscode-panelTitle-activeBorder, #e7e7e7);
-    color: var(--vscode-panelTitle-activeForeground, #e7e7e7);
+    border-bottom-color: var(--vscode-panelTitle-activeBorder);
+    color: var(--vscode-panelTitle-activeForeground);
     display: inline-block;
 }
 .simulator .tabbar > .tab:hover a {
-    color: var(--vscode-panelTitle-activeForeground, #e7e7e7) !important;
+    color: var(--vscode-panelTitle-activeForeground) !important;
 }
 
 .simulator .tabcontent {
-    color: var(--vscode-terminal-foreground, white);
+    color: var(--vscode-terminal-foreground);
     flex: 1 0;
-    min-height: calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
-    height:     calc((var(--vscode-editor-font-size, 13px) + 5px) * 10); /* 10 terminal lines */
+    min-height: calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
+    height:     calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
 }
 
 .simulator .tabcontent:not(.active) {
@@ -73,16 +71,16 @@ body:not(.vscode) .simulator .schematic {
 
 .simulator .terminal {
     outline: 0;
-    color: var(--vscode-terminal-foreground, white);
+    color: var(--vscode-terminal-foreground);
 }
 
 /* Add parts tab */
 
 .simulator .panel-add select {
     /* Not exactly the same as in VSCode but close enough */
-    background-color: var(--vscode-settings-dropdownBackground, #3c3c3c);
-    border: 1px solid var(--vscode-settings-dropdownBorder, #3c3c3c);
-    color: var(--vscode-settings-dropdownForeground, inherit);
+    background-color: var(--vscode-settings-dropdownBackground);
+    border: 1px solid var(--vscode-settings-dropdownBorder);
+    color: var(--vscode-settings-dropdownForeground);
     padding: 2px 8px;
 }
 
@@ -90,12 +88,12 @@ body:not(.vscode) .simulator .schematic {
     display: inline-block;
     border: 0px;
     padding: 2px 14px;
-    color: var(--vscode-button-foreground, inherit);
-    background: var(--vscode-button-background, #0e639c);
+    color: var(--vscode-button-foreground);
+    background: var(--vscode-button-background);
     font-size: 13px;
 }
 .simulator .panel-add button:hover {
-    background: var(--vscode-button-hoverBackground, #1177bb);
+    background: var(--vscode-button-hoverBackground);
 }
 
 /* Templates should be hidden */

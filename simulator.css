@@ -1,6 +1,56 @@
 /* CSS file for the 'output' part: the entire webview in VSCode or the right hand
  * side of the webpage on play.tinygo.org. */
 
+/* TODO: complete split between Bootstrap and VSCode styles, and move this to
+ * simulator-vscode.css */
+body:not(.vscode) {
+    --vscode-button-background: #005fb8;
+    --vscode-button-foreground: #fff;
+    --vscode-button-hoverBackground: #0258a8;
+    --vscode-editor-background: #fff;
+    --vscode-editor-font-family: monospace;
+    --vscode-editor-font-size: 13px;
+    --vscode-editorHoverWidget-background: #f8f8f8;
+    --vscode-editorHoverWidget-border: #c8c8c8;
+    --vscode-editorHoverWidget-foreground: #3b3b3b;
+    --vscode-panelTitle-activeBorder: #005fb8;
+    --vscode-panelTitle-activeForeground: #3b3b3b;
+    --vscode-panelTitle-inactiveForeground: #3b3b3b;
+    --vscode-settings-dropdownBackground: #fff;
+    --vscode-settings-dropdownBorder: #c3c3c3;
+    --vscode-settings-dropdownForeground: #3b3b3b;
+    --vscode-terminal-ansiBrightRed: #cd3131;
+    --vscode-panel-background: #f8f8f8;
+    --vscode-panel-border: #e5e5e5;
+    --vscode-terminal-foreground: #3b3b3b;
+    --vscode-terminal-selectionBackground: #add6ff;
+    --vscode-widget-shadow: rgba(0, 0, 0, 0.16);
+}
+/* We should use light-dark(...) but it's not well supported in Safari yet as of
+ * 2024. */
+@media (prefers-color-scheme: dark) {
+    body:not(.vscode) {
+        --vscode-button-background: #0e639c;
+        --vscode-button-hoverBackground: #1177bb;
+        --vscode-editor-background: #1f1f1f;
+        --vscode-editorHoverWidget-background: #252526;
+        --vscode-editorHoverWidget-border: #454545;
+        --vscode-editorHoverWidget-foreground: #cccccc;
+        --vscode-panelTitle-activeBorder: #e7e7e7;
+        --vscode-panelTitle-activeForeground: #e7e7e7;
+        --vscode-panelTitle-inactiveForeground: rgba(231, 231, 231, 0.6);
+        --vscode-settings-dropdownBackground: #3c3c3c;
+        --vscode-settings-dropdownBorder: #3c3c3c;
+        --vscode-settings-dropdownForeground: inherit;
+        --vscode-terminal-ansiBrightRed: #f55;
+        --vscode-panel-background: #181818;
+        --vscode-panel-border: #2b2b2b;
+        --vscode-terminal-foreground: white;
+        --vscode-terminal-selectionBackground: rgba(255, 255, 255, 0.3);
+        --vscode-widget-shadow: rgb(0 0 0 / 36%);
+    }
+}
+
 /* Area at the top with all the devices */
 
 .simulator {
@@ -106,12 +156,12 @@
 /* Tooltip for pin names */
 .simulator .schematic-tooltip {
     position: absolute;
-    border: 1px solid var(--vscode-editorHoverWidget-border, #454545);
+    border: 1px solid var(--vscode-editorHoverWidget-border);
     padding: 2px 8px;
     font-size: 12px;
-    color: var(--vscode-editorHoverWidget-foreground, #cccccc);
-    background: var(--vscode-editorHoverWidget-background, #252526);
-    box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgb(0 0 0 / 36%));
+    color: var(--vscode-editorHoverWidget-foreground);
+    background: var(--vscode-editorHoverWidget-background);
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow);
     pointer-events: none;
 }
 .simulator .schematic-tooltip:not(.visible) {
@@ -124,28 +174,28 @@
     width: 5px;
     height: 5px;
     transform: rotate(45deg);
-    border: solid var(--vscode-editorHoverWidget-border, #454545);
+    border: solid var(--vscode-editorHoverWidget-border);
     border-width: 0px 1px 1px 0px;
-    background: var(--vscode-editorHoverWidget-background, #252526);
+    background: var(--vscode-editorHoverWidget-background);
 }
 
 /* Terminal at the bottom of the screen */
 
 .simulator .terminal {
     width: 100%;
-    line-height: calc(var(--vscode-editor-font-size, 13px) + 5px);
-    font-size: var(--vscode-editor-font-size, 13px);
+    line-height: calc(var(--vscode-editor-font-size) + 5px);
+    font-size: var(--vscode-editor-font-size);
     resize: none;
     padding: 0 20px;
     border: 0;
     background: transparent;
-    font-family: var(--vscode-editor-font-family, monospace);
+    font-family: var(--vscode-editor-font-family);
 }
 .simulator .terminal::selection {
-    background: var(--vscode-terminal-selectionBackground, rgba(255, 255, 255, 0.3));
+    background: var(--vscode-terminal-selectionBackground);
 }
 .simulator .terminal.error {
-    color: var(--vscode-terminal-ansiBrightRed, #f55);
+    color: var(--vscode-terminal-ansiBrightRed);
 }
 
 /* Properties tab at the bottom */
