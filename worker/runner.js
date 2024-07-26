@@ -127,7 +127,7 @@ class Runner {
     //   every message to the schematic worker increments it, the schematic
     //   worker decrements it when completing something, and before reading any
     //   shared state the runner waits for it to reach zero.
-    // - index 1: 'speed' state (0 when sleeping, 1 when running).
+    // - index 1: 'speed' state (0 when paused, 1 when running).
     // - index 2..256: pin state for pins 0..254.
     const dataBufferLength = (1 + 1 + 255) * 4;
     if (crossOriginIsolated) {
@@ -141,6 +141,7 @@ class Runner {
     this.reinterpretBuf = new DataView(new ArrayBuffer(8));
     this.ws2812Buffers = {};
     this.simulatorExit = {}; // sentinel error value to raise when exiting
+    this.sleeping = false; // whether we're currently in a time.Sleep delay
   }
 
   // Load response and prepare runner, but don't run any code yet.
@@ -266,7 +267,14 @@ class Runner {
           this.clock.now() - this._timeOrigin,
         'runtime.sleepTicks': (timeout) => {
           this.flushAsyncOperations();
-          this.clock.setTimeout(this._inst.exports.go_scheduler, timeout)
+          this.sleeping = true;
+          this.clock.setTimeout(() => {
+              this.sleeping = false;
+              this._inst.exports.go_scheduler();
+              if (!this.sleeping) {
+                this.postMessage({type: 'exited'});
+              }
+            }, timeout);
         },
         'syscall/js.finalizeRef': () =>
           console.error('js.finalizeRef is not supported'),
@@ -403,6 +411,9 @@ class Runner {
   // Start running the code.
   run() {
     this._inst.exports._start();
+    if (!this.sleeping) {
+      this.postMessage({type: 'exited'});
+    }
   }
 
   envMem() {

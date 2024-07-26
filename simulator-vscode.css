@@ -1,21 +1,19 @@
-body:not(.vscode) .simulator {
-    background: light-dark(#f8f8f8, #181818);
-    border-left: 1px solid var(--vscode-panel-border);
-}
-
-body:not(.vscode) .simulator .schematic {
-    background: var(--vscode-editor-background);
+.simulator {
+    --terminal-font-size: var(--vscode-editor-font-size, 13px);
+    --terminal-line-height: calc(var(--terminal-font-size) + 5px);
 }
 
 /* Panels */
 
 .simulator .panels {
+    background: var(--vscode-panel-background);
     border-top: 1px solid var(--vscode-panel-border);
     display: flex;
     flex-direction: column;
 }
 .simulator.no-schematic .panels {
     flex-grow: 1;
+    border-top: none;
 }
 
 /* Tab bar */
@@ -50,7 +48,6 @@ body:not(.vscode) .simulator .schematic {
 
 .simulator .tabcontent {
     color: var(--vscode-terminal-foreground);
-    flex: 1 0;
     min-height: calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
     height:     calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
 }
@@ -72,6 +69,15 @@ body:not(.vscode) .simulator .schematic {
 .simulator .terminal {
     outline: 0;
     color: var(--vscode-terminal-foreground);
+}
+.simulator .terminal::selection {
+    background: var(--vscode-terminal-selectionBackground);
+}
+.simulator .terminal > .message.info {
+    color: #888;
+}
+.simulator .terminal > .message.error {
+    color: var(--vscode-terminal-ansiBrightRed);
 }
 
 /* Add parts tab */

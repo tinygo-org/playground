@@ -72,7 +72,7 @@ class Simulator {
       // message, show it as an error.
       // This can happen for example when one of the SVGs cannot be loaded.
       console.error(e);
-      this.terminal.showError(`failed to refresh schematic: ${e}`);
+      this.terminal.appendError(`failed to refresh schematic: ${e}`);
       return;
     }
 
@@ -408,7 +408,7 @@ class Simulator {
   // Show a compiler error. This can be called instead of run() to show the
   // compiler error in the output view.
   showCompilerError(msg) {
-    this.terminal.showError(msg);
+    this.terminal.appendError(msg);
   }
 
   #workerMessage(worker, msg) {
@@ -441,12 +441,12 @@ class Simulator {
       this.schematic.root.classList.remove('compiling');
       this.terminal.clear('Running...');
     } else if (msg.type === 'exited') {
-      // TODO: show this in the terminal even when there is some output.
-      let text = 'Exited.';
-      if (msg.exitCode !== 0) {
-        text = `Exited (exitcode: ${msg.exitCode}).`;
+      // Signal to the user that the program has exited.
+      let text = 'Exited';
+      if (msg.exitCode) {
+        text = `Exited (exitcode: ${msg.exitCode})`;
       }
-      this.terminal.setPlaceholder(text);
+      this.terminal.appendMessage(text);
     } else if (msg.type == 'notifyUpdate') {
       // The web worker is signalling that there are updates.
       // It won't repeat this message until the updates have been read using
@@ -471,12 +471,14 @@ class Simulator {
     } else if (msg.type == 'error') {
       // There was an error. Terminate the worker, it has no more work to do.
       this.#stopWorker();
-      this.terminal.showError(msg.message);
+      this.terminal.appendError(msg.message);
       if (msg.source === 'compiler') {
         if (this.editor) {
           this.editor.setDiagnostics(parseCompilerErrors(msg.message));
         }
       }
+    } else if (msg.type === 'stdout') {
+      this.terminal.write(msg.data);
     } else {
       console.warn('unknown worker message:', msg.type, msg);
     }
@@ -810,11 +812,6 @@ class Schematic {
         part.rootElement.style.setProperty('--' + key, value);
       }
 
-      // Main MCU that prints some text.
-      if (update.logText) {
-        this.simulator.terminal.log(update.logText);
-      }
-
       // Update the properties panel at the bottom if needed.
       // TODO: use IntersectionObserver to only update these properties when
       // visible! That should reduce CPU usage for fast-changing properties.
@@ -921,61 +918,99 @@ function unhighlightConnection(pins) {
 
 // Terminal at the bottom of the screen.
 class Terminal {
-  constructor(textarea) {
-    this.textarea = textarea;
-    this.observer = new IntersectionObserver(this.intersectionChange.bind(this));
-    this.observer.observe(this.textarea);
+  // Maximum number of lines in the terminal. Lines will be removed when going
+  // beyond this.
+  MAX_LINES = 1000;
+
+  constructor(parent) {
+    this.parent = parent;
+    this.observer = new IntersectionObserver(this.#intersectionChange.bind(this));
+    this.observer.observe(this.parent);
+    this.parent.addEventListener('scroll', e => {
+      // Update stick-to-bottom property on scroll.
+      if (this.isVisible) {
+        let distanceFromBottom = this.parent.scrollHeight - this.parent.scrollTop - this.parent.clientHeight;
+        this.stuckToBottom = distanceFromBottom < 2;
+      }
+    });
     this.isVisible = true;
-    this.text = '';
+    this.stuckToBottom = true;
+    this.lineText = '';
+    this.line = null;
+    this.lines = [];
   }
 
-  intersectionChange(entries) {
+  #intersectionChange(entries) {
     let isVisible = entries[0].isIntersecting;
     if (isVisible && !this.isVisible) {
-      // Textarea became visible, so update its contents.
-      this.updateText();
+      // Terminal became visible, so scroll to the bottom if needed.
+      if (this.stuckToBottom) {
+        this.parent.scrollTop = this.parent.scrollHeight;
+      }
     }
     this.isVisible = isVisible;
   }
 
-  // Change the terminal to show the given error message, in red.
-  showError(message) {
-    this.textarea.placeholder = '';
-    this.text = message;
-    this.textarea.value = message;
-    this.textarea.classList.add('error');
+  // Clear any existing content from the terminal (including a possible error
+  // message) and insert the given message.
+  clear(message) {
+    for (let line of this.lines) {
+      line.remove();
+    }
+    this.line = null;
+    this.appendMessage(message);
   }
 
-  // clear any existing content from the terminal (including a possible error
-  // message) and set the given placeholder.
-  clear(placeholder) {
-    this.setPlaceholder(placeholder);
-    this.text = '';
-    this.textarea.value = '';
-    this.textarea.classList.remove('error');
+  // Append the given error message to the terminal.
+  appendError(message) {
+    this.appendMessage(message, 'error');
   }
 
-  // Update the placeholder but don't change the contents of the terminal.
-  setPlaceholder(placeholder) {
-    this.textarea.placeholder = placeholder;
+  // Add a single message to the terminal.
+  appendMessage(message, messageClass) {
+    if (this.line && this.lineText === '\u200b') {
+      // Remove previous empty line.
+      this.line.remove();
+      this.lines.pop();
+    }
+    this.line = null; // don't continue with previous line.
+    let messageDiv = document.createElement('div');
+    messageDiv.classList.add('message');
+    messageDiv.classList.add(messageClass ? messageClass : 'info');
+    messageDiv.textContent = message;
+    this.#pushLine(messageDiv);
   }
 
-  // log writes the given message to the terminal. Note that it doesn't append a
-  // newline at the end.
-  log(msg) {
-    this.text += msg;
+  // Write the given message to the terminal, as normal text.
+  write(msg) {
+    // Write each line to the terminal.
+    let parts = msg.split('\n');
+    for (let i=0; i<parts.length; i++) {
+      if (this.line === null || i !== 0) {
+        this.line = document.createElement('div');
+        this.line.classList.add('output');
+        this.lineText = '\u200b'; // zero-width space, to show empty lines
+        this.#pushLine(this.line);
+      }
+      this.lineText += parts[i];
+      this.line.textContent = this.lineText;
+    }
+
+    // Scroll down if we're already scrolled down.
     if (this.isVisible) {
-      this.updateText();
+      if (this.stuckToBottom) {
+        this.parent.scrollTop = this.parent.scrollHeight;
+      }
     }
   }
 
-  // Internal function. Update the text in the textarea to reflect this.text
-  // while keeping the scroll position at the bottom if it was already there.
-  updateText() {
-    let distanceFromBottom = this.textarea.scrollHeight - this.textarea.scrollTop - this.textarea.clientHeight;
-    this.textarea.value = this.text;
-    if (distanceFromBottom < 2) {
-      this.textarea.scrollTop = this.textarea.scrollHeight;
+  // Add a single element to the terminal, removing lines when there are too
+  // many already in the terminal.
+  #pushLine(line) {
+    this.parent.appendChild(line);
+    this.lines.push(line);
+    while (this.lines.length > this.MAX_LINES) {
+      this.lines.shift().remove();
     }
   }
 }

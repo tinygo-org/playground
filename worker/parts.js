@@ -210,7 +210,6 @@ class MCU extends Part {
       this.pins[name] = pin;
       this.pins[number] = pin;
     }
-    this.stdout = '';
   }
 
   notifyPinUpdate(pin) {
@@ -225,12 +224,8 @@ class MCU extends Part {
   }
 
   getState() {
-    // Send the text that was written to stdout since the last call to getState().
-    let stdout = this.stdout;
-    this.stdout = '';
     return {
       id: this.id,
-      logText: stdout,
     };
   }
 
@@ -266,12 +261,6 @@ class MCU extends Part {
           Atomics.store(this.workerBuffer, this.bufferPinIndex+i, state);
         }
       }
-    } else if (msg.type === 'stdout') {
-      // Note: apparently concatenating strings is heavily optimized in JS
-      // engines, so this should be fast even with many small strings
-      // concatenated together.
-      this.stdout += msg.data;
-      this.notifyUpdate();
     } else if (msg.type === 'pin-configure') {
       this.getPin(msg.pin).setState(msg.state);
       this.#finishedTask();
@@ -294,7 +283,7 @@ class MCU extends Part {
       for (let c of msg.data) {
         pin.writeWS2812(c)
       }
-    } else if (msg.type === 'compiling' || msg.type === 'loading' || msg.type === 'exited' || msg.type === 'error') {
+    } else if (msg.type === 'compiling' || msg.type === 'loading' || msg.type === 'exited' || msg.type === 'error' || msg.type === 'stdout') {
       // Just forward the message to the UI.
       postMessage(msg);
     } else {

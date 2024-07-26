@@ -182,26 +182,23 @@ body:not(.vscode) {
 /* Terminal at the bottom of the screen */
 
 .simulator .terminal {
-    width: 100%;
-    line-height: calc(var(--vscode-editor-font-size) + 5px);
-    font-size: var(--vscode-editor-font-size);
-    resize: none;
-    padding: 0 20px;
-    border: 0;
-    background: transparent;
+    flex: 1 0 0;
+    padding: 8px 20px;
+    overflow: hidden auto;
+}
+.simulator .terminal > .output,
+.simulator .terminal > .message.error {
     font-family: var(--vscode-editor-font-family);
-}
-.simulator .terminal::selection {
-    background: var(--vscode-terminal-selectionBackground);
-}
-.simulator .terminal.error {
-    color: var(--vscode-terminal-ansiBrightRed);
+    font-size: var(--terminal-font-size);
+    line-height: var(--terminal-line-height);
+    white-space: break-spaces;
+    word-break: break-all;
 }
 
 /* Properties tab at the bottom */
 
 .simulator .panel-properties > .content {
-    padding: 0 20px;
+    padding: 8px 20px;
     overflow: auto;
     display: grid;
     grid-template-columns: auto minmax(auto, 100%);
@@ -226,7 +223,7 @@ body:not(.vscode) {
 /* Add parts tab */
 
 .simulator .panel-add {
-    padding: 0 20px;
+    padding: 8px 20px;
     display: grid;
     grid-template-columns: auto minmax(auto, 100%) auto auto;
     column-gap: 1ch;

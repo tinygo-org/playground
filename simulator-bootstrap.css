@@ -9,6 +9,8 @@
     --bs-card-cap-padding-y: 0.5rem;
     --bs-card-border-width: var(--bs-border-width);
     --bs-card-border-color: var(--bs-border-color-translucent);
+    --terminal-font-size: 0.875em;
+    --terminal-line-height: 1.5;
 }
 
 .simulator .schematic,
@@ -22,13 +24,19 @@
 
 .simulator .tab-pane {
     box-sizing: content-box;
-    min-height: calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
-    height:     calc((var(--vscode-editor-font-size) + 5px) * 10); /* 10 terminal lines */
-    padding-top: 8px;
+    min-height: 180px;
+    height:     180px;
     margin-bottom: 0;
     border: 0;
 }
 
 .simulator .tab-pane.active.terminal-box {
     display: flex;
+}
+
+.simulator .terminal > .message.info {
+    color: var(--bs-secondary-color);
+}
+.simulator .terminal > .message.error {
+    color: var(--bs-danger);
 }
