@@ -64,6 +64,8 @@ class Simulator {
       this.firmwareButton.disabled = true;
     }
 
+    upgradeOldState(state);
+
     // Redraw the schematic SVG.
     try {
       await this.refresh(state);
@@ -241,7 +243,7 @@ class Simulator {
       image.setAttribute('height', '10mm');
       image.classList.add('part-image');
       panel.appendChild(image);
-      let svgPromise = loadSVG(new URL(part.config.svg, partsURI))
+      let svgPromise = loadSVG(new URL(part.config.svg, this.baseURL))
       svgPromise.then((svg) => {
         // If needed, shrink the image to fit the available space.
         let width = svg.getAttribute('width').replace('mm', '');
@@ -311,7 +313,6 @@ class Simulator {
           y: e.pageY - this.schematicRect.height/2 - this.schematicRect.y,
         };
         newPart = await Part.load(data.config.id, data, this.schematic);
-        await newPart.loadSVG();
         this.schematic.addPart(newPart);
 
         // Truly add the part to the circuit when clicking on it.
@@ -1159,10 +1160,13 @@ class Part {
   // Load the given part and return it (because constructor() can't be async).
   static async load(id, data, schematic) {
     let config = {};
+    let configBaseURL = schematic.simulator.baseURL;
     if (data.location) {
       // Config object is stored in an external JSON file. Need to load that
       // first.
-      config = await loadJSON(new URL(data.location, schematic.simulator.baseURL));
+      let location = new URL(data.location, schematic.simulator.baseURL);
+      config = await loadJSON(location);
+      configBaseURL = location;
     } else if (data.config) {
       // Config is stored directly in the (modifiable) data object.
       // For example, this may be a simple part created in the Add tab.
@@ -1170,15 +1174,16 @@ class Part {
     }
     let part = new Part(id, config, data, null, schematic);
     if (part.config.svg) {
-      await part.loadSVG();
+      await part.#loadSVG(configBaseURL);
     }
     return part;
   }
 
   // loadSVG loads the 'svg' property (this.svg) of this object.
-  async loadSVG() {
-    // Determine the SVG URL, which is relative to the board config JSON file.
-    let svgUrl = new URL(this.config.svg, new URL('parts/', this.schematic.simulator.baseURL));
+  async #loadSVG(baseURL) {
+    // Determine the SVG URL, which is relative to the board config JSON file
+    // (if there is any).
+    let svgUrl = new URL(this.config.svg, baseURL);
 
     let svg = await loadSVG(svgUrl);
     this.setRootElement(svg);
@@ -1800,4 +1805,15 @@ function parseCompilerErrors(message) {
     })
   }
   return diagnostics;
+}
+
+// Upgrade state object if the configuration is of an older type.
+function upgradeOldState(state) {
+  // Rename SVG locations like "led-tht-5mm.svg" to "parts/led-tht-5mm.svg".
+  for (let part of Object.values(state.parts)) {
+    if (!part.config) continue;
+    if (RegExp('^[a-z0-9-]+\\.svg$').test(part.config.svg)) {
+      part.config.svg = 'parts/' + part.config.svg;
+    }
+  }
 }

@@ -4,7 +4,7 @@
       "config": {
         "type": "led",
         "humanName": "LED",
-        "svg": "led-tht-5mm.svg"
+        "svg": "parts/led-tht-5mm.svg"
       },
       "options": {
         "color": {
@@ -18,7 +18,7 @@
       "config": {
         "type": "ws2812",
         "humanName": "WS2812",
-        "svg": "ws2812.svg",
+        "svg": "parts/ws2812.svg",
         "length": 1
       }
     },
@@ -26,14 +26,14 @@
       "config": {
         "type": "pushbutton",
         "humanName": "Push button",
-        "svg": "pushbutton.svg"
+        "svg": "parts/pushbutton.svg"
       }
     },
     {
       "config": {
         "type": "st7789",
         "humanName": "ST7789",
-        "svg": "st7789-breakout.svg",
+        "svg": "parts/st7789-breakout.svg",
         "width": 240,
         "height": 240
       }
