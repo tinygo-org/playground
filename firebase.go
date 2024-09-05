@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -140,21 +141,35 @@ func handleShare(w http.ResponseWriter, r *http.Request) {
 // Obtain an obfuscated IP address, with the last bits removed to preserve
 // privacy.
 func getObfuscatedIP(r *http.Request) (string, error) {
-	address := r.RemoteAddr // TODO: parse the Forwarded header on Cloud Run
-	addrport, err := netip.ParseAddrPort(address)
-	if err != nil {
-		return "", fmt.Errorf("could not parse r.RemoteAddr: %w", err)
+	var address netip.Addr
+	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+		// Running inside Google Cloud Run (or behind a reverse proxy anyway).
+		// Parse the last IP address in the comma-separated list, because that's
+		// the one that's added by Google Cloud Run.
+		parts := strings.Split(forwarded, ",")
+		var err error
+		address, err = netip.ParseAddr(strings.TrimSpace(parts[len(parts)-1]))
+		if err != nil {
+			return "", fmt.Errorf("could not parse X-Forwarded-For header: %w", err)
+		}
+	} else {
+		// Running locally.
+		addrport, err := netip.ParseAddrPort(r.RemoteAddr)
+		if err != nil {
+			return "", fmt.Errorf("could not parse r.RemoteAddr: %w", err)
+		}
+		address = addrport.Addr()
 	}
-	if addrport.Addr().Is4() {
+	if address.Is4() {
 		// clear last octet
-		ip := addrport.Addr().As4()
+		ip := address.As4()
 		ip[3] = 0
 		return netip.AddrFrom4(ip).String() + "/24", nil
 	} else { // IPv6
 		// Zero all but the first 3 octets, to make it a /48 address.
 		// We might want to consider redacting the address a bit more, since
 		// this still identifies a single ISP customer.
-		ip := addrport.Addr().As16()
+		ip := address.As16()
 		for i := 6; i < 16; i++ {
 			ip[i] = 0
 		}
