@@ -484,6 +484,28 @@ class Simulator {
       console.warn('unknown worker message:', msg.type, msg);
     }
   }
+
+  // Share the code in the editor. Returns the share ID, which can be used as
+  // part of a URL.
+  async share() {
+    // Get the current state.
+    this.schematic.state.code = this.editor.text();
+    this.saveState();
+
+    // Save this snippet.
+    let response = await fetch(`${this.apiURL}/share`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(this.schematic.state),
+    });
+    let data = await response.json();
+
+    // The caller can decide what to do with this, like updating the current URL
+    // or open tinygo.org/play/s/<id>
+    return data.id;
+  }
 }
 
 class Schematic {
@@ -1181,6 +1203,14 @@ class Part {
 
   // loadSVG loads the 'svg' property (this.svg) of this object.
   async #loadSVG(baseURL) {
+    // We load these SVGs directly into the DOM, so if they contain scripts that
+    // can lead to XSS attacks. So check whether it's one of our SVGs.
+    // TODO: instead checking the URL, we should either sanitize the SVGs or use
+    // them inside an iframe sandbox. This would allow for custom SVGs.
+    if (!RegExp('^(parts/)?[a-z0-9-]+\\.svg$').test(this.config.svg)) {
+      throw 'unexpected SVG URL: ' + this.config.svg;
+    }
+
     // Determine the SVG URL, which is relative to the board config JSON file
     // (if there is any).
     let svgUrl = new URL(this.config.svg, baseURL);

@@ -37,6 +37,8 @@ var (
 	cacheType int
 
 	bucket *storage.BucketHandle
+
+	firebaseCredentials string
 )
 
 func main() {
@@ -54,6 +56,7 @@ func main() {
 	dir := flag.String("dir", ".", "which directory to serve from")
 	cacheTypeFlag := flag.String("cache-type", "local", "cache type (local, gcs)")
 	bucketNameFlag := flag.String("bucket-name", "", "Google Cloud Storage bucket name")
+	flag.StringVar(&firebaseCredentials, "firebase-credentials", "", "path to JSON file with Firebase credentials")
 	flag.Parse()
 
 	switch *cacheTypeFlag {
@@ -78,6 +81,7 @@ func main() {
 
 	// Run the web server.
 	http.HandleFunc("/api/compile", handleCompile)
+	http.HandleFunc("/api/share", handleShare)
 	http.Handle("/", addHeaders(http.FileServer(http.Dir(*dir))))
 	log.Print("Serving " + *dir + " on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
