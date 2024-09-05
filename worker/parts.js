@@ -420,6 +420,11 @@ class RGBLED extends Part {
     this.notifyUpdate();
   }
 
+  notifyPinUpdate() {
+    // The LED input pins were changed, so the state _probably_ changed.
+    this.notifyUpdate();
+  }
+
   getState() {
     let r = this.pins.r.net.isSink() ? 255 : 0;
     let g = this.pins.g.net.isSink() ? 255 : 0;
