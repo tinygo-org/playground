@@ -220,6 +220,19 @@ body:not(.vscode) {
     background-repeat: repeat-x;
 }
 
+.simulator .panel-power > .content {
+    padding: 8px 20px;
+    overflow: auto;
+    line-height: 1.5;
+    height: inherit;
+}
+
+.simulator .panel-power .power-table {
+    display: grid;
+    grid-template-columns: max-content 5em;
+    column-gap: 1ch;
+}
+
 /* Add parts tab */
 
 .simulator .panel-add {

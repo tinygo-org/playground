@@ -4,6 +4,7 @@
     "firmwareFormat": "hex",
     "svg": "arduino-nano33.svg",
     "mainPart": "mcu",
+    "baseCurrent": 0.0355,
     "parts": [
         {
             "id": "mcu",
@@ -53,7 +54,8 @@
             "id": "led",
             "type": "led",
             "humanName": "LED",
-            "color": [255, 165, 0]
+            "color": [255, 165, 0],
+            "current": 0.0022
         }
     ],
     "wires": [

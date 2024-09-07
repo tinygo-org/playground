@@ -4,6 +4,7 @@
     "firmwareFormat": "hex",
     "svg": "reelboard.svg",
     "mainPart": "mcu",
+    "baseCurrent": 0.076,
     "parts": [
         {
             "id": "mcu",
@@ -47,12 +48,14 @@
             "id": "led",
             "type": "led",
             "humanName": "LED 1 (back)",
+            "current": 0.0017,
             "color": [255, 255, 0]
         },
         {
             "id": "rgbled",
             "type": "rgbled",
-            "humanName": "LED 2-4 (RGB, front)"
+            "humanName": "LED 2-4 (RGB, front)",
+            "channelCurrent": [0.0007, 0.0003, 0.0006]
         },
         {
             "id": "display",

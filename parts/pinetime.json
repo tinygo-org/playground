@@ -4,6 +4,7 @@
     "firmwareFormat": "hex",
     "svg": "pinetime.svg",
     "mainPart": "mcu",
+    "baseCurrent": 0.000040,
     "parts": [
         {
             "id": "mcu",
@@ -33,18 +34,21 @@
             "id": "light1",
             "type": "led",
             "humanName": "Background (high)",
+            "current": 0.012,
             "color": [255, 255, 255]
         },
         {
             "id": "light2",
             "type": "led",
             "humanName": "Background (mid)",
+            "current": 0.0055,
             "color": [127, 127, 127]
         },
         {
             "id": "light3",
             "type": "led",
             "humanName": "Background (low)",
+            "current": 0.0018,
             "color": [63, 63, 63]
         },
         {

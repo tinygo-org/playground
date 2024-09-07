@@ -176,6 +176,14 @@ class Part {
   handleInput() {
     console.warn('unimplemented: handleInput for', this.type);
   }
+
+  // Return the parent ID (everything before the last dot), or '' if there is no
+  // parent.
+  parentId() {
+    let pos = this.id.lastIndexOf('.');
+    if (pos < 0) return '';
+    return this.id.substring(0, pos);
+  }
 }
 
 // Board implements a generic board with subparts on it. This is needed to
@@ -191,6 +199,40 @@ class Board extends Part {
     // 3.3V/GND pins for example).
     this.pins['vcc'] = new Pin(config.id + '.vcc', this, 'high');
     this.pins['gnd'] = new Pin(config.id + '.gnd', this, 'low');
+    this.power = {
+      id: this.id,
+      humanName: config.humanName,
+    }
+  }
+
+  getState() {
+    return {
+      id: this.id,
+    };
+  }
+}
+
+// Dummy is a dummy part, that can for example be used to insert a dummy power
+// consumption on a board as a catch-all baseload.
+class Dummy extends Part {
+  constructor(schematic, config) {
+    super(schematic, config);
+    if (config.current) {
+      this.current = config.current;
+      this.power = {
+        id: this.id,
+        humanName: config.humanName,
+        source: this.parentId(),
+      }
+      this.notifyUpdate();
+    }
+  }
+
+  getState() {
+    return {
+      id: this.id,
+      current: this.current,
+    };
   }
 }
 
@@ -367,6 +409,7 @@ class LED extends Part {
   constructor(schematic, config) {
     super(schematic, config);
     this.color = config.color;
+    this.current = config.current;
     this.pins.anode = new Pin(config.id + '.anode', this);
     this.pins.cathode = new Pin(config.id + '.cathode', this);
     this.properties = {
@@ -374,6 +417,11 @@ class LED extends Part {
       id: this.id,
       type: 'text',
     };
+    this.power = {
+      humanName: config.humanName,
+      id: this.id,
+      source: this.parentId(),
+    }
     this.notifyUpdate();
   }
 
@@ -399,6 +447,7 @@ class LED extends Part {
       id: this.id,
       cssProperties: colorProperties([r, g, b]),
       properties: on ? 'on' : 'off',
+      current: this.current * (on ? 1 : 0),
     };
   }
 }
@@ -412,10 +461,16 @@ class RGBLED extends Part {
     this.pins.r = new Pin(config.id + '.r', this);
     this.pins.g = new Pin(config.id + '.g', this);
     this.pins.b = new Pin(config.id + '.b', this);
+    this.channelCurrent = config.channelCurrent || [NaN, NaN, NaN];
     this.properties = {
       humanName: config.humanName,
       id: this.id,
       type: 'text',
+    };
+    this.power = {
+      humanName: config.humanName,
+      id: this.id,
+      source: this.parentId(),
     };
     this.notifyUpdate();
   }
@@ -443,6 +498,7 @@ class RGBLED extends Part {
       id: this.id,
       cssProperties: colorProperties([r, g, b]),
       properties: colorName,
+      current: r/255*this.channelCurrent[0] + g/255*this.channelCurrent[1] + b/255*this.channelCurrent[2],
     };
   }
 }
@@ -567,6 +623,14 @@ class ST7789 extends Part {
     this.command = 0x00; // nop
     this.dataBuf = null;
     this.softwareReset();
+
+    this.power = {
+      id: this.id,
+      humanName: config.humanName,
+      source: this.parentId(),
+    };
+
+    this.notifyUpdate();
   }
 
   notifyPinUpdate(pin) {
@@ -587,6 +651,7 @@ class ST7789 extends Part {
     this.ye = 0x13f; // note: depends on MV value
     this.inverse = false; // display inversion off
     this.madctl = 0 // not sure what the default is
+    this.sleeping = true;
 
     // Give these a sensible default value. Will be updated with the RAMWR
     // command.
@@ -685,7 +750,9 @@ class ST7789 extends Part {
         // SWRESET: re-initialize all registers
         this.softwareReset();
       } else if (w == 0x11) {
-        // SLPOUT: nothing to do
+        // SLPOUT: update sleep state
+        this.sleeping = false;
+        this.notifyUpdate();
       } else if (w == 0x13) {
         // NORON: normal display mode on
         // Sets the display to normal mode (as opposed to partial mode).
@@ -737,6 +804,7 @@ class ST7789 extends Part {
     return {
       id: this.id,
       canvas: this.imageData,
+      current: this.sleeping ? 0.000020 : 0.006, // values come from the datasheet
     };
   }
 }
@@ -749,6 +817,7 @@ class WS2812 extends Part {
     this.pins.dout = new Pin(config.id + '.dout', this, 'low');
     this.pins.din.mode = 'ws2812-din';
     this.length = config.length;
+    this.channelCurrent = config.channelCurrent || [0.011, 0.011, 0.011]; // measured values
     this.data = new Uint8Array(this.length * 3);
     this.properties = {
       humanName: config.humanName,
@@ -770,6 +839,11 @@ class WS2812 extends Part {
       ],
       length: this.length,
     };
+    this.power = {
+      humanName: config.humanName,
+      id: this.id,
+      source: this.parentId(),
+    }
     this.notifyUpdate();
   }
 
@@ -787,6 +861,7 @@ class WS2812 extends Part {
     // Calculate the buffer of RGB values to send to the UI.
     let data = [];
     let properties = [];
+    let current = this.length * 0.0006; // quiescent current (measured 0.6mA)
     for (let i=0; i < this.length; i++) {
       // Extract data from the array. Note that the data is in GRB order, at
       // least on most chips. TODO: make this configurable.
@@ -796,6 +871,9 @@ class WS2812 extends Part {
       let g = this.data[i*3+2];
       let b = this.data[i*3+0];
       properties.push([r, g, b]);
+
+      // Current consumed by the LEDs.
+      current += r/255*this.channelCurrent[0] + g/255*this.channelCurrent[1] + b/255*this.channelCurrent[2];
 
       // Do a gamma correction. The LEDs are in linear color space, while the
       // web uses the sRGB color space (with gamma=~2.2).
@@ -812,6 +890,7 @@ class WS2812 extends Part {
       id: this.id,
       ledstrip: data,
       properties: properties,
+      current: current,
     };
   }
 }

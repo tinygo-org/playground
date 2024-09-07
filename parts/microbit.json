@@ -4,6 +4,7 @@
     "firmwareFormat": "hex",
     "svg": "microbit.svg",
     "mainPart": "mcu",
+    "baseCurrent": 0.0145,
     "parts": [
         {
             "id": "mcu",
@@ -47,150 +48,175 @@
             "id": "led11",
             "type": "led",
             "humanName": "LED 1.1",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led12",
             "type": "led",
             "humanName": "LED 1.2",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led13",
             "type": "led",
             "humanName": "LED 1.3",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led14",
             "type": "led",
             "humanName": "LED 1.4",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led15",
             "type": "led",
             "humanName": "LED 1.5",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led21",
             "type": "led",
             "humanName": "LED 2.1",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led22",
             "type": "led",
             "humanName": "LED 2.2",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led23",
             "type": "led",
             "humanName": "LED 2.3",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led24",
             "type": "led",
             "humanName": "LED 2.4",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led25",
             "type": "led",
             "humanName": "LED 2.5",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led31",
             "type": "led",
             "humanName": "LED 3.1",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led32",
             "type": "led",
             "humanName": "LED 3.2",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led33",
             "type": "led",
             "humanName": "LED 3.3",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led34",
             "type": "led",
             "humanName": "LED 3.4",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led35",
             "type": "led",
             "humanName": "LED 3.5",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led41",
             "type": "led",
             "humanName": "LED 4.1",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led42",
             "type": "led",
             "humanName": "LED 4.2",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led43",
             "type": "led",
             "humanName": "LED 4.3",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led44",
             "type": "led",
             "humanName": "LED 4.4",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led45",
             "type": "led",
             "humanName": "LED 4.5",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led51",
             "type": "led",
             "humanName": "LED 5.1",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led52",
             "type": "led",
             "humanName": "LED 5.2",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led53",
             "type": "led",
             "humanName": "LED 5.3",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led54",
             "type": "led",
             "humanName": "LED 5.4",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {
             "id": "led55",
             "type": "led",
             "humanName": "LED 5.5",
+            "current": 0.0038,
             "color": [255, 0, 0]
         },
         {

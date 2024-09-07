@@ -4,6 +4,7 @@
     "firmwareFormat": "uf2",
     "svg": "circuit-playground.svg",
     "mainPart": "mcu",
+    "baseCurrent": 0.0128,
     "parts": [
         {
             "id": "mcu",
@@ -79,13 +80,15 @@
             "id": "led",
             "type": "led",
             "humanName": "LED",
-            "color": [255, 0, 0]
+            "color": [255, 0, 0],
+            "current": 0.0003
         },
         {
             "id": "neopixels",
             "type": "ws2812",
             "humanName": "NeoPixels",
-            "length": 10
+            "length": 10,
+            "channelCurrent": [0.010, 0.0108, 0.00908]
         },
         {
             "id": "buttonLeft",

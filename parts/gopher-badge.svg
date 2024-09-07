@@ -33,6 +33,9 @@
   <!-- LED on the back -->
   <g data-part="led"></g>
 
+  <!-- display backlight -->
+  <g data-part="backlight"></g>
+
   <!-- display, see: https://www.buydisplay.com/download/manual/ER-TFT024IPS-3_Datasheet.pdf -->
   <g transform="translate(15, 55.5)">
     <!-- border -->

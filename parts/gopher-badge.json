@@ -4,6 +4,7 @@
     "firmwareFormat": "uf2",
     "svg": "gopher-badge.svg",
     "mainPart": "mcu",
+    "baseCurrent": 0.0278,
     "parts": [
         {
             "id": "mcu",
@@ -45,7 +46,15 @@
             "id": "led",
             "type": "led",
             "humanName": "LED (back)",
-            "color": [0, 0, 255]
+            "color": [0, 0, 255],
+            "current": 0.0007
+        },
+        {
+            "id": "backlight",
+            "type": "led",
+            "humanName": "Backlight",
+            "color": [255, 255, 255],
+            "current": 0.0865
         },
         {
             "id": "display",
@@ -58,7 +67,8 @@
             "id": "neopixels",
             "type": "ws2812",
             "humanName": "Eye LEDs",
-            "length": 2
+            "length": 2,
+            "channelCurrent": [0.0112, 0.0112, 0.0112]
         },
         {
             "id": "buttonLeft",
@@ -104,6 +114,7 @@
         {"from": "mcu.GPIO17", "to": "display.cs"},
         {"from": "mcu.GPIO20", "to": "display.dc"},
         {"from": "mcu.GPIO21", "to": "display.reset"},
+        {"from": "mcu.GPIO12", "to": "backlight.anode"},
         {"from": "mcu.GPIO15", "to": "neopixels.din"},
         {"from": "mcu.GPIO25", "to": "buttonLeft.A"},
         {"from": "mcu.GPIO22", "to": "buttonRight.A"},

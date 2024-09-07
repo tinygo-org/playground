@@ -430,6 +430,9 @@ class Simulator {
     } else if (msg.type === 'properties') {
       // Set properties in the properties panel at the bottom.
       this.schematic.setProperties(msg.properties);
+    } else if (msg.type === 'power') {
+      // Set power consumption in the panel at the bottom.
+      this.schematic.setPower(msg.powerTree);
     } else if (msg.type === 'compiling') {
       // POST request has been sent, waiting for compilation to finish.
       this.terminal.clear('Compiling...');
@@ -522,6 +525,7 @@ class Schematic {
     this.state = state;
     this.schematic = root.querySelector('.schematic');
     this.propertiesContainer = root.querySelector('.panel-properties .content');
+    this.powerContainer = root.querySelector('.panel-power .power-table');
     this.setSpeed(1);
     this.scale = 1; // initial scale (1mm in SVG is ~1mm on screen)
     this.translateX = 0; // initial translation (before scaling)
@@ -812,6 +816,51 @@ class Schematic {
     }
   }
 
+  // Update the power tab at the bottom, replace all values with the new tree.
+  setPower(tree) {
+    this.powerContainer.innerHTML = '';
+
+    this.powerElements = {};
+    this.#addPowerNodes(tree, null, 0);
+  }
+
+  // Recursively add data rows to the power consumption tree view.
+  #addPowerNodes(tree, parent, indent) {
+    let rows = [];
+    for (let i=0; i < tree.length; i++) {
+      // Calculate some hacky tree symbols. This probably needs to be replaced
+      // with a nice CSS tree view at some point.
+      let node = tree[i];
+      let prefix = '';
+      if (indent > 0) {
+        prefix = i == tree.length-1 ? '└ ' : '├ ';
+      }
+
+      // Add elements.
+      let nameEl = document.createElement('div');
+      nameEl.textContent = prefix + node.node.humanName + ':';
+      this.powerContainer.appendChild(nameEl);
+      let valueEl = document.createElement('div');
+      valueEl.textContent = '?';
+      this.powerContainer.appendChild(valueEl);
+
+      // Keep track of them so we can show new values coming from the
+      // simulation.
+      let row = {
+        parent: parent,
+        element: valueEl,
+      };
+      this.powerElements[node.node.id] = row;
+      rows.push(row)
+
+      // Put children in the tree view.
+      if (node.children) {
+        row.children = this.#addPowerNodes(node.children, row, indent+1);
+      }
+    }
+    return rows;
+  }
+
   // Update a (sub)part in the UI with the given updates coming from the web
   // worker that's running the simulated program.
   update(updates) {
@@ -873,6 +922,22 @@ class Schematic {
           }
         } else {
           console.warn('unknown property:', update.properties);
+        }
+      }
+
+      // Add the current consumption to the power panel at the bottom.
+      if ('current' in update) {
+        let row = this.powerElements[update.id];
+        if (update.current !== row.current) {
+          row.current = update.current;
+          while (row) {
+            if (row.children.length) {
+              row.element.textContent = formatCurrent(sumCurrentChildren(row));
+            } else {
+              row.element.textContent = formatCurrent(row.current);
+            }
+            row = row.parent;
+          }
         }
       }
     }
@@ -1237,6 +1302,17 @@ class Part {
       let subpart = new Part(id, subconfig, {}, this, this.schematic);
       this.subparts[id] = subpart;
     }
+
+    // Add a single dummy object purely for base current consumption.
+    if (!this.config.type && 'baseCurrent' in this.config) {
+      let id = this.id + '.basecurrent';
+      let subpart = new Part(id, {
+        type: 'dummy',
+        humanName: 'Other',
+        current: this.config.baseCurrent,
+      }, {}, this, this.schematic);
+      this.subparts[id] = subpart;
+    }
   }
 
   // Create the container for the part SVG and initialize it.
@@ -1436,6 +1512,7 @@ class Part {
       let subconfig = {
         type: 'board',
         id: this.id,
+        humanName: this.config.humanName,
         pins: [],
       };
       for (let name in this.pins) {
@@ -1894,4 +1971,29 @@ function upgradeOldState(state) {
       part.config.svg = 'parts/' + part.config.svg;
     }
   }
+}
+
+// Return a human readable version of the input current, which is in amperes
+// (floating point).
+function formatCurrent(current) {
+  if (current === 0) {
+    return '0';
+  } else if (!current) {
+    return '?'; // NaN, undefined, etc
+  } else if (current < 0.001) {
+    return (current * 1000 * 1000).toPrecision(3) + 'µA';
+  } else if (current < 1) {
+    return (current * 1000).toPrecision(3) + 'mA';
+  } else {
+    return current.toFixed(2) + 'A';
+  }
+}
+
+// Add the current of all the children of this row together, recursively.
+function sumCurrentChildren(row) {
+  let sum = 0;
+  for (let child of row.children) {
+    sum += child.current + sumCurrentChildren(child);
+  }
+  return sum;
 }

@@ -4,6 +4,7 @@
     "firmwareFormat": "hex",
     "svg": "hifive1b.svg",
     "mainPart": "mcu",
+    "baseCurrent": 0.178,
     "parts": [
         {
             "id": "mcu",
@@ -46,7 +47,8 @@
         {
             "id": "led",
             "type": "rgbled",
-            "humanName": "LED"
+            "humanName": "LED",
+            "channelCurrent": [0.004, 0.004, 0.004]
         }
     ],
     "wires": [

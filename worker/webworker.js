@@ -26,10 +26,14 @@ function handleIncomingMessage(message) {
     });
   } else if (message.type === 'add') {
     let hasProperties = false;
+    let hasPower = false;
     for (let part of message.parts || []) {
       let instance = schematic.addPart(part);
       if (instance.properties) {
         hasProperties = true;
+      }
+      if (instance.power) {
+        hasPower = true;
       }
     }
     for (let wire of message.wires || []) {
@@ -48,12 +52,30 @@ function handleIncomingMessage(message) {
         }
       }
     }
+    if (hasPower) {
+      // Update power pane.
+      postMessage({
+        type: 'power',
+        powerTree: schematic.getPowerTree(),
+      });
+      // Send new power consumption values.
+      for (let part of Object.values(schematic.parts)) {
+        if (part.power) {
+          part.notifyUpdate();
+        }
+      }
+    }
     schematic.updateNets();
   } else if (message.type === 'remove') {
     let hasProperties = false;
+    let hasPower = false;
     for (let id of message.parts || []) {
-      if (schematic.parts[id].properties) {
+      let part = schematic.parts[id];
+      if (part.properties) {
         hasProperties = true;
+      }
+      if (part.power) {
+        hasPower = true;
       }
       schematic.removePart(id);
     }
@@ -69,6 +91,19 @@ function handleIncomingMessage(message) {
       // Send new properties.
       for (let part of Object.values(schematic.parts)) {
         if (part.properties) {
+          part.notifyUpdate();
+        }
+      }
+    }
+    if (hasPower) {
+      // Update power pane.
+      postMessage({
+        type: 'power',
+        powerTree: schematic.getPowerTree(),
+      });
+      // Send new power consumption values.
+      for (let part of Object.values(schematic.parts)) {
+        if (part.power) {
           part.notifyUpdate();
         }
       }
@@ -106,6 +141,10 @@ async function start(msg) {
   postMessage({
     type: 'properties',
     properties: schematic.getPropertyTypes(),
+  });
+  postMessage({
+    type: 'power',
+    powerTree: schematic.getPowerTree(),
   });
   schematic.notifyUpdate();
 

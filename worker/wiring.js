@@ -132,6 +132,8 @@ class Schematic {
   makePart(part) {
     if (part.type === 'board')
       return new Board(this, part);
+    if (part.type === 'dummy')
+      return new Dummy(this, part);
     if (part.type === 'mcu')
       return new MCU(this, part);
     if (part.type === 'pushbutton')
@@ -268,6 +270,33 @@ class Schematic {
       }
     }
     return properties;
+  }
+
+  // Return a tree of devices where a parent consumes the power of each child
+  // combined. It doesn't contain power values itself, only a tree of devices
+  // that will report power consumption when updating.
+  getPowerTree() {
+    // Find all devices.
+    let devices = {};
+    for (let part of Object.values(this.parts)) {
+      if (part.power) {
+        devices[part.id] = {
+          node: part.power,
+          children: [],
+        };
+      }
+    }
+
+    // Construct the tree.
+    let tree = [];
+    for (let part of Object.values(devices)) {
+      if (part.node.source && part.node.source in devices) {
+        devices[part.node.source].children.push(part);
+      } else {
+        tree.push(part);
+      }
+    }
+    return tree;
   }
 
   // getUpdates returns an array of updates to be applied in the UI.

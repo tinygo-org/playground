@@ -2,6 +2,7 @@
     "name": "st7789-breakout",
     "humanName": "ST7789 breakout board",
     "svg": "st7789-breakout.svg",
+    "baseCurrent": 0.00060,
     "parts": [
         {
             "id": "display",
@@ -14,7 +15,8 @@
             "id": "backlight",
             "type": "led",
             "humanName": "ST7789 Backlight",
-            "color": [255, 255, 255]
+            "color": [255, 255, 255],
+            "current": 0.014
         }
     ],
     "wires": [
