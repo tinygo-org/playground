@@ -15,6 +15,9 @@
     M 25.2 35.32 a 1.4 1.4 0 1 0 0.001 0 Z
     "/>
 
+  <!-- display backlight -->
+  <g data-part="backlight"></g>
+
   <!-- pins -->
   <g transform="translate(4.96, 1.27)" fill="transparent">
     <g data-pin="GND" transform="translate(0, 0)">
@@ -50,7 +53,7 @@
   <!-- screen -->
   <g transform="translate(0.81, 5)">
     <rect width="26.08" height="29.22" fill="#222"/>
-    <foreignObject width="23.34" height="23.34" transform="translate(1.37, 1.33)">
+    <foreignObject data-part="display" width="23.34" height="23.34" transform="translate(1.37, 1.33)">
       <canvas data-type="canvas" xmlns="http://www.w3.org/1999/xhtml" width="240" height="240" style="width: 23.34px; background: black"/>
     </foreignObject>
   </g>

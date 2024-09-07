@@ -31,12 +31,10 @@
     },
     {
       "config": {
-        "type": "st7789",
         "humanName": "ST7789",
-        "svg": "parts/st7789-breakout.svg",
-        "width": 240,
-        "height": 240
-      }
+        "svg": "parts/st7789-breakout.svg"
+      },
+      "location": "parts/st7789-breakout.json"
     }
   ]
 }

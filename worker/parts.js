@@ -718,6 +718,12 @@ class ST7789 extends Part {
         // It can be used to rotate/swap the display (see 8.12 Address Control
         // in the PDF), but has not yet been implemented.
         this.dataBuf = [];
+      } else if (w === 0xb2) {
+        // PORCTRL: porch setting
+        // Can probably be ignored.
+      } else if (w === 0xc6) {
+        // FRCTRL2: frame rate control
+        // Can definitely be ignored, since we use the system's frame rate.
       } else {
         // unknown command
         console.log('st7789: unknown command:', w);

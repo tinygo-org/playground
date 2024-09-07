@@ -305,26 +305,33 @@ class Simulator {
         // running circuit yet. Imagine picking up a part and hovering just above
         // where you want to put it down.
         this.root.classList.add('adding-part');
+        let id = Math.random().toString(36).slice(2);
         let data = {
-          config: Object.assign({}, part.config, config, {
-            id: Math.random().toString(36).slice(2),
-          }),
           x: e.pageX - this.schematicRect.width/2 - this.schematicRect.x,
           y: e.pageY - this.schematicRect.height/2 - this.schematicRect.y,
         };
-        newPart = await Part.load(data.config.id, data, this.schematic);
+        if (part.location) {
+          data.location = part.location;
+        } else {
+          data.config = Object.assign({}, part.config, config, {
+            id: id,
+          });
+        }
+        newPart = await Part.load(id, data, this.schematic);
         this.schematic.addPart(newPart);
 
         // Truly add the part to the circuit when clicking on it.
         let onclick = e => {
+          let [parts, wires] = newPart.workerConfigRecursive();
           this.worker.postMessage({
             type: 'add',
-            parts: [newPart.workerConfig()],
+            parts: parts,
+            wires: wires,
           });
           newPart.rootElement.removeEventListener('click', onclick);
           newPart = null;
           this.root.classList.remove('adding-part');
-          this.schematic.state.parts[data.config.id] = data;
+          this.schematic.state.parts[id] = data;
           this.saveState();
         };
         newPart.rootElement.addEventListener('click', onclick);
@@ -832,6 +839,8 @@ class Schematic {
 
       // Simple devices (like LEDs) that only need to change some CSS properties.
       for (let [key, value] of Object.entries(update.cssProperties || {})) {
+        if (!part.rootElement)
+          throw `part ${part.id} has no root element`;
         part.rootElement.style.setProperty('--' + key, value);
       }
 
@@ -1439,6 +1448,31 @@ class Part {
     return Object.assign({}, this.config, {id: this.id});
   }
 
+  // Return workerConfigu but not just for this part but also for all sub-parts.
+  // Return both the parts and the wires as an array.
+  workerConfigRecursive() {
+    let parts = [];
+    let wires = [];
+
+    // Add config for ourself.
+    parts.push(this.workerConfig());
+    for (let wire of this.config.wires || []) {
+      wires.push({
+        from: this.id + '.' + wire.from,
+        to: this.id + '.' + wire.to,
+      });
+    }
+
+    // Add config for all subparts, recursively.
+    for (let subpart of Object.values(this.subparts)) {
+      let [subparts, subwires] = subpart.workerConfigRecursive();
+      parts.push(...subparts);
+      wires.push(...subwires);
+    }
+
+    return [parts, wires];
+  }
+
   // Set a new (x, y) position in millimeters, relative to the center.
   setPosition(x, y) {
     this.data.x = x;
@@ -1540,23 +1574,37 @@ class Part {
       }
     }
 
-    // Remove the sub-parts.
-    for (let subpart of Object.values(this.subparts)) {
-      console.warn('todo: remove subpart', subpart.id);
-    }
+    this.#removeRecursive(message);
 
+    return message;
+  }
+
+  // Remove this part and all sub-parts, recursively. Add the to-be-removed
+  // parts and wires to the message.
+  #removeRecursive(message) {
     // Remove the main part.
     this.schematic.parts.delete(this.id);
     delete this.schematic.state.parts[this.id];
     message.parts.push(this.id);
-    this.container.remove();
+    if (this.container) {
+      this.container.remove();
+    }
+    for (let wire of this.config.wires || []) {
+      message.wires.push({
+        from: this.id + '.' + wire.from,
+        to: this.id + '.' + wire.to,
+      });
+    }
+
+    // Remove the sub-parts.
+    for (let subpart of Object.values(this.subparts)) {
+      subpart.#removeRecursive(message);
+    }
 
     // Remove a pin tooltip, if it is present.
     if (this.tooltipPin) {
       this.schematic.simulator.tooltip.remove(this.tooltipPin);
     }
-
-    return message;
   }
 }
 

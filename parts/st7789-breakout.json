@@ -1,0 +1,28 @@
+{
+    "name": "st7789-breakout",
+    "humanName": "ST7789 breakout board",
+    "svg": "st7789-breakout.svg",
+    "parts": [
+        {
+            "id": "display",
+            "type": "st7789",
+            "humanName": "ST7789 Display",
+            "width": 240,
+            "height": 240
+        },
+        {
+            "id": "backlight",
+            "type": "led",
+            "humanName": "ST7789 Backlight",
+            "color": [255, 255, 255]
+        }
+    ],
+    "wires": [
+        {"from": "sck", "to": "display.sck"},
+        {"from": "sdi", "to": "display.sdi"},
+        {"from": "reset", "to": "display.reset"},
+        {"from": "dc", "to": "display.dc"},
+        {"from": "vcc", "to": "backlight.anode"},
+        {"from": "gnd", "to": "backlight.cathode"}
+    ]
+}
