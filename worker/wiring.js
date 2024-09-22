@@ -107,15 +107,16 @@ class Net {
 
 // The schematic tracks all electronic parts and the connections between them.
 class Schematic {
-  constructor(sendConnections, sendNotifyUpdate) {
+  constructor(powerTabVisible) {
     this.parts = {};
     this.wires = [];
+    this.needsContinuousUpdates = new Set();
+    this.powerUpdate = null;
+    this.powerTabVisible = powerTabVisible;
     // Don't send an update before the UI has requested an update. The UI will
     // request an update on load. The way this is implemented is by setting
     // hasUpdate to true at the beginning.
     this.hasUpdate = true;
-    this.sendConnections = sendConnections;
-    this.sendNotifyUpdate = sendNotifyUpdate;
   }
 
   // addPart adds a single part to the schematic.
@@ -155,6 +156,7 @@ class Schematic {
   // removePart removes the part with the given ID. Call updateNets()
   // afterwards to update all connections (if any).
   removePart(id) {
+    this.needsContinuousUpdates.delete(this.parts[id]);
     delete this.parts[id];
   }
 
@@ -227,7 +229,18 @@ class Schematic {
     }
 
     // Send the new netlist to the frontend.
-    this.sendConnections(nets);
+    let connections = [];
+    for (let net of Object.values(nets)) {
+      let pinIds = [];
+      for (let pin of net.pins) {
+        pinIds.push(pin.id);
+      }
+      connections.push(pinIds);
+    }
+    postMessage({
+      type: 'connections',
+      pinLists: connections,
+    });
   }
 
   // getPin returns a pin by its full name, such as arduino.led.anode.
@@ -258,7 +271,47 @@ class Schematic {
 
     // There was an update. Notify the frontend.
     this.hasUpdate = true;
-    this.sendNotifyUpdate();
+    postMessage({
+      type: 'notifyUpdate',
+    });
+  }
+
+  // Mark the given part as needing continuous updates.
+  updatePowerContinuously(part) {
+    this.needsContinuousUpdates.add(part);
+    if (!this.needsContinuousUpdates.length) {
+      this.#updateContinuousPowerUpdates();
+    }
+  }
+
+  // Check whether we need to continuously update power usage and start/stop the
+  // updating of average power.
+  #updateContinuousPowerUpdates() {
+    let needsUpdates = this.powerTabVisible && this.needsContinuousUpdates.size;
+    if (needsUpdates && !this.powerUpdateInterval) {
+      // Start updating power.
+      this.powerUpdateInterval = setInterval(() => {
+        let powerUpdates = {};
+        for (let part of this.needsContinuousUpdates) {
+          // TODO: only push avg power?
+          powerUpdates[part.id] = part.powerState.getState();
+        }
+        postMessage({
+          type: 'powerUpdates',
+          updates: powerUpdates,
+        })
+      }, 100);
+    } else if (!needsUpdates && this.powerUpdateInterval) {
+      // Stop updating power.
+      clearTimeout(this.powerUpdateInterval);
+      this.powerUpdateInterval = null;
+    }
+  }
+
+  // Set whether the power tab is visible. This information is sent by the UI.
+  setPowerTabVisible(visible) {
+    this.powerTabVisible = visible;
+    this.#updateContinuousPowerUpdates();
   }
 
   // Return property types for each part that has properties.

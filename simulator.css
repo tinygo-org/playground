@@ -229,7 +229,7 @@ body:not(.vscode) {
 
 .simulator .panel-power .power-table {
     display: grid;
-    grid-template-columns: max-content 5em;
+    grid-template-columns: max-content 5em 5em 5em;
     column-gap: 1ch;
 }
 

@@ -126,6 +126,7 @@ class Part {
     this.spiBuses = {};
     this.properties = null;
     this.hasUpdate = false;
+    this.powerState = new PowerTracker(this);
   }
 
   // getPin returns a pin by ID. It can be either a pin name (such as PB5) or a
@@ -186,6 +187,58 @@ class Part {
   }
 }
 
+// Track power of a part.
+class PowerTracker {
+  constructor(part) {
+    this.part = part;
+    this.current = NaN;
+    this.maxCurrent = NaN;
+    this.coulombs = 0;
+  }
+
+  update(current) {
+    if (current === this.current || (isNaN(current) && isNaN(this.current))) {
+      // Nothing changed, so don't update anything.
+      return;
+    }
+    if (isNaN(current)) {
+      throw 'current must not be NaN';
+    }
+    if (isNaN(this.current)) {
+      // First update.
+      this.current = current;
+      this.maxCurrent = current;
+      let now = performance.now() / 1000;
+      this.start = now;
+      this.lastUpdate = now;
+    } else {
+      this.part.schematic.updatePowerContinuously(this.part);
+      let now = performance.now() / 1000;
+      let timeSinceUpdate = now - this.lastUpdate;
+      let coulombs = timeSinceUpdate * this.current; // coulombs since the previous update
+      this.coulombs += coulombs;
+      this.current = current;
+      this.lastUpdate = now;
+      if (current > this.maxCurrent) {
+        this.maxCurrent = current;
+      }
+    }
+  }
+
+  getState() {
+    let now = performance.now() / 1000;
+    let timeSinceUpdate = now - this.lastUpdate;
+    let timeSinceStart = now - this.start;
+    let coulombs = this.coulombs + timeSinceUpdate * this.current;
+    let state = {
+      current: this.current,
+      maxCurrent: this.maxCurrent,
+      avgCurrent: coulombs / timeSinceStart,
+    };
+    return state;
+  }
+}
+
 // Board implements a generic board with subparts on it. This is needed to
 // provide pins to attach wires to: the UI allows creating new wires between
 // pins on a board.
@@ -218,12 +271,12 @@ class Dummy extends Part {
   constructor(schematic, config) {
     super(schematic, config);
     if (config.current) {
-      this.current = config.current;
       this.power = {
         id: this.id,
         humanName: config.humanName,
         source: this.parentId(),
       }
+      this.powerState.update(config.current);
       this.notifyUpdate();
     }
   }
@@ -231,7 +284,7 @@ class Dummy extends Part {
   getState() {
     return {
       id: this.id,
-      current: this.current,
+      power: this.powerState.getState(),
     };
   }
 }
@@ -422,22 +475,30 @@ class LED extends Part {
       id: this.id,
       source: this.parentId(),
     }
-    this.notifyUpdate();
+    this.on = null;
   }
 
   notifyPinUpdate() {
     // The LED input pins were changed, so the state _probably_ changed.
-    this.notifyUpdate();
+    this.updateState();
   }
 
-  getState() {
+  updateState() {
     let anodeConnected = this.pins.anode.isConnected();
     let cathodeConnected = this.pins.cathode.isConnected();
     let anode = anodeConnected ? this.pins.anode.net.isSource() : true;
     let cathode = cathodeConnected ? this.pins.cathode.net.isSink() : true;
     let on = anode && cathode && (anodeConnected || cathodeConnected);
+    if (on !== this.on) {
+      this.on = on;
+      this.powerState.update(this.current * (on ? 1 : 0));
+      this.notifyUpdate();
+    }
+  }
+
+  getState() {
     let [r, g, b] = this.color;
-    if (!on) {
+    if (!this.on) {
       // Turn off the LED entirely.
       r = 0;
       g = 0;
@@ -446,8 +507,8 @@ class LED extends Part {
     return {
       id: this.id,
       cssProperties: colorProperties([r, g, b]),
-      properties: on ? 'on' : 'off',
-      current: this.current * (on ? 1 : 0),
+      properties: this.on ? 'on' : 'off',
+      power: this.powerState.getState(),
     };
   }
 }
@@ -472,18 +533,27 @@ class RGBLED extends Part {
       id: this.id,
       source: this.parentId(),
     };
-    this.notifyUpdate();
   }
 
   notifyPinUpdate() {
     // The LED input pins were changed, so the state _probably_ changed.
-    this.notifyUpdate();
+    this.updateState();
   }
 
-  getState() {
+  updateState() {
     let r = this.pins.r.net.isSink() ? 255 : 0;
     let g = this.pins.g.net.isSink() ? 255 : 0;
     let b = this.pins.b.net.isSink() ? 255 : 0;
+    if (r !== this.r || g !== this.g || b !== this.b) {
+      this.r = r;
+      this.g = g;
+      this.b = b;
+      this.powerState.update(r/255*this.channelCurrent[0] + g/255*this.channelCurrent[1] + b/255*this.channelCurrent[2]);
+      this.notifyUpdate();
+    }
+  }
+
+  getState() {
     let colorName = {
       '': 'off',
       'r': 'red',
@@ -493,12 +563,12 @@ class RGBLED extends Part {
       'gb': 'aqua',
       'rb': 'fuchsia',
       'rgb': 'white',
-    }[(r ? 'r' : '') + (g ? 'g' : '') + (b ? 'b' : '')];
+    }[(this.r ? 'r' : '') + (this.g ? 'g' : '') + (this.b ? 'b' : '')];
     return {
       id: this.id,
-      cssProperties: colorProperties([r, g, b]),
+      cssProperties: colorProperties([this.r, this.g, this.b]),
       properties: colorName,
-      current: r/255*this.channelCurrent[0] + g/255*this.channelCurrent[1] + b/255*this.channelCurrent[2],
+      power: this.powerState.getState(),
     };
   }
 }
@@ -630,7 +700,8 @@ class ST7789 extends Part {
       source: this.parentId(),
     };
 
-    this.notifyUpdate();
+    this.current = NaN;
+    this.updateState();
   }
 
   notifyPinUpdate(pin) {
@@ -638,6 +709,7 @@ class ST7789 extends Part {
       this.inReset = this.pins.reset.net.isLow();
       if (this.inReset) {
         this.softwareReset();
+        this.updateState();
         this.notifyUpdate();
       }
     }
@@ -752,7 +824,7 @@ class ST7789 extends Part {
       } else if (w == 0x11) {
         // SLPOUT: update sleep state
         this.sleeping = false;
-        this.notifyUpdate();
+        this.updateState();
       } else if (w == 0x13) {
         // NORON: normal display mode on
         // Sets the display to normal mode (as opposed to partial mode).
@@ -799,12 +871,20 @@ class ST7789 extends Part {
     return 0;
   }
 
+  updateState() {
+    let current = this.sleeping ? 0.000020 : 0.006; // values come from the datasheet
+    if (current !== this.current) {
+      this.powerState.update(current);
+      this.notifyUpdate();
+    }
+  }
+
   getState() {
     // Send the image data.
     return {
       id: this.id,
       canvas: this.imageData,
-      current: this.sleeping ? 0.000020 : 0.006, // values come from the datasheet
+      power: this.powerState.getState(),
     };
   }
 }
@@ -844,7 +924,7 @@ class WS2812 extends Part {
       id: this.id,
       source: this.parentId(),
     }
-    this.notifyUpdate();
+    this.updateState();
   }
 
   writeWS2812(c) {
@@ -854,13 +934,23 @@ class WS2812 extends Part {
     this.pins.dout.writeWS2812(this.data[this.data.length-1]);
     this.data.set(this.data.slice(0, -1), 1);
     this.data[0] = c;
-    this.notifyUpdate();
+    this.updateState();
   }
 
-  getState() {
+  updateState() {
+    if (!this.updateTimeout) {
+      this.updateTimeout = setTimeout(() => {
+        this.updateTimeout = 0;
+        this.updateStateNow();
+        this.notifyUpdate();
+      }, 0);
+    }
+  }
+
+  updateStateNow() {
     // Calculate the buffer of RGB values to send to the UI.
-    let data = [];
-    let properties = [];
+    this.colorProperties = [];
+    this.propertyData = [];
     let current = this.length * 0.0006; // quiescent current (measured 0.6mA)
     for (let i=0; i < this.length; i++) {
       // Extract data from the array. Note that the data is in GRB order, at
@@ -870,7 +960,7 @@ class WS2812 extends Part {
       let r = this.data[i*3+1];
       let g = this.data[i*3+2];
       let b = this.data[i*3+0];
-      properties.push([r, g, b]);
+      this.propertyData.push([r, g, b]);
 
       // Current consumed by the LEDs.
       current += r/255*this.channelCurrent[0] + g/255*this.channelCurrent[1] + b/255*this.channelCurrent[2];
@@ -882,15 +972,19 @@ class WS2812 extends Part {
       g = encodeSRGB(g / 255);
       b = encodeSRGB(b / 255);
 
-      data.push(colorProperties([r, g, b]));
+      this.colorProperties.push(colorProperties([r, g, b]));
     }
 
+    this.powerState.update(current);
+  }
+
+  getState() {
     // Send the resulting data.
     return {
       id: this.id,
-      ledstrip: data,
-      properties: properties,
-      current: current,
+      ledstrip: this.colorProperties,
+      properties: this.propertyData,
+      power: this.powerState.getState(),
     };
   }
 }

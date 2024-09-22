@@ -117,6 +117,8 @@ function handleIncomingMessage(message) {
     });
   } else if (message.type === 'input') {
     schematic.getPart(message.id).handleInput(message);
+  } else if (message.type === 'powerTabVisible') {
+    schematic.setPowerTabVisible(message.visible);
   } else {
     console.log('unknown message:', message);
   }
@@ -126,11 +128,7 @@ function handleIncomingMessage(message) {
 // schematic.
 async function start(msg) {
   // Set up all the electronics for this program in preparation of running it.
-  schematic = new Schematic(sendConnections, () => {
-    postMessage({
-      type: 'notifyUpdate',
-    });
-  });
+  schematic = new Schematic(msg.powerTabVisible);
   for (let part of msg.config.parts) {
     schematic.addPart(part);
   }
@@ -151,23 +149,6 @@ async function start(msg) {
   // Now run the binary inside the MCU part.
   mainPart = schematic.getPart(msg.config.mainPart);
   await mainPart.start(msg.binary, msg.runnerURL);
-}
-
-// sendConnections sends the current netlist to the UI so that the UI can show
-// which pins are connected together.
-function sendConnections(nets) {
-  let connections = [];
-  for (let net of Object.values(nets)) {
-    let pinIds = [];
-    for (let pin of net.pins) {
-      pinIds.push(pin.id);
-    }
-    connections.push(pinIds);
-  }
-  postMessage({
-    type: 'connections',
-    pinLists: connections,
-  });
 }
 
 // sendError sends an error back to the UI thread, which will display it and

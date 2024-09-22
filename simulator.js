@@ -225,6 +225,18 @@ class Simulator {
       // performance.
       this._schematicRect = null;
     }, {passive: true});
+
+    // Track whether the power tab is visible.
+    // This is to avoid updating it continuously if not needed.
+    (new IntersectionObserver((entries) => {
+      this.powerTabVisible = entries[0].isIntersecting;
+      if (this.worker) {
+        this.worker.postMessage({
+          type: 'powerTabVisible',
+          visible: this.powerTabVisible,
+        });
+      }
+    })).observe(this.root.querySelector('.panel-power .power-table'));
   }
 
   // Initialize the parts panel at the bottom, from where new parts can be
@@ -410,6 +422,7 @@ class Simulator {
       config: this.schematic.configForWorker(),
       binary: binary,
       runnerURL: this.runnerURL.toString(),
+      powerTabVisible: this.powerTabVisible,
     });
   }
 
@@ -476,6 +489,10 @@ class Simulator {
       // a getUpdate message.
       // Update the UI with the new state.
       this.schematic.update(msg.updates);
+    } else if (msg.type === 'powerUpdates') {
+      for (let [id, update] of Object.entries(msg.updates)) {
+        this.schematic.updatePower(id, update);
+      }
     } else if (msg.type === 'speed') {
       // Change speed, also used to pause the worker.
       this.schematic.setSpeed(msg.speed);
@@ -818,7 +835,7 @@ class Schematic {
 
   // Update the power tab at the bottom, replace all values with the new tree.
   setPower(tree) {
-    this.powerContainer.innerHTML = '';
+    this.powerContainer.innerHTML = '<div></div><div>now</div><div>maximum</div><div>average</div>';
 
     this.powerElements = {};
     this.#addPowerNodes(tree, null, 0);
@@ -836,19 +853,33 @@ class Schematic {
         prefix = i == tree.length-1 ? '└ ' : '├ ';
       }
 
-      // Add elements.
+      // Add name.
       let nameEl = document.createElement('div');
       nameEl.textContent = prefix + node.node.humanName + ':';
       this.powerContainer.appendChild(nameEl);
+
+      // Add current power consumption.
       let valueEl = document.createElement('div');
       valueEl.textContent = '?';
       this.powerContainer.appendChild(valueEl);
+
+      // Add maximum power consumption since start.
+      let maxEl = document.createElement('div');
+      maxEl.textContent = '?';
+      this.powerContainer.appendChild(maxEl);
+
+      // Add average power consumption since start.
+      let avgEl = document.createElement('div');
+      avgEl.textContent = '?';
+      this.powerContainer.appendChild(avgEl);
 
       // Keep track of them so we can show new values coming from the
       // simulation.
       let row = {
         parent: parent,
         element: valueEl,
+        elementMax: maxEl,
+        elementAvg: avgEl,
       };
       this.powerElements[node.node.id] = row;
       rows.push(row)
@@ -926,19 +957,29 @@ class Schematic {
       }
 
       // Add the current consumption to the power panel at the bottom.
-      if ('current' in update) {
-        let row = this.powerElements[update.id];
-        if (update.current !== row.current) {
-          row.current = update.current;
-          while (row) {
-            if (row.children.length) {
-              row.element.textContent = formatCurrent(sumCurrentChildren(row));
-            } else {
-              row.element.textContent = formatCurrent(row.current);
-            }
-            row = row.parent;
-          }
+      if ('power' in update) {
+        this.updatePower(update.id, update.power);
+      }
+    }
+  }
+
+  updatePower(id, power) {
+    let row = this.powerElements[id];
+    if (power.current !== row.current || power.maxCurrent !== row.maxCurrent || power.avgCurrent !== row.avgCurrent) {
+      row.current = power.current;
+      row.maxCurrent = power.maxCurrent;
+      row.avgCurrent = power.avgCurrent;
+      while (row) {
+        if (row.children.length) {
+          row.element.textContent = formatCurrent(sumCurrentChildren(row, 'current'));
+          row.elementMax.textContent = formatCurrent(sumCurrentChildren(row, 'maxCurrent'));
+          row.elementAvg.textContent = formatCurrent(sumCurrentChildren(row, 'avgCurrent'));
+        } else {
+          row.element.textContent = formatCurrent(row.current);
+          row.elementMax.textContent = formatCurrent(row.maxCurrent);
+          row.elementAvg.textContent = formatCurrent(row.avgCurrent);
         }
+        row = row.parent;
       }
     }
   }
@@ -1990,10 +2031,10 @@ function formatCurrent(current) {
 }
 
 // Add the current of all the children of this row together, recursively.
-function sumCurrentChildren(row) {
+function sumCurrentChildren(row, property) {
   let sum = 0;
   for (let child of row.children) {
-    sum += child.current + sumCurrentChildren(child);
+    sum += child[property] + sumCurrentChildren(child, property);
   }
   return sum;
 }
