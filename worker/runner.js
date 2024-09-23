@@ -410,7 +410,11 @@ class Runner {
 
   // Start running the code.
   run() {
-    this._inst.exports._start();
+    try {
+      this._inst.exports._start();
+    } finally {
+      this.flushAsyncOperations();
+    }
     if (!this.sleeping) {
       this.postMessage({type: 'exited'});
     }
