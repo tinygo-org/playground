@@ -462,10 +462,12 @@ class Runner {
   flushAsyncOperations() {
     // Send all WS2812 writes to the schematic worker.
     for (let pinNumber in this.ws2812Buffers) {
+      let data = new Uint8Array(this.ws2812Buffers[pinNumber]);
+      data.reverse(); // LEDs are written back to front because of how the protocol works
       this.postMessage({
         type: 'ws2812-write',
         pin: pinNumber,
-        data: this.ws2812Buffers[pinNumber],
+        data: data,
       });
       delete this.ws2812Buffers[pinNumber];
     }

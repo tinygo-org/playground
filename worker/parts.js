@@ -102,8 +102,8 @@ class Pin {
     return this.net.pins.size > 1;
   }
 
-  // writeWS2812 writes a single WS2812 byte to the network.
-  writeWS2812(c) {
+  // writeWS2812 writes a WS2812 buffer to the net.
+  writeWS2812(buf) {
     if (!this.isOutput()) {
       // Writing is only possible when this pin is set as an output.
       return;
@@ -111,7 +111,7 @@ class Pin {
     for (let pin of this.net.pins) {
       if (pin.mode !== 'ws2812-din' || pin.state !== 'floating')
         continue;
-      pin.part.writeWS2812(c);
+      pin.part.writeWS2812(buf);
     }
   }
 }
@@ -372,12 +372,7 @@ class MCU extends Part {
       }
       this.#finishedTask();
     } else if (msg.type === 'ws2812-write') {
-      // TODO: it should be possible to write the buffer in one go instead of
-      // doing it per byte (which can lead to O(n²) situations).
-      let pin = this.getPin(msg.pin);
-      for (let c of msg.data) {
-        pin.writeWS2812(c)
-      }
+      this.getPin(msg.pin).writeWS2812(msg.data);
     } else if (msg.type === 'compiling' || msg.type === 'loading' || msg.type === 'exited' || msg.type === 'error' || msg.type === 'stdout') {
       // Just forward the message to the UI.
       postMessage(msg);
@@ -927,13 +922,13 @@ class WS2812 extends Part {
     this.updateState();
   }
 
-  writeWS2812(c) {
-    // TODO: support incomplete writes with timeouts.
-    // TODO: do something smarter than a memcpy here. It's fine for small LED
-    // strips but it may be rather expensive with long strips as it's O(n²).
-    this.pins.dout.writeWS2812(this.data[this.data.length-1]);
-    this.data.set(this.data.slice(0, -1), 1);
-    this.data[0] = c;
+  writeWS2812(buf) {
+    if (buf.length <= this.data.length) {
+      this.data.set(buf);
+    } else {
+      this.data.set(buf.subarray(0, this.data.length));
+      this.pins.dout.writeWS2812(buf.subarray(this.data.length));
+    }
     this.updateState();
   }
 
