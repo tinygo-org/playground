@@ -420,6 +420,7 @@ class Button extends Part {
       type: 'text',
     };
     this.pressed = false;
+    this.notifyUpdate();
   }
 
   getState() {
