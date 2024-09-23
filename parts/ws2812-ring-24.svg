@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+Dimensions: https://learn.adafruit.com/adafruit-neopixel-uberguide/downloads#neopixel-24-led-ring-2894607
+-->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 65.5 65.5" width="65.5mm" height="65.5mm">
+
+  <g transform="translate(32.75, 32.75)">
+    <!-- PCB -->
+    <circle r="29.45" stroke="black" fill="transparent" stroke-width="6.6"/>
+
+    <!-- WS2812 LEDs -->
+    <g transform="rotate(0) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(15) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(30) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(45) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(60) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(75) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(90) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(105) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(120) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(135) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(150) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(165) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(180) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(195) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(210) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(225) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(240) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(255) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(270) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(285) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(300) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(315) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(330) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+    <g transform="rotate(345) translate(0, -29.45)">
+        <rect x="-2.5" y="-2.5" width="5" height="5" fill="white"/>
+        <circle data-type="rgbled" r="2" fill="var(--color)" filter="drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow))" style="will-change: filter"/>
+    </g>
+
+    <!-- pins -->
+    <g data-pin="dout" transform="rotate(-7.5) translate(-2, -32.75)">
+        <rect class="area" width="4" height="4" fill="transparent"/>
+        <circle cx="2" cy="2" r="1.3" fill="#d4af37"/>
+    </g>
+    <g data-pin="din" transform="rotate(-37.5) translate(-2, -32.75)">
+        <rect class="area" width="4" height="4" fill="transparent"/>
+        <circle cx="2" cy="2" r="1.3" fill="#d4af37"/>
+    </g>
+  </g>
+</svg>

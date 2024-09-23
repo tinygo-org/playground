@@ -24,6 +24,38 @@
     },
     {
       "config": {
+        "type": "ws2812",
+        "humanName": "NeoPixel 8 Stick",
+        "svg": "parts/ws2812-stick-8.svg",
+        "length": 8
+      }
+    },
+    {
+      "config": {
+        "type": "ws2812",
+        "humanName": "NeoPixel 12 Ring",
+        "svg": "parts/ws2812-ring-12.svg",
+        "length": 12
+      }
+    },
+    {
+      "config": {
+        "type": "ws2812",
+        "humanName": "NeoPixel 16 Ring",
+        "svg": "parts/ws2812-ring-16.svg",
+        "length": 16
+      }
+    },
+    {
+      "config": {
+        "type": "ws2812",
+        "humanName": "NeoPixel 24 Ring",
+        "svg": "parts/ws2812-ring-24.svg",
+        "length": 24
+      }
+    },
+    {
+      "config": {
         "type": "pushbutton",
         "humanName": "Push button",
         "svg": "parts/pushbutton.svg"
