@@ -57,6 +57,7 @@ body:not(.vscode) {
     position: relative;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .simulator .schematic {

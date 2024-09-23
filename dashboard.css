@@ -117,10 +117,6 @@ body {
 	border-top: 1px solid var(--vscode-panel-border);
 }
 
-#output {
-	overflow: hidden;
-}
-
 body:not(.vscode) .simulator {
     border-left: 1px solid var(--vscode-panel-border);
 }
