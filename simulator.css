@@ -235,15 +235,17 @@ body:not(.vscode) {
 
 /* Add parts tab */
 
-.simulator .panel-add {
+.simulator .panel-add > .content {
     padding: 8px 20px;
     display: grid;
+    overflow: auto;
+    height: inherit;
     grid-template-columns: auto minmax(auto, 100%) auto auto;
     column-gap: 1ch;
     align-content: start;
 }
 
-.simulator.adding-part .panel-add {
+.simulator.adding-part .panel-add .content {
     opacity: 0.5;
     pointer-events: none;
 }

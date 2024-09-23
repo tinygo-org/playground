@@ -242,7 +242,7 @@ class Simulator {
   // Initialize the parts panel at the bottom, from where new parts can be
   // added.
   async #loadPartsPanel() {
-    let panel = this.root.querySelector('.panel-add');
+    let panel = this.root.querySelector('.panel-add .content');
     let partsURI = new URL('parts/parts.json', this.baseURL)
     let response = await fetch(partsURI);
     let json = await response.json();
