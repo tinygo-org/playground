@@ -113,7 +113,7 @@ async function updateBoards() {
         // Removing the currently active project.
         // Pick the base project using a bit of a hack (because we don't store
         // the original project name in the data object).
-        let matches = project.parts.main.location.match(RegExp('^parts/([a-z0-9_-]+)\.json$'));
+        let matches = project.parts[0].location.match(RegExp('^parts/([a-z0-9_-]+)\.json$'));
         if (matches) {
           // Found the project name, so use that.
           setProject(matches[1]);
@@ -192,13 +192,14 @@ async function loadProject(name) {
       defaultHumanName: board.humanName,
       code: board.code,
       compiler: board.compiler,
-      parts: {
-        main: {
+      parts: [
+        {
+          id: 'main',
           location: board.location,
           x: 0,
           y: 0,
         },
-      },
+      ],
       wires: [],
     };
   }

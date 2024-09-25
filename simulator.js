@@ -1,7 +1,7 @@
 // This file emulates a hardware board with an MCU and a set of external
 // devices (LEDs etc.).
 
-export { Simulator };
+export { Simulator, upgradeOldState };
 
 // The number of CSS pixels in a CSS millimeter. Yes, this is a constant,
 // defined by the CSS specification. This doesn't correspond exactly to
@@ -319,17 +319,16 @@ class Simulator {
         this.root.classList.add('adding-part');
         let id = Math.random().toString(36).slice(2);
         let data = {
+          id: id,
           x: e.pageX - this.schematicRect.width/2 - this.schematicRect.x,
           y: e.pageY - this.schematicRect.height/2 - this.schematicRect.y,
         };
         if (part.location) {
           data.location = part.location;
         } else {
-          data.config = Object.assign({}, part.config, config, {
-            id: id,
-          });
+          data.config = Object.assign({}, part.config, config);
         }
-        newPart = await Part.load(id, data, this.schematic);
+        newPart = await Part.load(data, this.schematic);
         this.schematic.addPart(newPart);
 
         // Truly add the part to the circuit when clicking on it.
@@ -343,7 +342,7 @@ class Simulator {
           newPart.rootElement.removeEventListener('click', onclick);
           newPart = null;
           this.root.classList.remove('adding-part');
-          this.schematic.state.parts[id] = data;
+          this.schematic.state.parts.push(data);
           this.saveState();
         };
         newPart.rootElement.addEventListener('click', onclick);
@@ -383,6 +382,7 @@ class Simulator {
     // If there was a new state (for example, when switching to a different
     // board), restart the Schematic.
     if (newState) {
+      upgradeOldState(newState);
       this.schematic = new Schematic(this, this.root, newState);
     }
 
@@ -569,8 +569,8 @@ class Schematic {
   async refresh() {
     // Load all the parts in parallel!
     let promises = [];
-    for (let [id, data] of Object.entries(this.state.parts)) {
-      promises.push(Part.load(id, data, this));
+    for (let data of this.state.parts) {
+      promises.push(Part.load(data, this));
     }
     let parts = await Promise.all(promises);
 
@@ -1301,7 +1301,7 @@ class Part {
   }
 
   // Load the given part and return it (because constructor() can't be async).
-  static async load(id, data, schematic) {
+  static async load(data, schematic) {
     let config = {};
     let configBaseURL = schematic.simulator.baseURL;
     if (data.location) {
@@ -1315,7 +1315,7 @@ class Part {
       // For example, this may be a simple part created in the Add tab.
       config = data.config;
     }
-    let part = new Part(id, config, data, null, schematic);
+    let part = new Part(data.id, config, data, null, schematic);
     if (part.config.svg) {
       await part.#loadSVG(configBaseURL);
     }
@@ -1708,7 +1708,17 @@ class Part {
   #removeRecursive(message) {
     // Remove the main part.
     this.schematic.parts.delete(this.id);
-    delete this.schematic.state.parts[this.id];
+
+    // Remove part from the state (if it exists: subparts don't appear in
+    // state.parts).
+    for (let i in this.schematic.state.parts) {
+      let part = this.schematic.state.parts[i];
+      if (part.id === this.id) {
+        this.schematic.state.parts.splice(i, 1);
+        break;
+      }
+    }
+
     message.parts.push(this.id);
     if (this.container) {
       this.container.remove();
@@ -2011,8 +2021,25 @@ function parseCompilerErrors(message) {
 
 // Upgrade state object if the configuration is of an older type.
 function upgradeOldState(state) {
+  // state.parts used to be a map. Unfortunately, maps in JSON don't keep their
+  // order so parts would get reordered. So it was switched to an array instead.
+  // This upgrades the parts map to a parts array (keeping the main part at the
+  // beginning).
+  if (!(state.parts instanceof Array)) {
+    let parts = [];
+    for (let [id, data] of Object.entries(state.parts)) {
+      data.id = id;
+      if (id === 'main') {
+        parts.unshift(data);
+      } else {
+        parts.push(data);
+      }
+    }
+    state.parts = parts;
+  }
+
   // Rename SVG locations like "led-tht-5mm.svg" to "parts/led-tht-5mm.svg".
-  for (let part of Object.values(state.parts)) {
+  for (let part of state.parts) {
     if (!part.config) continue;
     if (RegExp('^[a-z0-9-]+\\.svg$').test(part.config.svg)) {
       part.config.svg = 'parts/' + part.config.svg;
