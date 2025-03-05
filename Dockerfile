@@ -1,12 +1,12 @@
 # Build binary in the first stage.
-FROM golang:1.22-bookworm AS build
+FROM golang:1.23-bookworm AS build
 RUN mkdir /build
 COPY *.go go.mod go.sum /build/
 WORKDIR /build
 RUN go build -o main .
 
 # Use a separate container for the resulting image.
-FROM golang:1.22-bookworm
+FROM golang:1.23-bookworm
 RUN adduser --disabled-login --system --home /app appuser
 RUN mkdir -p /app/.cache && chown appuser /app/.cache
 
