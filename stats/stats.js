@@ -1,5 +1,7 @@
 'use strict';
 
+const API_URL = location.hostname == 'localhost' ? '/api' : 'https://playground-bttoqog3vq-uc.a.run.app/api';
+
 async function updateChart() {
     // Set up initial chart data.
     let now = new Date();
@@ -59,7 +61,7 @@ async function updateChart() {
     });
 
     // Fetch the data from the API.
-    let req = await fetch('/api/stats');
+    let req = await fetch(`${API_URL}/stats`);
     let data = await req.json();
 
     // Process data to turn it into chart data.
