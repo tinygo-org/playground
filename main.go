@@ -104,6 +104,7 @@ func addHeaders(fs http.Handler) http.HandlerFunc {
 // from a cache and if that fails, compiles the submitted source code directly.
 func handleCompile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "TinyGo-Page, TinyGo-Modified")
 
 	var source []byte
 	if strings.HasPrefix(r.Header.Get("Content-Type"), "text/plain") {
