@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,6 +16,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -175,4 +178,72 @@ func getObfuscatedIP(r *http.Request) (string, error) {
 		}
 		return netip.AddrFrom16(ip).String() + "/48", nil
 	}
+}
+
+// Track a single compiler action.
+func trackCompile(data map[string]any, modified string) {
+	initFirebase()
+	ctx := context.Background()
+
+	// Calculate ID for this data point.
+	buf, err := json.Marshal(data)
+	if err != nil {
+		log.Println("ERROR: could not marshal tracking data:", err)
+		return
+	}
+	hash := sha256.Sum256(buf)
+	id := base64.URLEncoding.EncodeToString(hash[:])[:20] // same length as standard IDs
+
+	// Add to the right counter. We track initial (unmodified) and modified
+	// buffers separately.
+	switch modified {
+	case "false":
+		data["count_initial"] = firestore.Increment(1)
+		data["count_modified"] = firestore.Increment(0)
+	case "true":
+		data["count_initial"] = firestore.Increment(0)
+		data["count_modified"] = firestore.Increment(1)
+	default:
+		// No valid "modified" parameter given, so can't track.
+		return
+	}
+
+	_, err = firestoreClient.Collection("track").Doc(id).Set(ctx, data, firestore.MergeAll)
+	if err != nil {
+		log.Printf("tracker: %s", err)
+	}
+}
+
+// Return recent compilation stats.
+func getStats(w http.ResponseWriter, r *http.Request) {
+	initFirebase()
+	ctx := context.Background()
+
+	// Query data of the past 30 days.
+	const numDays = 30
+	now := time.Now().UTC().Truncate(time.Hour * 24)
+	start := now.Add(-time.Hour * 24 * numDays)
+	end := now
+	iter := firestoreClient.Collection("track").Where("timestamp", ">=", start).Where("timestamp", "<", end).Documents(ctx)
+	defer iter.Stop()
+
+	// Request all data.
+	allData := []map[string]any{}
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("could not fetch stats data"))
+			fmt.Fprintln(os.Stderr, "could not fetch data:", err)
+			return
+		}
+		allData = append(allData, doc.Data())
+	}
+
+	// Send the data to the client.
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(allData)
 }

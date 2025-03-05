@@ -20,6 +20,7 @@ export class Editor {
     this.view = null;
     this.modifyCallback = () => {};
     this.parentStyles = getComputedStyle(parent);
+    this.textModified = false;
 
     // Detect dark mode from theme changes.
     matchMedia('(prefers-color-scheme: dark)').onchange = () => {
@@ -50,7 +51,8 @@ export class Editor {
   // Replace the text in the editor. This resets the editor state entirely,
   // including the undo history.
   setText(text) {
-    const editorState = this.#createEditorState(text, this.modifyCallback);
+    this.textModified = false;
+    const editorState = this.#createEditorState(text);
 
     // Create a new view, or if it already exists, replace the state in the view.
     if (!this.view) {
@@ -73,6 +75,7 @@ export class Editor {
     let extensions = [
       EditorView.updateListener.of(update => {
         if (update.changedRanges.length) {
+          this.textModified = true;
           this.modifyCallback();
         }
       }),

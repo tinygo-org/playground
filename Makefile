@@ -20,6 +20,7 @@ push-docker:
 push-gcloud: release.tar.gz
 	gcloud builds submit --tag us-central1-docker.pkg.dev/tinygo/cloud-run-source-deploy/playground
 
+# note: run `npm install` first
 resources/editor.bundle.js: editor/editor.js editor/tango.js package.json package-lock.json Makefile
 	npx rollup editor/editor.js -f es -o resources/editor.bundle.js -p @rollup/plugin-node-resolve
 

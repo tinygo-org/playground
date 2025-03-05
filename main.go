@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/storage"
 )
@@ -82,6 +83,7 @@ func main() {
 	// Run the web server.
 	http.HandleFunc("/api/compile", handleCompile)
 	http.HandleFunc("/api/share", handleShare)
+	http.HandleFunc("/api/stats", getStats)
 	http.Handle("/", addHeaders(http.FileServer(http.Dir(*dir))))
 	log.Print("Serving " + *dir + " on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
@@ -126,11 +128,13 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 		// backwards compatibility (the format should be specified)
 		format = "wasm"
 	}
+	flashFirmware := false
 	switch format {
 	case "wasm", "wasi":
 		// Run code in the browser.
 	case "elf", "hex", "uf2":
 		// Build a firmware that can be flashed directly to a development board.
+		flashFirmware = true
 	default:
 		// Unrecognized format. Disallow to be sure (might introduce security
 		// issues otherwise).
@@ -152,6 +156,15 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("unrecognized compiler"))
 		return
 	}
+
+	// Track this compile action (after we're done compiling).
+	defer trackCompile(map[string]any{
+		"page":          r.Header.Get("TinyGo-Page"),
+		"compiler":      compiler,
+		"target":        r.FormValue("target"),
+		"flashFirmware": flashFirmware,
+		"timestamp":     time.Now().UTC().Truncate(time.Hour * 24),
+	}, r.Header.Get("TinyGo-Modified"))
 
 	// Attempt to serve directly from the directory with cached files.
 	filename := filepath.Join(cacheDir, "build-"+compiler+"-"+r.FormValue("target")+"-"+sourceHash+"."+format)

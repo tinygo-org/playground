@@ -409,6 +409,12 @@ class Simulator {
       url: `${this.apiURL}/compile?compiler=${compiler}&format=wasi&target=${this.schematic.parts.get('main').config.name}`,
       method: 'POST',
       body: this.editor.text(),
+      headers: {
+        // Some tracking information, to know how often a given playground page
+        // is loaded and how often it is being used (modified).
+        'TinyGo-Page': document.location.href,
+        'TinyGo-Modified': this.editor.textModified,
+      },
     });
   }
 
