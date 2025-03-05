@@ -219,6 +219,9 @@ func getStats(w http.ResponseWriter, r *http.Request) {
 	initFirebase()
 	ctx := context.Background()
 
+	// Allow access from everywhere.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	// Query data of the past 30 days.
 	const numDays = 30
 	now := time.Now().UTC().Truncate(time.Hour * 24)
