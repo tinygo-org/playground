@@ -16,7 +16,16 @@
       <header>
         <h1>Playground Stats</h1>
       </header>
-      <canvas id="chart"></canvas>
+
+      <main>
+        <p>These statistics are collected in a privacy preserving way. No IP addresses are stored, only the number of times a certain configuration is compiled per day is stored.</p>
+
+        <p>Below are the number of compile jobs of the past month. "Initial" jobs are those that happen when a page is loaded or a different target is selected (meaning, it wasn't modified). "Modified" means that the user changed the code in some way, and the simulation was automatically updated as a result.</p>
+        <canvas id="chart-month" class="mb-4"></canvas>
+
+        <p>The graph below shows the different compile targets and how often they've been used in the playground.</p>
+        <canvas id="chart-targets" class="mb-4"></canvas>
+      </main>
     </div>
   </body>
 </html>

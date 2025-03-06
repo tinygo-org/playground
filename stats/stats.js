@@ -13,20 +13,19 @@ async function updateChart() {
         dataInitial.push(0);
         dataModified.push(0);
     }
-    let labels = [];
+    let dayLabels = [];
     for (let d=nowDay-numDays; d<nowDay; d++) {
         let ts = new Date(d * 86400 * 1000);
-        labels.push(ts.toISOString().substring(0, 10))
+        dayLabels.push(ts.toISOString().substring(0, 10))
     }
 
-    // Create the default chart (without data).
-    let chartEl = document.getElementById('chart');
-    chartEl.style.opacity = 0.5;
-    const ctx = chartEl.getContext('2d');
-    let chart = new Chart(ctx, {
+    // Create the default time chart (without data).
+    let chartMonthEl = document.getElementById('chart-month');
+    chartMonthEl.style.opacity = 0.5;
+    let chartMonth = new Chart(chartMonthEl.getContext('2d'), {
         type: 'line',
         data: {
-            labels: labels,
+            labels: dayLabels,
             datasets: [
                 {
                     label: 'initial',
@@ -41,12 +40,60 @@ async function updateChart() {
             ],
         },
         options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Compile jobs over time',
+                },
+            },
             scales: {
-                x: {
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Day',
+                        text: 'Number of compile requests',
                     },
+                }
+            }
+        }
+    });
+
+    // Create the default targets chart.
+    let chartTargetsEl = document.getElementById('chart-targets');
+    chartTargetsEl.style.opacity = 0.5;
+    let chartTargetsLabels = [];
+    let dataTargetsInitial = {};
+    let dataTargetsModified = {};
+    let chartTargets = new Chart(chartTargetsEl.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: chartTargetsLabels,
+            datasets: [
+                {
+                    label: 'initial',
+                    data: dataTargetsInitial,
+                    fill: true,
+                    parsing: true,
+                },
+                {
+                    label: 'modified',
+                    data: dataTargetsModified,
+                    fill: true,
+                    parsing: true,
+                },
+            ],
+        },
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Compile targets',
+                },
+            },
+            scales: {
+                x: {
+                    stacked: true,
                 },
                 y: {
                     stacked: true,
@@ -69,16 +116,29 @@ async function updateChart() {
         let ts = new Date(point.timestamp);
         let day = Math.floor(ts.getTime() / 1000 / 86400);
         let index = numDays - (nowDay - day);
-        if (index < 0 || index >= numDays) {
+        if (index < 0 || index >= numDays || !point.target) {
             continue;
         }
+
         dataInitial[index] += point.count_initial || 0;
         dataModified[index] += point.count_modified || 0;
+
+        let target = point.target;
+        if (target === 'console') {
+            target = point.compiler + ' console';
+        }
+        if (!(target in dataTargetsInitial)) {
+            chartTargetsLabels.push(target);
+        }
+        dataTargetsInitial[target] = (dataTargetsInitial[target]||0) + point.count_initial;
+        dataTargetsModified[target] = (dataTargetsModified[target]||0) + point.count_modified;
     }
 
     // Update the chart with the data we just got.
-    chart.update();
-    chartEl.style.opacity = '';
+    chartMonth.update();
+    chartMonthEl.style.opacity = '';
+    chartTargets.update();
+    chartTargetsEl.style.opacity = '';
 }
 
 updateChart();
