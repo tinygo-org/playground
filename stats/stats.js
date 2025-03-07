@@ -12,8 +12,12 @@ let chartMonth, chartTargets;
 // only data for certain pages or groups of pages.
 function updatePageList() {
     selectedPages.clear();
+    let initialPageCount = {};
+    let modifiedPageCount = {};
     for (let point of data) {
         selectedPages.add(point.page);
+        initialPageCount[point.page] = (initialPageCount[point.page]||0) + point.count_initial;
+        modifiedPageCount[point.page] = (modifiedPageCount[point.page]||0) + point.count_modified;
     }
     let pages = Array.from(selectedPages);
     pages.sort();
@@ -27,8 +31,12 @@ function updatePageList() {
         checkbox.setAttribute('type', 'checkbox');
         checkbox.checked = true;
         label.append(checkbox, ' ' + page)
+        let initialEl = document.createElement('td');
+        initialEl.textContent = initialPageCount[page];
+        let modifiedEl = document.createElement('td');
+        modifiedEl.textContent = modifiedPageCount[page];
         pageEl.append(label);
-        tr.append(pageEl);
+        tr.append(pageEl, initialEl, modifiedEl);
         tbody.append(tr);
 
         checkbox.onchange = () => {
