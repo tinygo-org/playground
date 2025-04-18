@@ -135,17 +135,17 @@ func (job compilerJob) Run() error {
 	env := []string{"GOPROXY=off"} // don't download dependencies
 	switch job.Compiler {
 	case "go":
-		cmd = exec.Command("go", "build", "-trimpath", "-ldflags", "-s -w", "-o", tmpfile, infile.Name())
+		cmd = exec.Command("go", "build", "-json", "-trimpath", "-ldflags", "-s -w", "-o", tmpfile, infile.Name())
 		env = append(env, "GOOS=wasip1", "GOARCH=wasm")
 	case "tinygo":
 		switch job.Format {
 		case "wasm", "wasi":
 			// simulate
 			tag := strings.Replace(job.Target, "-", "_", -1) // '-' not allowed in tags, use '_' instead
-			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Format, "-tags", tag, "-no-debug", infile.Name())
+			cmd = exec.Command("tinygo", "build", "-json", "-o", tmpfile, "-target", job.Format, "-tags", tag, "-no-debug", infile.Name())
 		default:
 			// build firmware
-			cmd = exec.Command("tinygo", "build", "-o", tmpfile, "-target", job.Target, infile.Name())
+			cmd = exec.Command("tinygo", "build", "-json", "-o", tmpfile, "-target", job.Target, infile.Name())
 		}
 	}
 	buf := &bytes.Buffer{}

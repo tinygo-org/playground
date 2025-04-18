@@ -510,10 +510,11 @@ class Simulator {
     } else if (msg.type == 'error') {
       // There was an error. Terminate the worker, it has no more work to do.
       this.#stopWorker();
-      this.terminal.appendError(msg.message);
+      let [output, diagnostics] = parseCompilerErrors(msg.message);
+      this.terminal.appendError(output);
       if (msg.source === 'compiler') {
         if (this.editor) {
-          this.editor.setDiagnostics(parseCompilerErrors(msg.message));
+          this.editor.setDiagnostics(diagnostics);
         }
       }
     } else if (msg.type === 'stdout') {
@@ -2006,22 +2007,48 @@ function parseUnitMM(value) {
 // Parse compiler errors from the Go (or TinyGo) compiler and convert them to an
 // array of diagnostics ready to give to the editor.
 function parseCompilerErrors(message) {
+  let output = '';
   let diagnostics = [];
-  let re = new RegExp("^main\.go:([0-9]+)(:([0-9]+))?: (.*)$")
+  let messageRegExp = new RegExp("^main\.go:([0-9]+)(:([0-9]+))?: (.*)\n$")
   let lines = message.split('\n');
   for (let line of lines) {
-    let result = re.exec(line);
+    if (line === '') continue;
+
+    // Parse JSON build output.
+    if (!line.startsWith('{')) {
+      console.warn('non-JSON compiler error:', line);
+      output += line + '\n';
+      continue;
+    }
+    let data;
+    try {
+      data = JSON.parse(line);
+    } catch (e) {
+      console.warn('failed to parse JSON compiler error:', line);
+      output += line + '\n';
+      continue;
+    }
+    if (data.Action !== 'build-output') {
+      continue;
+    }
+
+    // Parse error message.
+    output += data.Output;
+    let result = messageRegExp.exec(data.Output);
     if (result === null) {
       continue;
     }
-    diagnostics.push({
+
+    // Create the diagnostic to be sent to the editor.
+    let diagnostic = {
       line: parseInt(result[1]),
       col: result[3] ? parseInt(result[3]) : 0,
       severity: 'error',
       message: result[4],
-    })
+    };
+    diagnostics.push(diagnostic)
   }
-  return diagnostics;
+  return [output, diagnostics];
 }
 
 // Upgrade state object if the configuration is of an older type.
