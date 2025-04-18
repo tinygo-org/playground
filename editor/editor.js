@@ -184,6 +184,9 @@ export class Editor {
         if (diag.col <= 0) {
           from = index;
           to   = index + line.length;
+        } else if (diag.col2 > 0) {
+          // There is a separate end position for this diagnostic.
+          to = index + diag.col2 - 1;
         }
         result.push({
           from: from,

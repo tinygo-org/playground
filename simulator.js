@@ -2010,6 +2010,7 @@ function parseCompilerErrors(message) {
   let output = '';
   let diagnostics = [];
   let messageRegExp = new RegExp("^main\.go:([0-9]+)(:([0-9]+))?: (.*)\n$")
+  let posRegExp = new RegExp("^main\.go:([0-9]+)(:([0-9]+))?$")
   let lines = message.split('\n');
   for (let line of lines) {
     if (line === '') continue;
@@ -2047,6 +2048,15 @@ function parseCompilerErrors(message) {
       message: result[4],
     };
     diagnostics.push(diagnostic)
+
+    // Check whether there is an end position, for slightly better (IDE-like)
+    // inline error messages.
+    let endPosParsed = posRegExp.exec(data.EndPos);
+    if (endPosParsed !== null) {
+      if (parseInt(endPosParsed[1]) === diagnostic.line) {
+        diagnostic.col2 = parseInt(endPosParsed[3]);
+      }
+    }
   }
   return [output, diagnostics];
 }
