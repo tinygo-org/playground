@@ -405,6 +405,11 @@ class Simulator {
 
   #runWithAPI() {
     let compiler = this.schematic.state.compiler || 'tinygo'; // fallback to tinygo
+    let page = document.location.origin + document.location.pathname;
+    if (document.location.pathname.startsWith('/play/s/')) {
+      // Strip the 'share' location from the URL to be tracked.
+      page = document.location.origin + '/play/';
+    }
     this.run({
       url: `${this.apiURL}/compile?compiler=${compiler}&format=wasi&target=${this.schematic.parts.get('main').config.name}`,
       method: 'POST',
@@ -412,7 +417,7 @@ class Simulator {
       headers: {
         // Some tracking information, to know how often a given playground page
         // is loaded and how often it is being used (modified).
-        'TinyGo-Page': document.location.href,
+        'TinyGo-Page': page,
         'TinyGo-Modified': this.editor.textModified,
       },
     });
