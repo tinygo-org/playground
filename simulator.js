@@ -936,6 +936,38 @@ class Schematic {
         part.rootElement.style.setProperty('--' + key, value);
       }
 
+      // Some parts use the Web Animation API to animate some CSS properties.
+      if (part.animation) {
+        // Cancel an ongoing animation if there is one.
+        part.animation.cancel();
+        part.animation = null;
+      }
+      if (update.cssBlink) {
+        // Blink some CSS properties: turn them on and off at a given frequency
+        // and duty cycle. This is done using an animation (instead of doing it
+        // all in JS) to improve performance at high frequencies.
+        let startProperties = {};
+        for (let [key, value] of Object.entries(update.cssProperties || {})) {
+          startProperties['--'+key] = value;
+        }
+        let endProperties = {};
+        for (let [key, value] of Object.entries(update.cssBlink.cssPropertiesOff || {})) {
+          endProperties['--'+key] = value;
+        }
+        part.animation = part.rootElement.animate(
+          [
+            startProperties,
+            Object.assign({offset: update.cssBlink.dutyCycle}, startProperties),
+            Object.assign({offset: update.cssBlink.dutyCycle}, endProperties),
+            endProperties,
+          ],
+          {
+            duration: update.cssBlink.period,
+            iterations: Infinity,
+          },
+        );
+      }
+
       // Update the properties panel at the bottom if needed.
       // TODO: use IntersectionObserver to only update these properties when
       // visible! That should reduce CPU usage for fast-changing properties.
@@ -1036,6 +1068,11 @@ class Schematic {
   setSpeed(speed) {
     this.root.querySelector('.schematic-button-pause').disabled = false;
     this.root.classList.toggle('paused', speed === 0);
+    if (this.parts) {
+      for (let part of this.parts.values()) {
+        part.setSpeed(speed);
+      }
+    }
   }
 }
 
@@ -1744,6 +1781,13 @@ class Part {
     // Remove a pin tooltip, if it is present.
     if (this.tooltipPin) {
       this.schematic.simulator.tooltip.remove(this.tooltipPin);
+    }
+  }
+
+  // Set the speed of this one part.
+  setSpeed(speed) {
+    if (this.animation) {
+      this.animation.updatePlaybackRate(speed);
     }
   }
 }

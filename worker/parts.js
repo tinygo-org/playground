@@ -9,6 +9,8 @@ class Pin {
     this.state = state ? state : 'floating';
     this.net = null;
     this.mode = 'gpio';
+    this.pwmPeriod = 0;
+    this.pwmDutyCycle = 0;
   }
 
   // notifyPart sends a pin update notification to the attached part.
@@ -78,8 +80,10 @@ class Pin {
       return 3;
     } else if (state === 'pullup') {
       return 4;
+    } else if (state === 'pwm') {
+      return 5;
     } else {
-      console.warn('unknown state: ' + state);
+      console.error('unknown state: ' + state);
       return 0;
     }
   }
@@ -100,6 +104,18 @@ class Pin {
   // pin - floating or not. This is used for LEDs.
   isConnected() {
     return this.net.pins.size > 1;
+  }
+
+  // Set the period and duty cycle of this pin. This is called from the PWM
+  // peripheral.
+  setPWM(period, dutyCycle) {
+    if (this.state !== 'pwm')
+      return;
+    this.pwmPeriod = period;
+    this.pwmDutyCycle = dutyCycle;
+    if (this.net) {
+      this.net.updateState();
+    }
   }
 
   // writeWS2812 writes a WS2812 buffer to the net.
@@ -124,6 +140,7 @@ class Part {
     this.type = config.type;
     this.pins = {};
     this.spiBuses = {};
+    this.pwmInstances = {};
     this.properties = null;
     this.hasUpdate = false;
     this.powerState = new PowerTracker(this);
@@ -147,6 +164,17 @@ class Part {
     if (!instance) {
       instance = new SPIBus();
       this.spiBuses[bus] = instance;
+    }
+    return instance;
+  }
+
+  // getPWM returns the given PWM instance number, and creates it if it doesn't
+  // exist yet.
+  getPWM(number) {
+    let instance = this.pwmInstances[number];
+    if (!instance) {
+      instance = new PWMInstance();
+      this.pwmInstances[number] = instance;
     }
     return instance;
   }
@@ -362,6 +390,15 @@ class MCU extends Part {
     } else if (msg.type === 'gpio-set') {
       this.getPin(msg.pin).set(msg.high);
       this.#finishedTask();
+    } else if (msg.type === 'pwm-configure') {
+      let instance = this.getPWM(msg.instance);
+      instance.configure(msg.instance, msg.frequency, msg.top);
+    } else if (msg.type === 'pwm-channel-configure') {
+      let instance = this.getPWM(msg.instance);
+      instance.channelConfigure(msg.channel, this.getPin(msg.pin));
+    } else if (msg.type === 'pwm-channel-set') {
+      let instance = this.getPWM(msg.instance);
+      instance.channelSet(msg.channel, msg.value);
     } else if (msg.type === 'spi-configure') {
       let bus = this.getSPI(msg.bus);
       bus.configureAsController(this.getPin(msg.sck), this.getPin(msg.sdo), this.getPin(msg.sdi));
@@ -472,6 +509,8 @@ class LED extends Part {
       source: this.parentId(),
     }
     this.on = null;
+    this.pwmPeriod = 0;
+    this.pwmDutyCycle = 0;
   }
 
   notifyPinUpdate() {
@@ -484,28 +523,63 @@ class LED extends Part {
     let cathodeConnected = this.pins.cathode.isConnected();
     let anode = anodeConnected ? this.pins.anode.net.isSource() : true;
     let cathode = cathodeConnected ? this.pins.cathode.net.isSink() : true;
-    let on = anode && cathode && (anodeConnected || cathodeConnected);
-    if (on !== this.on) {
+    let on = (anode && cathode && (anodeConnected || cathodeConnected)) ? 1 : 0;
+    let period = 0;
+    let dutyCycle = 0;
+    if (anode && this.pins.cathode.net.state === 'pwm') {
+      // Cathode is connected to PWM output.
+      period = this.pins.cathode.net.extra.period;
+      dutyCycle = this.pins.cathode.net.extra.dutyCycle;
+    } else if (cathode && this.pins.anode.net.state === 'pwm') {
+      // Anode is connected to PWM output.
+      // TODO: invert duty cycle (first part high and later part 0) instead of
+      // just inverting the duty cycle value.
+      period = this.pins.anode.net.extra.period;
+      dutyCycle = 1-this.pins.anode.net.extra.dutyCycle;
+    }
+
+    if (period !== 0) {
+      // PWM
+      if (period > 1000/30) {
+        // Longer period, use animation.
+        this.pwmPeriod = period;
+        this.pwmDutyCycle = dutyCycle;
+        this.on = 1;
+      } else {
+        // Shorter period, fade the LED.
+        this.pwmPeriod = 0;
+        this.on = dutyCycle;
+      }
+      // TODO: change power state together with the blinking?
+      this.powerState.update(this.current * dutyCycle);
+      this.notifyUpdate();
+    } else if (on !== this.on) {
+      this.pwmPeriod = 0;
       this.on = on;
-      this.powerState.update(this.current * (on ? 1 : 0));
+      this.powerState.update(this.current * on);
       this.notifyUpdate();
     }
   }
 
   getState() {
     let [r, g, b] = this.color;
-    if (!this.on) {
-      // Turn off the LED entirely.
-      r = 0;
-      g = 0;
-      b = 0;
-    }
-    return {
+    r = encodeSRGB(r * this.on / 255);
+    g = encodeSRGB(g * this.on / 255);
+    b = encodeSRGB(b * this.on / 255);
+    let state = {
       id: this.id,
       cssProperties: colorProperties([r, g, b]),
       properties: this.on ? 'on' : 'off',
       power: this.powerState.getState(),
     };
+    if (this.pwmPeriod) {
+      state.cssBlink = {
+        period: this.pwmPeriod,
+        dutyCycle: this.pwmDutyCycle,
+        cssPropertiesOff: colorProperties([0, 0, 0]),
+      };
+    }
+    return state;
   }
 }
 

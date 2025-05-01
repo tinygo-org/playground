@@ -22,16 +22,20 @@ class Net {
     let state = 'floating';
     let pins = new Set(this.pins);
     let nets = new Set([this]);
+    let extra = null;
     for (let pin of pins) {
       if (pin.state === 'floating') {
         // no change
+      } else if (pin.state === 'pwm') {
+        state = 'pwm';
+        extra = {period: pin.pwmPeriod, dutyCycle: pin.pwmDutyCycle};
       } else if (pin.state === 'low') {
-        if (state === 'high') {
+        if (state === 'high' || state === 'pwm') {
           console.warn('short!'); // TODO: make this more informative
         }
         state = 'low';
       } else if (pin.state === 'high') {
-        if (state === 'low') {
+        if (state === 'low' || state === 'pwm') {
           console.warn('short!'); // TODO: same here
         }
         state = 'high';
@@ -61,18 +65,19 @@ class Net {
         console.error('unknown pin state:', pin.state);
       }
     }
-    return [state, nets];
+    return [state, extra, nets];
   }
 
   // updateState updates the shared state of the net: low, high, or floating.
   // It also notifies connected devices that they have been updated.
   updateState() {
-    let [newState, nets] = this.computeState();
+    let [newState, extra, nets] = this.computeState();
 
     for (let net of nets) {
-      if (net.state !== newState) {
+      if (net.state !== newState || extra) {
         // The state changed. Notify listening parts.
         net.state = newState;
+        net.extra = extra;
         for (let pin of net.pins) {
           pin.notifyPart();
         }
@@ -95,13 +100,13 @@ class Net {
   // isSource returns whether this pin is a source of current (such as VCC or a
   // high pin, but not a pulled up input pin). Used for LEDs.
   isSource() {
-    return this.state == 'high';
+    return this.state === 'high' || this.state === 'pwm';
   }
 
   // isSink returns whether this pin is a current sink (such as GND or a low
   // pin, but not a pulled down input pin). Used for LEDs.
   isSink() {
-    return this.state == 'low';
+    return this.state == 'low' || this.state === 'pwm';
   }
 }
 
@@ -214,8 +219,9 @@ class Schematic {
       if (updatedNets.has(net)) {
         continue;
       }
-      let [newState, nets] = net.computeState();
+      let [newState, extra, nets] = net.computeState();
       net.state = newState;
+      net.extra = extra;
       updatedNets.add(net);
     }
 
@@ -431,5 +437,55 @@ class SPIBus {
       }
     }
     return r;
+  }
+}
+
+// A PWM instance simulates a single PWM/timer peripheral as commonly exists on
+// microcontrollers.
+class PWMInstance {
+  configure(instance, frequency, top) {
+    this.instance = instance;
+    this.frequency = frequency;
+    this.top = top;
+    this.channels = new Map();
+  }
+
+  // Configure a channel to use the given pin.
+  // One channel may be connected to multiple pins.
+  channelConfigure(channel, pin) {
+    // Add the pin to this channel. One channel might control multiple pins
+    // (that's how the hardware usually works).
+    if (!this.channels.has(channel)) {
+      this.channels.set(channel, {
+        pins: new Set(),
+        value: 0,
+      });
+    }
+    this.channels.get(channel).pins.add(pin);
+
+    // Set the pin as a PWM output.
+    pin.setState('pwm', 'pwm');
+  }
+
+  // Set the value (duty cycle) of the channel.
+  channelSet(channel, value) {
+    if (!this.channels.has(channel)) {
+      throw new Error(`channel ${channel} of PWM instance ${this.instance} has not been configured`)
+    }
+
+    let ch = this.channels.get(channel)
+    ch.value = value;
+    this.#updatePins(ch);
+  }
+
+  #updatePins(ch) {
+    let period = this.top / this.frequency * 1000; // period in ms
+    let dutyCycle = ch.value / this.top;
+    if (dutyCycle > 1) {
+      dutyCycle = 1;
+    }
+    for (let outPin of ch.pins) {
+      outPin.setPWM(period, dutyCycle);
+    }
   }
 }

@@ -335,6 +335,30 @@ class Runner {
             }[mode],
           })
         },
+        __tinygo_pwm_configure: (instance, frequency, top) => {
+          this.postMessage({
+            type: 'pwm-configure',
+            instance: instance,
+            frequency: frequency,
+            top: top,
+          });
+        },
+        __tinygo_pwm_channel_configure: (instance, channel, pin) => {
+          this.postMessage({
+            type: 'pwm-channel-configure',
+            instance: instance,
+            channel: channel,
+            pin: pin,
+          });
+        },
+        __tinygo_pwm_channel_set: (instance, channel, value) => {
+          this.postMessage({
+            type: 'pwm-channel-set',
+            instance: instance,
+            channel: channel,
+            value: value,
+          });
+        },
         __tinygo_spi_configure: (bus, sck, sdo, sdi) => {
           this.postMessage({
             type: 'spi-configure',
