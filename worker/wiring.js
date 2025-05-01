@@ -154,6 +154,8 @@ class Schematic {
       return new EPD2IN13(this, part);
     if (part.type === 'st7789')
       return new ST7789(this, part);
+    if (part.type === 'servo')
+      return new Servo(this, part);
     console.error('part: ' + part.type);
     throw 'unknown part';
   }

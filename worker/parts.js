@@ -1059,6 +1059,103 @@ class WS2812 extends Part {
   }
 }
 
+// Simulate a servo, as commonly used in hobby R/C cars for example.
+class Servo extends Part {
+  constructor(schematic, config) {
+    super(schematic, config);
+    this.pins.control = new Pin(config.id + '.control', this);
+    this.properties = {
+      humanName: config.humanName,
+      id: this.id,
+      type: 'text',
+    };
+    this.power = {
+      humanName: config.humanName,
+      id: this.id,
+      source: this.parentId(),
+    }
+    this.speed = 600; // degrees turned per second
+    this.idleCurrent = 0.006;  // ~6mA
+    this.stallCurrent = 0.800; // ~800mA
+    this.fullRotation = 180;   // 180° servo
+    this.rotation = 0;
+    this.rotationTime = 0;
+    this.rotationTarget = 0;
+    this.powerState.update(this.idleCurrent)
+    this.updateState();
+  }
+
+  notifyPinUpdate() {
+    this.updateState();
+  }
+
+  updateState() {
+    let pin = this.pins.control;
+    if (pin.net && pin.net.state === 'pwm') {
+      let timeOn = pin.net.extra.period * pin.net.extra.dutyCycle;
+      // Accept the following:
+      //   - period size between 3ms and 100ms
+      //   - pulse width between 800µs and 2200µs
+      if (pin.net.extra.period > 3 && pin.net.extra.period < 100) {
+        if (timeOn < 0.8)
+          timeOn = 0.8;
+        if (timeOn > 2.2) {
+          timeOn = 2.2;
+        }
+        let rotationTarget = (1.5 - timeOn) * this.fullRotation;
+        if (this.rotation !== rotationTarget) {
+          this.rotationTarget = rotationTarget;
+          this.rotationTime = performance.now();
+          this.notifyUpdate();
+        }
+      }
+    }
+  }
+
+  #updateRotation() {
+    let now = performance.now();
+    if (this.rotation !== this.rotationTarget) {
+      this.powerState.update(this.stallCurrent)
+      let elapsed = now - this.rotationTime;
+      if (this.rotationTarget > this.rotation) {
+        // Rotating clockwise.
+        let newRotation = this.rotation + this.speed*elapsed/1000;
+        if (newRotation > this.rotationTarget) {
+          // Reached target rotation!
+          newRotation = this.rotationTarget;
+        }
+        this.rotation = newRotation;
+      } else {
+        // Rotating counterclockwise.
+        let newRotation = this.rotation - this.speed*elapsed/1000;
+        if (newRotation < this.rotationTarget) {
+          // Reached target rotation!
+          newRotation = this.rotationTarget;
+        }
+        this.rotation = newRotation;
+      }
+      this.rotationTime = now;
+      setTimeout(() => {this.notifyUpdate()}, 0);
+    } else {
+      this.powerState.update(this.idleCurrent)
+    }
+    return this.rotation;
+  }
+
+  getState() {
+    this.#updateRotation();
+    let state = {
+      id: this.id,
+      properties: `rotation ${this.rotation.toFixed(1)}°`,
+      cssProperties: {
+        rotation: `${this.rotation}deg`,
+      },
+      power: this.powerState.getState(),
+    };
+    return state;
+  }
+}
+
 // colorProperties returns --color and --shadow CSS custom properties for use
 // in SVG files. The --shadow custom property is used to give the illusion of
 // light coming off the LED and is partially transparent when not fully bright.

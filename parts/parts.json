@@ -67,6 +67,13 @@
         "svg": "parts/st7789-breakout.svg"
       },
       "location": "parts/st7789-breakout.json"
+    },
+    {
+      "config": {
+        "type": "servo",
+        "humanName": "Servo SG90",
+        "svg": "parts/servo-sg90.svg"
+      }
     }
   ]
 }
