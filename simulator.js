@@ -2007,6 +2007,11 @@ function parseUnitMM(value) {
 // Parse compiler errors from the Go (or TinyGo) compiler and convert them to an
 // array of diagnostics ready to give to the editor.
 function parseCompilerErrors(message) {
+  if (message instanceof Error) {
+    // This can happen for example when the WebAssembly binary imports a
+    // function that is not defined in the runner.
+    return ['JavaScript error while running code:\n' + message.message, []];
+  }
   let output = '';
   let diagnostics = [];
   let messageRegExp = new RegExp("^main\.go:([0-9]+)(:([0-9]+))?: (.*)\n$")
