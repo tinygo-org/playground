@@ -105,6 +105,12 @@
             "type": "pushbutton",
             "key": "B",
             "humanName": "Button B"
+        },
+        {
+          "id": "imu",
+          "type": "lis3dh",
+          "humanName": "LIS3DH",
+          "axisMap": [1, -2, -3]
         }
     ],
     "wires": [
@@ -127,6 +133,9 @@
         {"from": "gnd", "to": "buttonUp.B"},
         {"from": "gnd", "to": "buttonDown.B"},
         {"from": "gnd", "to": "buttonA.B"},
-        {"from": "gnd", "to": "buttonB.B"}
+        {"from": "gnd", "to": "buttonB.B"},
+        {"from": "mcu.GPIO0", "to": "imu.sda"},
+        {"from": "mcu.GPIO1", "to": "imu.scl"},
+        {"from": "gnd", "to": "imu.sa0"}
     ]
 }

@@ -70,6 +70,13 @@
     },
     {
       "config": {
+        "humanName": "Adafruit LIS3DH",
+        "svg": "parts/adafruit-lis3dh.svg"
+      },
+      "location": "parts/adafruit-lis3dh.json"
+    },
+    {
+      "config": {
         "type": "servo",
         "humanName": "Servo SG90",
         "svg": "parts/servo-sg90.svg"

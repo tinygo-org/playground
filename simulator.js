@@ -968,6 +968,10 @@ class Schematic {
         );
       }
 
+      // Accelerometer sensor reading, which must be done from the UI thread
+      // (not a worker thread).
+      part.configureAccelerometer(update.accelFrequency);
+
       // Update the properties panel at the bottom if needed.
       // TODO: use IntersectionObserver to only update these properties when
       // visible! That should reduce CPU usage for fast-changing properties.
@@ -1789,6 +1793,80 @@ class Part {
     if (this.animation) {
       this.animation.updatePlaybackRate(speed);
     }
+  }
+
+  // Configure the accelerometer for the given frequency, or disable the
+  // accelerometer if the frequency is zero.
+  // The values that are read are send back to the web worker so accelerometer
+  // sensors can make user of them.
+  configureAccelerometer(frequency) {
+    if (this.accel) {
+      this.accel.stop();
+      this.accel = null;
+    }
+    if (!frequency) {
+      return;
+    }
+
+    if (window.Accelerometer) {
+      // This is the newer API, that is (as of 2025) only supported by
+      // Chromium-based browsers.
+      // Note: this requires the 'accelerometer' permission. However, this
+      // permission seems to be granted by default in Chrome.
+      this.accel = new Accelerometer({
+        frequency: frequency,
+        referenceFrame: 'screen', // relative to what's displayed on screen (import for rotation)
+      });
+      this.accel.onreading = () => this.#sendAccelData(this.accel.x, this.accel.y, this.accel.z);
+      this.accel.start();
+    } else {
+      // This is the older deprecated API. Firefox will log a warning that it is
+      // deprecated, but doesn't provide a replacement 🤷‍♀️ All modern browsers
+      // support it though.
+      // Safari seems to require asking for permission, which is good, but I
+      // have no iPhone to test this on.
+      // https://stackoverflow.com/questions/59886073/how-to-check-motion-orientation-permissionstate-in-ios-12-2-by-javascript
+      // This API unfortunately doesn't provide a way to tell the update
+      // frequency. In Firefox it seems to be 10Hz.
+      let listener = (e) => this.#sendAccelData(
+        e.accelerationIncludingGravity.x,
+        e.accelerationIncludingGravity.y,
+        e.accelerationIncludingGravity.z);
+      window.addEventListener('devicemotion', listener);
+
+      // Stub an Accelerometer object, so it can be stopped easily.
+      this.accel = {
+        stop: () => window.removeEventListener('devicemotion', listener),
+      };
+    }
+  }
+
+  #sendAccelData(x, y, z) {
+    // The Sensor API uses m/s², but hardware sensors typically use g.
+    // The value here comes from Wikipedia:
+    // https://en.wikipedia.org/wiki/Standard_gravity
+    const g = 9.806;
+
+    // Determine rotation of the sensor.
+    let rotation = 0;
+    for (let part = this; part; part = part.parent) {
+      rotation = (rotation + part.data.rotation) % 360;
+    }
+
+    // Apply this rotation.
+    let rad = (360 - rotation) / 180 * Math.PI;
+    [x, y] = [
+      x * Math.cos(rad) + y * Math.sin(rad),
+      y * Math.cos(rad) - x * Math.sin(rad),
+    ];
+
+    // Send this rotation value to the web worker to update the simulated sensor
+    // state.
+    this.schematic.simulator.worker.postMessage({
+      type: 'input',
+      id: this.id,
+      event: { accel: [x/g, y/g, z/g]},
+    });
   }
 }
 

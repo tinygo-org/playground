@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<!--
+See:
+https://www.adafruit.com/product/2809
+https://learn.adafruit.com/adafruit-lis3dh-triple-axis-accelerometer-breakout/downloads
+-->
+
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 25.40 17.78" width="25.40mm" height="17.78mm">
+  <!-- rounded PCB with 4 holes -->
+  <path fill="#1c1c1c" d="
+    M 2.54 0 H 22.86 a 2.54 2.54 0 0 1  2.54  2.54
+             V 15.24 a 2.54 2.54 0 0 1 -2.54  2.54
+             H  2.54 a 2.54 2.54 0 0 1 -2.54 -2.54
+             V  2.54 a 2.54 2.54 0 0 1  2.54 -2.54 Z
+    M 22.86  1.34 a 1.20 1.20 0 1 0 0.001 0 Z
+    M 22.86 14.04 a 1.20 1.20 0 1 0 0.001 0 Z
+    M  2.54 14.04 a 1.20 1.20 0 1 0 0.001 0 Z
+    M  2.54  1.34 a 1.20 1.20 0 1 0 0.001 0 Z
+    "/>
+
+  <!-- pins -->
+  <g transform="translate(5.08, 1.27)" fill="transparent">
+    <g data-pin="I2" transform="translate(0, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">I2</text>
+    </g>
+    <g data-pin="A3" transform="translate(2.54, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">A3</text>
+    </g>
+    <g data-pin="A2" transform="translate(5.08, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">A2</text>
+    </g>
+    <g data-pin="A1" transform="translate(7.62, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">A1</text>
+    </g>
+    <g data-pin="SDO" transform="translate(10.16, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">SDO</text>
+    </g>
+    <g data-pin="CS" transform="translate(12.70, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">CS</text>
+    </g>
+  </g>
+
+  <!-- more pins -->
+  <g transform="translate(5.08, 13.97)" fill="transparent">
+    <g data-pin="VIN" transform="translate(0, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="3.4" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">VIN</text>
+    </g>
+    <g data-pin="3V" transform="translate(2.54, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">3Vo</text>
+    </g>
+    <g data-pin="GND" transform="translate(5.08, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="3.4" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">GND</text>
+    </g>
+    <g data-pin="SCL" transform="translate(7.62, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="0.0" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">SCL</text>
+    </g>
+    <g data-pin="SDA" transform="translate(10.16, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="3.4" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">SDA</text>
+    </g>
+    <g data-pin="INT" transform="translate(12.70, 0)">
+      <circle cx="1.27" cy="1.27" r="1" fill="#c2b9af"/>
+      <rect width="2.54" height="2.54" class="area"/>
+      <text x="1.27" y="3.4" font-size="1.5" text-anchor="middle" fill="white" font-family="monospace">INT</text>
+    </g>
+  </g>
+
+  <!--
+  LIS3DH chip + solder pads
+  -->
+  <g transform="translate(12.7, 8.89) rotate(180)">
+    <g transform="translate(-0.675, -1.90)">
+      <rect width="0.35" height="0.8" x="0.0" class="area" fill="#c2b9af"/>
+      <rect width="0.35" height="0.8" x="0.5" class="area" fill="#c2b9af"/>
+      <rect width="0.35" height="0.8" x="1.0" class="area" fill="#c2b9af"/>
+    </g>
+    <g transform="translate(-0.675, 1.10)">
+      <rect width="0.35" height="0.8" x="0.0" class="area" fill="#c2b9af"/>
+      <rect width="0.35" height="0.8" x="0.5" class="area" fill="#c2b9af"/>
+      <rect width="0.35" height="0.8" x="1.0" class="area" fill="#c2b9af"/>
+    </g>
+    <g transform="translate(-1.90, -1.175)">
+      <rect width="0.80" height="0.35" y="0.0" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="0.5" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="1.0" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="1.5" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="2.0" class="area" fill="#c2b9af"/>
+    </g>
+    <g transform="translate(1.10, -1.175)">
+      <rect width="0.80" height="0.35" y="0.0" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="0.5" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="1.0" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="1.5" class="area" fill="#c2b9af"/>
+      <rect width="0.80" height="0.35" y="2.0" class="area" fill="#c2b9af"/>
+    </g>
+    <rect width="3" height="3" fill="#333" x="-1.5" y="-1.5"/>
+    <text x="1.4" y="0" font-size="1.1" text-anchor="end" dominant-baseline="middle" fill="white" font-family="monospace">C3H</text>
+  </g>
+</svg>

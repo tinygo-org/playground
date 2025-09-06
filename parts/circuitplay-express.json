@@ -101,6 +101,11 @@
             "type": "pushbutton",
             "key": "B",
             "humanName": "Button B"
+        },
+        {
+          "id": "imu",
+          "type": "lis3dh",
+          "humanName": "LIS3DH"
         }
     ],
     "wires": [
@@ -123,6 +128,9 @@
         {"from": "mcu.PA28", "to": "buttonLeft.A"},
         {"from": "vcc",      "to": "buttonLeft.B"},
         {"from": "mcu.PA14", "to": "buttonRight.A"},
-        {"from": "vcc",      "to": "buttonRight.B"}
+        {"from": "vcc",      "to": "buttonRight.B"},
+        {"from": "mcu.PA00", "to": "imu.sda"},
+        {"from": "mcu.PA01", "to": "imu.scl"},
+        {"from": "vcc",      "to": "imu.sa0"}
     ]
 }

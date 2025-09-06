@@ -154,6 +154,8 @@ class Schematic {
       return new RGBLED(this, part);
     if (part.type === 'ws2812')
       return new WS2812(this, part);
+    if (part.type === 'lis3dh')
+      return new LIS3DH(this, part);
     if (part.type === 'epd2in13')
       return new EPD2IN13(this, part);
     if (part.type === 'st7789')

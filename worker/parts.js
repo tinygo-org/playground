@@ -664,6 +664,220 @@ class RGBLED extends Part {
   }
 }
 
+// LIS3DH accelerometer from ST.
+// https://cdn-shop.adafruit.com/datasheets/LIS3DH.pdf
+// https://cdn-shop.adafruit.com/datasheets/LIS3DHappnote.pdf
+class LIS3DH extends Part {
+  constructor(schematic, config) {
+    super(schematic, config);
+    this.pins.scl = new Pin(config.id + '.scl', this);
+    this.pins.sda = new Pin(config.id + '.sda', this);
+    this.pins.sa0 = new Pin(config.id + '.sa0', this, 'pullup');
+    this.axisMap = config.axisMap;
+    this.i2c = new I2CBus();
+    this.i2c.configureAsPeripheral(this.pins.scl, this.pins.sda);
+    this.i2cRegister = 0;
+    this.i2cData = new Uint8Array(118);
+    this.i2cData[0x0F] = 0x33; // WHO_AM_I
+    this.i2cData[0x20] = 0x07; // CTRL_REG1
+
+    this.setPosition([0, 0, 1]);
+
+    this.properties = {
+      humanName: config.humanName,
+      id: this.id,
+      type: 'text',
+    };
+    this.status = '';
+
+    this.lastUpdate = null;
+
+    this.power = {
+      id: this.id,
+      humanName: config.humanName,
+      source: this.parentId(),
+    };
+    this.accel = null;
+    this.onRegisterUpdate();
+  }
+
+  setPosition(accel) {
+    // Number (1-3) indicates the axis starting from 1, the sign of the number
+    // indicates whether it should be flipped.
+    let enabledAxes = this.i2cData[0x20] & 0b111;
+    let axisMap = this.axisMap || [1, 2, 3];
+    if (enabledAxes & 0b001)
+      this.x = accel[Math.abs(axisMap[0])-1] * Math.sign(axisMap[0]);
+    if (enabledAxes & 0b010)
+      this.y = accel[Math.abs(axisMap[1])-1] * Math.sign(axisMap[1]);
+    if (enabledAxes & 0b100)
+      this.z = accel[Math.abs(axisMap[2])-1] * Math.sign(axisMap[2]);
+  }
+
+  handleInput(data) {
+    this.setPosition(data.event.accel);
+  }
+
+  getState() {
+    return {
+      id: this.id,
+      properties: this.status,
+      power: this.powerState.getState(),
+      accelFrequency: this.odr,
+    };
+  }
+
+  onRegisterUpdate() {
+    // Note: this doesn't include high-resolution mode.
+    let odr = this.i2cData[0x20] >> 4; // CTRL_REG1
+    let lp = this.i2cData[0x20] & (1 << 3);
+    let enabledAxes = this.i2cData[0x20] & 0b111;
+    let microamps = 0.5; // chip starts up in power-down mode (0.5µA)
+    this.status = '(out of spec)';
+    this.odr = 0; // zero means 'not updating'
+    if (odr === 0b0000) { // power down
+      this.status = 'Power down mode';
+    } else if (odr === 0b0001) { // 1Hz
+      this.status = lp ? 'Low power mode 1Hz' : 'Normal mode 1Hz';
+      this.odr = 1;
+      microamps = 2;
+    } else if (odr === 0b0010) { // 10Hz
+      this.status = lp ? 'Low power mode 10Hz' : 'Normal mode 10Hz';
+      this.odr = 10;
+      microamps = lp ? 3 : 4;
+    } else if (odr === 0b0011) { // 25Hz
+      this.status = lp ? 'Low power mode 25Hz' : 'Normal mode 25Hz';
+      this.odr = 25;
+      microamps = lp ? 4 : 6;
+    } else if (odr === 0b0100) { // 50Hz
+      this.status = lp ? 'Low power mode 50Hz' : 'Normal mode 50Hz';
+      this.odr = 50;
+      microamps = lp ? 6 : 11;
+    } else if (odr === 0b0101) { // 100Hz
+      this.status = lp ? 'Low power mode 100Hz' : 'Normal mode 100Hz';
+      this.odr = 100;
+      microamps = lp ? 10 : 20;
+    } else if (odr === 0b0110) { // 200Hz
+      this.status = lp ? 'Low power mode 200Hz' : 'Normal mode 200Hz';
+      this.odr = 200;
+      microamps = lp ? 18 : 38;
+    } else if (odr === 0b0111) { // 400Hz
+      this.status = lp ? 'Low power mode 400Hz' : 'Normal mode 400Hz';
+      this.odr = 400;
+      microamps = lp ? 36 : 73;
+    } else if (odr === 0b1000) { // 1620Hz
+      // The datasheet is inconsistent here. One place says 1620Hz, another 1600Hz.
+      this.status = 'Low power mode 1620Hz';
+      this.odr = 1620;
+      microamps = 100;
+    } else if (odr === 0b1001) { // 1344Hz or 5376Hz
+      // The datasheet is inconsistent here as well, for both frequencies.
+      this.status = lp ? 'Low power mode 5376Hz' : 'Normal mode 1344Hz';
+      this.odr = lp ? 5376 : 1344;
+      microamps = 185;
+    }
+    if (microamps > 0.5) {
+      // For any enabled state, also show the enabled axes.
+      let axes = [];
+      if (enabledAxes === 0) {
+        this.status += ', no axes enabled';
+      } else {
+        if (enabledAxes & 0b001) axes.push('X');
+        if (enabledAxes & 0b010) axes.push('Y');
+        if (enabledAxes & 0b100) axes.push('Z');
+        this.status += `, enabled axes ${axes.join(', ')}`;
+      }
+    }
+    this.powerState.update(microamps / 1000_000);
+    this.notifyUpdate();
+  }
+
+  updateRegisters() {
+    if (this.odr !== 0) {
+      let now = performance.now();
+      let updatesSinceStart = Math.floor(((now / 1000) * this.odr));
+      let calculatedLastUpdate = updatesSinceStart / this.odr;
+      if (calculatedLastUpdate !== this.lastUpdate) {
+        this.lastUpdate = calculatedLastUpdate;
+        let fs = (this.i2cData[0x23] >> 4) & 0b11; // CTRL_REG4 FS0 and FS1
+        let fullScale = 2 << fs; // 2G..16G
+        let enabledAxes = this.i2cData[0x20] & 0b111; // CTRL_REG1
+        // Adding random noise with an average deviation of 50. I did some
+        // measuring with a real chip (default 2g scale), and the noise had a
+        // standard deviation of around 60 for X and Y (which were around zero)
+        // and around 100 for the Z axis (which was around 16384). Here we'll
+        // simplify things and just add random noise around 50, which should be
+        // good enough. (Also divide by 64 because there are 6 more bits in the
+        // output than the ADC provides).
+        let noise = 50 / 64;
+        if (enabledAxes & 0b001) { // X
+          let x = simulateADC(this.x / fullScale, 10, noise) << 6;
+          this.i2cData[0x28] = (x >> 0) & 0xff;
+          this.i2cData[0x29] = (x >> 8) & 0xff;
+        }
+        if (enabledAxes & 0b010) { // Y
+          let y = simulateADC(this.y / fullScale, 10, noise) << 6;
+          this.i2cData[0x2A] = (y >> 0) & 0xff;
+          this.i2cData[0x2B] = (y >> 8) & 0xff;
+        }
+        if (enabledAxes & 0b100) { // Z
+          let z = simulateADC(this.z / fullScale, 10, noise) << 6;
+          this.i2cData[0x2C] = (z >> 0) & 0xff;
+          this.i2cData[0x2D] = (z >> 8) & 0xff;
+        }
+      }
+    }
+  }
+
+  hasI2CAddress(address) {
+    if (address == 0x18) {
+      return this.pins.sa0.net.isLow();
+    }
+    if (address == 0x19) {
+      return this.pins.sa0.net.isHigh();
+    }
+    return false;
+  }
+
+  transferI2C(w, r) {
+    if (w.length > 0) {
+      // The first written byte is the register to start reading/writing.
+      this.i2cRegister = w[0];
+
+      // Write data to the register.
+      if (w.length > 1) {
+        if (this.i2cRegister & 0x80) {
+          // autoincrement
+          this.i2cData.set(w.subarray(1), this.i2cRegister & 0x7f);
+          this.i2cRegister += w.length - 1;
+        } else {
+          // non-autoincrement
+          this.i2cData[this.i2cRegister] = w[w.length - 1];
+        }
+        this.onRegisterUpdate();
+        this.updateRegisters();
+      }
+    }
+
+    // If the read buffer is non-zero, read the given registers from the current
+    // register number.
+    if (r.length > 0) {
+      // Update registers first if needed.
+      this.updateRegisters();
+
+      if (this.i2cRegister & 0x80) {
+        // autoincrement
+        let register = this.i2cRegister & 0x7f;
+        r.set(this.i2cData.subarray(register, (register & 0x7f) + r.length));
+        this.i2cRegister += r.length;
+      } else {
+        // non autoincrement
+        r.fill(this.i2cData[this.i2cRegister]);
+      }
+    }
+  }
+}
+
 // E-paper display by WaveShare.
 // https://www.waveshare.com/w/upload/e/e6/2.13inch_e-Paper_Datasheet.pdf
 class EPD2IN13 extends Part {
@@ -1213,4 +1427,33 @@ function decodeLittleEndian(buf) {
     n |= (buf[i] << i*8);
   }
   return n;
+}
+
+// Return gaussian noise with the given standard deviation.
+// Useful for simulated ADC noise.
+function randomNoise(stddev) {
+  // Use the Box-Muller transform:
+  // https://en.wikipedia.org/wiki/Box%E2%80%93Muller_method
+  // There are faster algorithms, but this one is pretty simple.
+  let u = Math.random();
+  let v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v) * stddev;
+}
+
+// Simulate a signed ADC read operation. The input value is a value in the 0..1
+// range, the bits is the number of bits of this ADC, and the noise is the
+// random noise to add to the result (standard deviation).
+function simulateADC(value, bits, noise) {
+  // min/max value of the signed integer result.
+  let maxValue = (1 << (bits - 1)) - 1;
+  let minValue = -(1 << (bits - 1));
+
+  // Calculate the ADC value.
+  let result = Math.round(value * maxValue + randomNoise(noise));
+
+  // Cap the result (saturate).
+  result = Math.min(result, maxValue);
+  result = Math.max(result, minValue);
+
+  return result;
 }
