@@ -1,5 +1,9 @@
 'use strict';
 
+const i2cErrorNoDevice = 1;
+const i2cErrorMultipleDevices = 2;
+const i2cErrorWrongAddress = 3;
+
 // A net is a collection of pins that are all connected together through wires.
 // None of the pins in the net have a connection to a pin that's not part of
 // the net.
@@ -439,6 +443,53 @@ class SPIBus {
       }
     }
     return r;
+  }
+}
+
+class I2CBus {
+  configureAsController(scl, sda) {
+    this.scl = scl;
+    this.sda = sda;
+    this.mode = 'controller';
+    scl.setState('pullup', 'i2c-scl-out');
+    sda.setState('pullup');
+  }
+
+  configureAsPeripheral(scl, sda) {
+    this.scl = scl;
+    this.sda = sda;
+    this.mode = 'controller';
+    scl.setState('pullup', 'i2c-scl-in');
+    sda.setState('pullup');
+  }
+
+  transfer(address, w, r) {
+    if (this.mode !== 'controller') {
+      console.warn('sending on a non-controller I2C bus:', this.scl.id);
+    }
+
+    let devices = [];
+    let totalDevices = 0;
+    for (let pin of this.scl.net.pins) {
+      if (pin.mode !== 'i2c-scl-in')
+        continue;
+      totalDevices++;
+      // TODO: also check SDA pin
+      if (pin.part.hasI2CAddress(address)) {
+        devices.push(pin.part);
+      }
+    }
+    if (devices.length == 0) {
+      if (totalDevices > 0) {
+        return i2cErrorWrongAddress;
+      }
+      return i2cErrorNoDevice;
+    } else if (devices.length > 1) {
+      return i2cErrorMultipleDevices;
+    } else {
+      devices[0].transferI2C(w, r);
+      return 0;
+    }
   }
 }
 

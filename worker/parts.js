@@ -140,6 +140,7 @@ class Part {
     this.type = config.type;
     this.pins = {};
     this.spiBuses = {};
+    this.i2cBuses = {};
     this.pwmInstances = {};
     this.properties = null;
     this.hasUpdate = false;
@@ -164,6 +165,17 @@ class Part {
     if (!instance) {
       instance = new SPIBus();
       this.spiBuses[bus] = instance;
+    }
+    return instance;
+  }
+
+  // getI2C returns an I2C bus by bus number, or creates one if the bus doesn't
+  // exist yet. The bus is initially unconfigured.
+  getI2C(bus) {
+    let instance = this.i2cBuses[bus];
+    if (!instance) {
+      instance = new I2CBus();
+      this.i2cBuses[bus] = instance;
     }
     return instance;
   }
@@ -323,6 +335,7 @@ class MCU extends Part {
   bufferMutexIndex = 0;
   bufferSpeedIndex = 1;
   bufferPinIndex = 2;
+  bufferI2CBusStatusIndex = this.bufferPinIndex + 256;
 
   constructor(schematic, config) {
     super(schematic, config);
@@ -399,6 +412,14 @@ class MCU extends Part {
     } else if (msg.type === 'pwm-channel-set') {
       let instance = this.getPWM(msg.instance);
       instance.channelSet(msg.channel, msg.value);
+    } else if (msg.type === 'i2c-configure') {
+      let bus = this.getI2C(msg.bus);
+      bus.configureAsController(this.getPin(msg.scl), this.getPin(msg.sda));
+    } else if (msg.type === 'i2c-transfer') {
+      let bus = this.getI2C(msg.bus);
+      let errCode = bus.transfer(msg.address, msg.w, msg.r);
+      Atomics.store(this.workerBuffer, this.bufferI2CBusStatusIndex + msg.bus, errCode);
+      this.#finishedTask();
     } else if (msg.type === 'spi-configure') {
       let bus = this.getSPI(msg.bus);
       bus.configureAsController(this.getPin(msg.sck), this.getPin(msg.sdo), this.getPin(msg.sdi));

@@ -118,6 +118,8 @@ class Runner {
   bufferMutexIndex = 0;
   bufferSpeedIndex = 1;
   bufferPinIndex = 2;
+  bufferI2CBusStatusIndex = this.bufferPinIndex + 256;
+  bufferLength = this.bufferI2CBusStatusIndex + 32;
 
   constructor(postMessage) {
     this.postMessage = (msg) => postMessage(msg);
@@ -129,7 +131,7 @@ class Runner {
     //   shared state the runner waits for it to reach zero.
     // - index 1: 'speed' state (0 when paused, 1 when running).
     // - index 2..256: pin state for pins 0..254.
-    const dataBufferLength = (1 + 1 + 255) * 4;
+    const dataBufferLength = (this.bufferLength) * 4;
     if (crossOriginIsolated) {
       this.dataBuffer = new SharedArrayBuffer(dataBufferLength);
     } else {
@@ -358,6 +360,32 @@ class Runner {
             channel: channel,
             value: value,
           });
+        },
+        __tinygo_i2c_configure: (bus, scl, sda, frequency) => {
+          this.postMessage({
+            type: 'i2c-configure',
+            bus: bus,
+            scl: scl,
+            sda: sda,
+            frequency: frequency,
+          });
+        },
+        __tinygo_i2c_transfer: (bus, address, wptr, wlen, rptr, rlen) => {
+          this.addTask();
+          let wbuf = new Uint8Array(this._inst.exports.memory.buffer, wptr, wlen);
+          let rbuf = new Uint8Array(new SharedArrayBuffer(rlen));
+          this.postMessage({
+            type: 'i2c-transfer',
+            bus: bus,
+            address: address,
+            w: wbuf,
+            r: rbuf,
+          });
+          this.waitTasks(); // wait until I2C transfer has completed
+          let rbuf2 = new Uint8Array(this._inst.exports.memory.buffer, rptr, rlen);
+          rbuf2.set(rbuf);
+          let errCode = Atomics.load(this.int32Buffer, this.bufferI2CBusStatusIndex+bus);
+          return errCode;
         },
         __tinygo_spi_configure: (bus, sck, sdo, sdi) => {
           this.postMessage({
