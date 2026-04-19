@@ -1,12 +1,12 @@
 # Build binary in the first stage.
-FROM golang:1.25-bookworm AS build
+FROM golang:1.26-bookworm AS build
 RUN mkdir /build
 COPY *.go go.mod go.sum /build/
 WORKDIR /build
 RUN go build -o main .
 
 # Use a separate container for the resulting image.
-FROM golang:1.25-bookworm
+FROM golang:1.26-bookworm
 RUN adduser --disabled-login --system --home /app appuser
 RUN mkdir -p /app/.cache && chown appuser /app/.cache
 
@@ -33,15 +33,13 @@ ENV PATH="${PATH}:/app/tinygo/bin"
 RUN GOOS=wasip1 GOARCH=wasm go build -o /tmp/outfile && \
     tinygo build -o /tmp/outfile -target=wasi && \
     tinygo build -o /tmp/outfile -target=wasm && \
-    tinygo build -o /tmp/outfile -target=arduino && \
+    tinygo build -o /tmp/outfile -target=arduino-uno && \
     tinygo build -o /tmp/outfile -target=arduino-nano33 && \
     tinygo build -o /tmp/outfile -target=circuitplay-bluefruit && \
     tinygo build -o /tmp/outfile -target=circuitplay-express && \
     tinygo build -o /tmp/outfile -target=gopher-badge && \
-    tinygo build -o /tmp/outfile -target=hifive1b && \
     tinygo build -o /tmp/outfile -target=microbit && \
     tinygo build -o /tmp/outfile -target=pinetime && \
-    tinygo build -o /tmp/outfile -target=reelboard && \
     rm /tmp/outfile
 
 # Finish container.

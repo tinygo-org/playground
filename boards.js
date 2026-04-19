@@ -189,9 +189,9 @@ const boards = {
 		compiler: 'tinygo',
 		code: exampleHelloTinyGo,
 	},
-	'arduino': {
+	'arduino-uno': {
 		humanName: 'Arduino Uno',
-		location: 'parts/arduino.json',
+		location: 'parts/arduino-uno.json',
 		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
@@ -219,23 +219,11 @@ const boards = {
 		compiler: 'tinygo',
 		code: exampleGopherBadge,
 	},
-	'hifive1b': {
-		humanName: 'HiFive1 rev B',
-		location: 'parts/hifive1b.json',
-		compiler: 'tinygo',
-		code: exampleRGBLED,
-	},
 	'microbit': {
 		humanName: 'BBC micro:bit v1',
 		location: 'parts/microbit.json',
 		compiler: 'tinygo',
 		code: exampleMicrobitBlink,
-	},
-	'reelboard': {
-		humanName: 'Phytec reel board',
-		location: 'parts/reelboard.json',
-		compiler: 'tinygo',
-		code: exampleRGBLED,
 	},
 	'pinetime': {
 		humanName: 'PineTime',
