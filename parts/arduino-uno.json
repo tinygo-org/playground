@@ -1,7 +1,7 @@
 {
-    "name": "arduino",
+    "name": "arduino-uno",
     "humanName": "Arduino Uno",
-    "svg": "arduino.svg",
+    "svg": "arduino-uno.svg",
     "mainPart": "mcu",
     "baseCurrent": 0.0380,
     "parts": [
