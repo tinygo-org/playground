@@ -44,12 +44,14 @@ func initFirebase() {
 			app, err = firebase.NewApp(ctx, nil)
 		}
 		if err != nil {
-			log.Fatalln(err)
+			log.Println("Could not initialize Firebase App:", err)
+			return
 		}
 
 		firestoreClient, err = app.Firestore(ctx)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println("Could not initialize Firestore:", err)
+			return
 		}
 	})
 }
@@ -67,6 +69,11 @@ func handleShare(w http.ResponseWriter, r *http.Request) {
 		}
 
 		initFirebase()
+		if firestoreClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Firestore not configured"))
+			return
+		}
 		ctx := context.Background()
 
 		doc, err := firestoreClient.Collection("shared").Doc(id).Get(ctx)
@@ -109,6 +116,11 @@ func handleShare(w http.ResponseWriter, r *http.Request) {
 		}
 
 		initFirebase()
+		if firestoreClient == nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Firestore not configured"))
+			return
+		}
 		ctx := context.Background()
 
 		// Use a RFC3339 formatted timestamp, rounded to a single minute.
@@ -183,6 +195,9 @@ func getObfuscatedIP(r *http.Request) (string, error) {
 // Track a single compiler action.
 func trackCompile(data map[string]any, modified string) {
 	initFirebase()
+	if firestoreClient == nil {
+		return
+	}
 	ctx := context.Background()
 
 	// Calculate ID for this data point.
@@ -217,6 +232,11 @@ func trackCompile(data map[string]any, modified string) {
 // Return recent compilation stats.
 func getStats(w http.ResponseWriter, r *http.Request) {
 	initFirebase()
+	if firestoreClient == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Firestore not configured"))
+		return
+	}
 	ctx := context.Background()
 
 	// Allow access from everywhere.
