@@ -14,6 +14,60 @@ easily run a local test server:
 Some changes need to be tested in the Docker container used in production. Run
 `make run` to test such changes.
 
+## Building the Docker container
+
+You will need the `amd64` release build of TinyGo that you want to use to build the Docker container. Download it from Github for this release. Then copy it into the root directory of this repo and name it `release.tar.gz`
+
+Now you should be able to run `make build`:
+
+```
+$ make build
+docker build -t tinygo/playground:latest .
+...
+ => => naming to docker.io/tinygo/playground:latest
+```
+
+After the container has been built you can execute it using `make run`
+
+
+## Deployment
+
+### Playground web UI
+
+When you merge to the `main` branch, the web UI will be deployed automatically using `Netlify` to the `play.tinygo.org` site.
+
+### TinyGo compiler container
+
+You must build the Docker container first before running this command.
+
+```
+make push-docker
+```
+
+### TinyGo compiler backend
+
+You must install the `google-cloud-cli`
+
+```
+sudo snap install google-cloud-cli --classic
+```
+
+You must also authenticate to GCP:
+
+```
+gcloud init
+```
+
+Now you should be able to submit a job to build and deploy the container:
+
+```
+make push-gcloud
+```
+
+### TinyGo homepage/Tour
+
+You must update the submodule in the `tinygo-site` repo and then deploy that in order to pickup changes to the playground.
+
 ## Architecture
 
 The playground consists of a few separate parts:
