@@ -1,22 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Seeed XIAO ESP32-S3 for the TinyGo Playground simulator. -->
+<!-- Seeed XIAO ESP32-C3 for the TinyGo Playground simulator. -->
 <!-- PCB: 20.44×17.78mm. USB-C port centered at top. -->
 <!-- Left pads (top→bottom):  D0 D1 D2 D3 D4 D5 D6 -->
 <!-- Right pads (top→bottom): 5V GND 3V3 D10 D9 D8 D7 -->
-<!-- LED (GPIO21) is an onboard indicator, not on a header pad. -->
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 -1.3 20.44 19.08" width="20.44mm" height="19.08mm">
 
   <!-- PCB -->
-  <rect x="0" y="0" width="20.44" height="17.78" fill="#1a1a1a"/>
+  <rect x="0" y="0" width="20.44" height="17.78" fill="#000000"/>
 
   <!-- USB port -->
   <rect x="6.22" y="-1.3" width="8" height="6" fill="#ccc"/>
-
-  <!-- onboard LED (GPIO21) -->
-  <g data-part="led" transform="translate(9.22, 8.5)">
-    <rect width="2.0" height="1.2" fill="black"/>
-    <rect width="2.0" height="1.2" style="fill: var(--color, black); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
-  </g>
 
   <!-- pads on the left: D0 D1 D2 D3 D4 D5 D6 -->
   <g transform="translate(0, 0)" fill="transparent">
