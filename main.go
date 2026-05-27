@@ -133,7 +133,7 @@ func handleCompile(w http.ResponseWriter, r *http.Request) {
 	switch format {
 	case "wasm", "wasi":
 		// Run code in the browser.
-	case "elf", "hex", "uf2":
+	case "elf", "hex", "uf2", "bin":
 		// Build a firmware that can be flashed directly to a development board.
 		flashFirmware = true
 	default:

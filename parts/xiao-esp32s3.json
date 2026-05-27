@@ -1,7 +1,7 @@
 {
     "name": "xiao-esp32s3",
     "humanName": "Seeed XIAO ESP32-S3",
-    "firmwareFormat": "esp32s3",
+    "firmwareFormat": "bin",
     "svg": "xiao-esp32s3.svg",
     "mainPart": "mcu",
     "baseCurrent": 0.0220,
