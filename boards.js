@@ -237,12 +237,6 @@ const boards = {
 		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
-	'xiao-esp32c3': {
-		humanName: 'Seeed XIAO ESP32-C3',
-		location: 'parts/xiao-esp32c3.json',
-		compiler: 'tinygo',
-		code: exampleBlinky1,
-	},
 	'xiao-esp32s3': {
 		humanName: 'Seeed XIAO ESP32-S3',
 		location: 'parts/xiao-esp32s3.json',
