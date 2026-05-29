@@ -236,5 +236,11 @@ const boards = {
 		location: 'parts/pico.json',
 		compiler: 'tinygo',
 		code: exampleBlinky1,
-	}
+	},
+	'xiao-esp32s3': {
+		humanName: 'Seeed Studio XIAO ESP32-S3',
+		location: 'parts/xiao-esp32s3.json',
+		compiler: 'tinygo',
+		code: exampleBlinky1,
+	},
 };
