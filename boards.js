@@ -243,4 +243,10 @@ const boards = {
 		compiler: 'tinygo',
 		code: exampleBlinky1,
 	},
+	'esp32c3-supermini': {
+		humanName: 'ESP32-C3 Super Mini',
+		location: 'parts/esp32c3-supermini.json',
+		compiler: 'tinygo',
+		code: exampleBlinky1,
+	},
 };
