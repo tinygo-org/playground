@@ -16,7 +16,7 @@ Some changes need to be tested in the Docker container used in production. Run
 
 ## Building the Docker container
 
-You will need the `amd64` release build of TinyGo that you want to use to build the Docker container. Download it from Github for this release. Then copy it into the root directory of this repo and name it `release.tar.gz`
+You will need the `amd64` release build of TinyGo that you want to use to build the Docker container. Running `make release.tar.gz` downloads the version set by `TINYGO_VERSION` in the Makefile into the root directory of this repo. To use a different build, put it in the root directory and name it `release.tar.gz`.
 
 Now you should be able to run `make build`:
 

@@ -1,4 +1,9 @@
+TINYGO_VERSION ?= 0.44.0
+
 all: build
+
+release.tar.gz:
+	curl -fL -o release.tar.gz https://github.com/tinygo-org/tinygo/releases/download/v$(TINYGO_VERSION)/tinygo$(TINYGO_VERSION).linux-amd64.tar.gz
 
 .PHONY: build
 build: release.tar.gz
