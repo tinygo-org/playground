@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- ESP32-C3 Super Mini for the TinyGo Playground simulator. -->
+<!-- PCB: 18x23mm. USB-C port centered at top. -->
+<!-- Left pads (top to bottom): IO5 IO6 IO7 IO8 IO9 IO10 IO20 IO21 -->
+<!-- Right pads (top to bottom): 5V GND 3V3 IO4 IO3 IO2 IO1 IO0 -->
+<!-- Onboard status LED (GPIO8 / machine.LED), blue. -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 -1.3 18 24.3" width="18mm" height="24.3mm">
+
+  <!-- PCB -->
+  <rect x="0" y="0" width="18" height="23" fill="#1a1a1a"/>
+
+  <!-- USB port -->
+  <rect x="5" y="-1.3" width="8" height="6" fill="#ccc"/>
+
+  <!-- onboard LED (GPIO8), horizontal SMD -->
+  <g data-part="led" transform="translate(12.0, 10.5)">
+    <rect x="-0.9" y="-0.4" width="1.8" height="0.8" fill="#994" rx="0.12"/>
+    <rect x="-0.9" y="-0.4" width="1.8" height="0.8" rx="0.12" style="fill: var(--color, transparent); filter: drop-shadow(0 0 1px var(--shadow)) drop-shadow(0 0 1px var(--shadow));"/>
+  </g>
+
+  <!-- MCU (ESP32-C3 module, symbolic) -->
+  <g id="mcu-mark">
+    <rect x="5.9" y="11.2" width="6.2" height="6.2" rx="0.35" fill="#ecebea" stroke="#808080" stroke-width="0.2" transform="rotate(45 9 14.3)"/>
+    <circle cx="6.5" cy="11.85" r="0.25" fill="#808080"/>
+    <circle cx="11.5" cy="16.75" r="0.25" fill="#808080"/>
+  </g>
+
+  <!-- pads on the left: IO5 through IO21 -->
+  <g transform="translate(0, 0)" fill="transparent">
+    <g data-pin="IO5" transform="translate(0, 0)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO6" transform="translate(0, 2.54)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO7" transform="translate(0, 5.08)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO8" transform="translate(0, 7.62)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO9" transform="translate(0, 10.16)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO10" transform="translate(0, 12.7)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO20" transform="translate(0, 15.24)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO21" transform="translate(0, 17.78)">
+      <path transform="translate(0, 0.47)" d="M 0,0 V 1.6 H 1.61 A 0.8 0.8 0 0 0 1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+  </g>
+
+  <!-- pads on the right: 5V GND 3V3 IO4 through IO0 -->
+  <g transform="translate(14.78, 0)" fill="transparent">
+    <g data-pin="5V" data-title="5V" transform="translate(0, 0)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="GND#1" data-title="GND" transform="translate(0, 2.54)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="3V3" data-title="3V3" transform="translate(0, 5.08)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO4" transform="translate(0, 7.62)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO3" transform="translate(0, 10.16)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO2" transform="translate(0, 12.7)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO1" transform="translate(0, 15.24)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+    <g data-pin="IO0" transform="translate(0, 17.78)">
+      <path transform="translate(3.22, 0.47)" d="M 0,0 V 1.6 H -1.61 A 0.8 0.8 0 0 1 -1.61 0 Z" fill="#d4af37"/>
+      <rect width="3.22" height="2.54" class="area"/>
+    </g>
+  </g>
+</svg>
